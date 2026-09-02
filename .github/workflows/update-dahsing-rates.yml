@@ -1,0 +1,148 @@
+name: Update Dah Sing HIBOR and Prime Rates
+
+# 每日抓取大新銀行公開利率頁的 HIBOR 1個月 與 最優惠利率 P，
+# 寫入 data/dahsing-rates.js，供 02 保費融資計算機讀取。
+#
+# 【為什麼不用 Cloudflare Worker】
+# HIBOR 是「每日一次定盤」：香港銀行公會每個營業日 11:15 a.m. 公布一次
+# （來源：HKAB《Specifications of HKD HIBOR》官方規格書）。
+# 一天只有一個值，不存在盤中即時值 —— 11:15 之後不管誰去抓都是同一個數，
+# 11:15 之前連即時代理也拿不到當天的。所以 Worker 帶不來增量價值，純 Actions 就夠。
+#
+# 【排程時間為什麼是港時 12:00】
+# 定盤在 11:15，排在它之前（例如港時 07:00）只會抓到昨天的值，等於白跑。
+# 港時 12:00 留了 45 分鐘 buffer 抓當天定盤。
+# 已知限制：颱風／黑雨順延到 14:30 公布的日子，這次會抓空而沿用前一營業日
+# （是「沿用舊值」不是「寫入錯值」，可接受；一年沒幾天）。
+
+on:
+  schedule:
+    # UTC 04:00 = 香港時間 12:00。三個 workflow 時程錯開：
+    # 05 匯率 HK 08:00 → 02 利率 HK 12:00 → 06 基金 HK 15:00
+    - cron: '0 4 * * *'
+  workflow_dispatch: # 允許在 Actions 分頁手動觸發
+
+concurrency:
+  group: update-dahsing-rates-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write # 少了這段推不上去
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # 讓後面的 git pull --rebase 能正常運作
+
+      # ① 先跟遠端同步，而且必須在「動到任何檔案之前」做。
+      #    舊版是先寫檔再 pull，檔案一髒 Git 就拒絕：
+      #    error: cannot pull with rebase: You have unstaged changes.
+      - name: Sync with remote
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+
+      # ② 抓大新，先落到暫存檔，還不碰倉庫裡的 data/dahsing-rates.js
+      #    【踩坑】不加 Accept-Encoding: identity 會拿到 http=200 但 body 是空的，
+      #    看起來像被擋，其實是編碼協商問題。
+      - name: Fetch rates from Dah Sing
+        run: |
+          curl -sS --fail --max-time 30 \
+            -H "Accept-Encoding: identity" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36" \
+            "https://www.dahsing.com/pws/rate-enquiry/api/other-rate" \
+            -o /tmp/dahsing.json
+
+          # 抓到空檔就中止，保留昨天的資料，不要寫壞檔案
+          if [ ! -s /tmp/dahsing.json ]; then
+            echo "::error::抓取結果為空，保留既有資料"
+            exit 1
+          fi
+
+      # ③ 解析 + 防呆門檻，通過才產出 .js
+      #    配對用 rateDesc 關鍵字，【不可】用陣列索引 —— JSON 陣列順序不保證。
+      #    輸出 .js 而非 .json：這樣 file:// 本機直接開啟也能載入
+      #    （fetch() 讀 JSON 在 file 協定下會被 CORS 擋住）
+      - name: Parse and validate
+        run: |
+          node -e '
+            const fs = require("fs");
+            const raw = JSON.parse(fs.readFileSync("/tmp/dahsing.json", "utf8"));
+            const items = raw?.OtherRate?.OtherRateItem;
+            if (!Array.isArray(items)) { console.error("資料格式異常：找不到 OtherRateItem"); process.exit(1); }
+
+            // 用 rateDesc 關鍵字配對，不用索引
+            const find = (kw) => items.find(x => String(x.rateDesc || "").indexOf(kw) >= 0);
+            const hiborItem = find("一個月港元同業拆息");
+            const primeItem = find("大新銀行港元最優惠利率");
+
+            if (!hiborItem || !primeItem) {
+              console.error("找不到 HIBOR 或 P 欄位，rateDesc 可能已改版");
+              process.exit(1);
+            }
+
+            // "2.8626% p.a." -> 2.8626
+            const num = (s) => {
+              const m = String(s || "").match(/(-?\d+(?:\.\d+)?)/);
+              return m ? Number(m[1]) : NaN;
+            };
+            const hibor = num(hiborItem.rateVal);
+            const prime = num(primeItem.rateVal);
+
+            // 防呆門檻：不合理的整包丟棄，沿用上一層，絕不寫進畫面
+            const bad = (v, lo, hi) => !Number.isFinite(v) || v < lo || v > hi;
+            if (bad(hibor, 0.01, 20)) { console.error("HIBOR 超出合理範圍:", hibor); process.exit(1); }
+            if (bad(prime, 2, 15))    { console.error("P 超出合理範圍:", prime);     process.exit(1); }
+
+            const payload = {
+              hibor: Number(hibor.toFixed(4)),
+              prime: Number(prime.toFixed(4)),
+              hiborUpdated: hiborItem.updated || "",
+              primeUpdated: primeItem.updated || "",
+              fetchedAt: new Date().toISOString()
+            };
+
+            fs.writeFileSync("/tmp/dahsing-rates.new.js",
+              "window.DAHSING_RATES = " + JSON.stringify(payload, null, 2) + ";\n");
+            console.log("HIBOR:", payload.hibor, "(", payload.hiborUpdated, ")  P:",
+                        payload.prime, "(", payload.primeUpdated, ")");
+          '
+
+      # ④ 只比對 hibor / prime / 兩個 updated，忽略每次都變的 fetchedAt。
+      #    否則光是時間戳不同就天天空 commit，把提交歷史洗滿。
+      - name: Write only if changed
+        run: |
+          node -e '
+            const fs = require("fs");
+            const parse = (s) => {
+              const m = String(s).match(/window\.DAHSING_RATES\s*=\s*([\s\S]*?);\s*$/);
+              const o = JSON.parse(m[1]);
+              return JSON.stringify([o.hibor, o.prime, o.hiborUpdated, o.primeUpdated]);
+            };
+            const next = fs.readFileSync("/tmp/dahsing-rates.new.js", "utf8");
+            const cur = fs.existsSync("data/dahsing-rates.js")
+              ? fs.readFileSync("data/dahsing-rates.js", "utf8") : null;
+            if (cur && parse(cur) === parse(next)) {
+              console.log("利率與既有內容相同，略過寫入");
+              process.exit(0);
+            }
+            fs.mkdirSync("data", { recursive: true });
+            fs.copyFileSync("/tmp/dahsing-rates.new.js", "data/dahsing-rates.js");
+            console.log("已更新 data/dahsing-rates.js");
+          '
+
+      # ⑤ 有實際變動才提交
+      - name: Commit only if changed
+        run: |
+          git add data/dahsing-rates.js
+
+          if git diff --quiet --cached; then
+            echo "利率未變動，略過提交"
+          else
+            git commit -m "chore(rates): update dah sing $(date -u +%Y-%m-%d)"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
