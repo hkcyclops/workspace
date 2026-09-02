@@ -1,0 +1,1 @@
+window.__FUND_DATA__=window.__FUND_DATA__||{};window.__FUND_DATA__["data/distributions/P05.js"]={"records":[{"recordDate":"2017-12-14","amountPerUnit":0.03886,"eligibleNav":5.69,"annualizedRate":8.2},{"recordDate":"2019-12-13","amountPerUnit":0.019,"eligibleNav":5.42,"annualizedRate":4.21}]};

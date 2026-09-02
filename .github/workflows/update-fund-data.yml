@@ -1,0 +1,121 @@
+name: Update Fund Data (06)
+
+# 每月從 AIA 官方 API 重新抓取 146 隻基金的歷史 NAV、派息記錄與匯率，
+# 重建 smart-metrics，輸出成 data/*.js 並推回倉庫。
+#
+# 資料流：
+#   FundInfo2        → 基金清單與中繼資料
+#   FundHistorical   → 每隻基金全歷史 NAV
+#   FundDividendRecord → 派息記錄
+#   ExchangeRate2    → 06 內部用的匯率
+#
+# 合併策略：以倉庫內既有的 data/*.js 為基底，API 資料覆蓋／追加，
+# 避免丟掉 AIA API 沒有、但先前由其他來源補齊的歷史（例如 Z23）。
+
+on:
+  schedule:
+    # 每月 1 日 UTC 02:00 = 香港時間 10:00
+    # GitHub 不定時延遲，實際可能晚幾分鐘到幾小時。
+    - cron: '0 2 1 * *'
+  workflow_dispatch: # 可在 Actions 分頁手動觸發
+
+permissions:
+  contents: write # 少了這段推不上去
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # 讓後面的 git pull --rebase 能正常運作
+
+      # ① 先跟遠端同步，而且必須在「動到任何檔案之前」做。
+      #    寫過檔案再 pull --rebase 會被 Git 拒絕
+      #    （cannot pull with rebase: You have unstaged changes）。
+      - name: Sync with remote
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # ② 抓取前的基準快照
+      - name: Baseline
+        run: python scripts/fund_data.py check | tee /tmp/before.txt
+
+      # ③ 抓取並重建（純標準函式庫，不需 pip install）
+      - name: Fetch from AIA
+        run: python scripts/fund_data.py fetch
+
+      # ④ 抓取後的快照
+      - name: After
+        run: python scripts/fund_data.py check | tee /tmp/after.txt
+
+      # ⑤ 健全性檢查：基金數、筆數不能變少，日期不能倒退
+      - name: Sanity check
+        run: |
+          python - <<'PY'
+          import json, io, sys, datetime, re
+
+          def load(p):
+              s = io.open(p, encoding='utf-8').read().strip()
+              m = re.match(r'window\.__FUND_DATA__=window\.__FUND_DATA__\|\|\{\};'
+                           r'window\.__FUND_DATA__\["[^"]+"\]=(.*);\s*$', s, re.S)
+              return json.loads(m.group(1))
+
+          man = load('data/manifest.js')
+          nav = man['navIndex']
+          idx = man['source']
+          print('基金數:', idx['navFundCount'], '| NAV 索引:', len(nav),
+                '| 總筆數:', idx['navPointCount'])
+          print('最新時間戳:', idx['navLatestTimestamp'],
+                datetime.datetime.utcfromtimestamp(
+                    idx['navLatestTimestamp'] / 1000).strftime('%Y-%m-%d'))
+
+          errs = []
+          if idx['navFundCount'] != 146:
+              errs.append('基金數應為 146，實際 %s' % idx['navFundCount'])
+          if len(nav) != 146:
+              errs.append('NAV 索引應為 146，實際 %d' % len(nav))
+          if idx['navPointCount'] < 400000:
+              errs.append('總筆數異常偏少: %s' % idx['navPointCount'])
+
+          # 每隻基金都要有資料，且筆數為正
+          empty = [c for c, v in nav.items() if (v.get('recordCount') or 0) <= 0]
+          if empty:
+              errs.append('有 %d 隻基金沒有 NAV: %s' % (len(empty), empty[:6]))
+
+          cat = load('data/catalog.js')
+          if len(cat.get('funds') or []) != 146:
+              errs.append('catalog 基金數異常: %d' % len(cat.get('funds') or []))
+          if not (cat.get('exchangeRatesHkd') or {}).get('USD'):
+              errs.append('catalog 缺少 USD 匯率')
+
+          sm = load('data/smart-metrics.js')
+          if len(sm.get('default') or []) != 146:
+              errs.append('smart-metrics.default 應為 146 筆')
+          if len(sm.get('customYears') or {}) != 30:
+              errs.append('smart-metrics.customYears 應為 30 組')
+
+          if errs:
+              print('\n[健全性檢查失敗]')
+              for e in errs:
+                  print('  -', e)
+              sys.exit(1)
+          print('\n健全性檢查通過')
+          PY
+
+      # ⑥ 只在資料真的有變時才提交
+      - name: Commit only if changed
+        run: |
+          git add -A -- data
+          if git diff --quiet --cached; then
+            echo "基金資料未變動，略過提交"
+          else
+            git commit -m "chore(funds): update $(date -u +%Y-%m-%d)"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

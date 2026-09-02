@@ -1,0 +1,1 @@
+window.__FUND_DATA__=window.__FUND_DATA__||{};window.__FUND_DATA__["data/distributions/Z77.js"]={"records":[{"recordDate":"2026-07-31","amountPerUnit":0.3709,"eligibleNav":57.0,"annualizedRate":7.81}]};
