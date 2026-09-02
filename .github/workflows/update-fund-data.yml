@@ -51,11 +51,41 @@ jobs:
       - name: Fetch from AIA
         run: python scripts/fund_data.py fetch
 
-      # ④ 抓取後的快照
+      # ④ 把 data/funds/*.json 打包成頁面實際載入的 data/*.js。
+      #    fetch 只寫 data/funds/*.json；少了這一步，頁面永遠停在舊的 data/*.js。
+      #    （2026-09-02 實測：9/1 的 fetch 有抓到並提交，但 data/manifest.js
+      #     自 8/30 起沒再變過，頁面 NAV 一直停在 8/27。）
+      - name: Pack to JS
+        run: python scripts/fund_data.py pack
+
+      # ⑤ 抓取後的快照
       - name: After
         run: python scripts/fund_data.py check | tee /tmp/after.txt
 
-      # ⑤ 健全性檢查：基金數、筆數不能變少，日期不能倒退
+      # ⑥ 日期不倒退：AIA 偶爾會回傳不完整的歷史，
+      #    若抓到的最新 NAV 反而比抓取前舊，寧可不要這次的結果。
+      - name: No regression
+        run: |
+          python - <<'PY'
+          import io, re
+
+          def latest(p):
+              s = io.open(p, encoding='utf-8', errors='replace').read()
+              ds = re.findall(r'\d{4}-\d{2}-\d{2}', s)
+              return max(ds) if ds else None
+
+          b, a = latest('/tmp/before.txt'), latest('/tmp/after.txt')
+          print('抓取前最新:', b, ' -> 抓取後最新:', a)
+          if not b or not a:
+              print('（取不到日期，略過比對）')
+          elif a < b:
+              raise SystemExit('資料日期倒退：%s -> %s' % (b, a))
+          else:
+              print('日期未倒退')
+          PY
+
+      # ⑦ 健全性檢查：基金數、筆數不能變少
+      #    （在 pack 之後執行，此時 data/*.js 已是這次抓到的資料）
       - name: Sanity check
         run: |
           python - <<'PY'
