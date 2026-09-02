@@ -1,7 +1,12 @@
 name: Update Fund Data (06)
 
-# 每月從 AIA 官方 API 重新抓取 146 隻基金的歷史 NAV、派息記錄與匯率，
-# 重建 smart-metrics，輸出成 data/*.js 並推回倉庫。
+# 每天從 AIA 官方 API 重新抓取 146 隻基金的歷史 NAV、派息記錄與匯率，
+# 重建 smart-metrics，輸出成 data/*.js 並推回倉庫（06 計算機讀的就是這些檔）。
+#
+# 為什麼每天一次就夠：
+#   fetch 對每隻基金都是「全量重拉 2000-01-01 起」的歷史（146 次請求，約 2 分 16 秒），
+#   所以就算某天 AIA 還沒發布、沒抓到新資料，隔天那次也會把漏掉的一併補回來，
+#   不會留下斷層。跑太頻繁只是平白加重 AIA 端負擔、徒增被限流的風險。
 #
 # 資料流：
 #   FundInfo2        → 基金清單與中繼資料
@@ -14,10 +19,17 @@ name: Update Fund Data (06)
 
 on:
   schedule:
-    # 每月 1 日 UTC 02:00 = 香港時間 10:00
-    # GitHub 不定時延遲，實際可能晚幾分鐘到幾小時。
-    - cron: '0 2 1 * *'
+    # 每天 UTC 07:00 = 香港時間 15:00。
+    # 選這個時段的理由：2026-09-01 那次排程在 UTC 07:06 執行，成功抓到
+    # 8/31（前一交易日）的 NAV，實測這個時間點 AIA 已經發布。
+    # GitHub 排程本身會延遲幾分鐘到幾小時，屬正常現象。
+    - cron: '0 7 * * *'
   workflow_dispatch: # 可在 Actions 分頁手動觸發
+
+# 同一時間只跑一個：避免排程與手動觸發互相搶 push
+concurrency:
+  group: update-fund-data-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write # 少了這段推不上去
@@ -139,7 +151,8 @@ jobs:
           print('\n健全性檢查通過')
           PY
 
-      # ⑥ 只在資料真的有變時才提交
+      # ⑧ 只在資料真的有變時才提交（06 的 ?v= 是執行時動態取當天日期，
+      #    所以這裡一提交，使用者隔天開頁面就會讀到新資料，不必清快取）
       - name: Commit only if changed
         run: |
           git add -A -- data
