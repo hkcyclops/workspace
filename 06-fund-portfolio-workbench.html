@@ -121,8 +121,9 @@ languageButtons.forEach(button=>button.addEventListener('click',()=>applyLanguag
 </script><script>
 /* HUB_CONV_V2 — 繁簡字元轉換引擎（共用版：無狀態 + MutationObserver）。
    字典 = 05 頁詞組字典 + 05 單字字典 + opencc s2hk 補齊（覆蓋本站全部字元）。
-   與 05 舊版差異：不記憶原文（React 重渲染會換掉文字節點），
+   與 05 舊版差異：不記憶文字節點的原文（React 重渲染會換掉文字節點），
    改為純函式冪等轉換；新增/改動的文字由 MutationObserver 於下一幀補轉換。
+   另處理 placeholder / title / aria-label 這類屬性文字（TreeWalker 碰不到）。
    語言狀態讀取 <html data-hub-language>，未設定時預設 traditional。
    另暴露 window.__hubConvStr(s,lang) 供 06 的基金搜尋做查詢歸一化。 */
 (function(){
@@ -142,8 +143,39 @@ function convStr(s,lang){
   for(i=0;i<s.length;i++){c=s.charAt(i);o+=(H1.call(CR,c)?CR[c]:c);}return o;
 }
 window.__hubConvStr=convStr;
+/* 屬性文字（placeholder / title / aria-label）不是文字節點，TreeWalker 碰不到，
+   但 placeholder 與 title 使用者看得到，不轉會留下簡體。這裡另外處理：
+   原文記在元素的 WeakMap 裡，才能在切回簡體時還原。
+   ⚠️ 不能用「第一次看到就鎖死原文」的寫法：React 若之後改寫該屬性
+   （例如依狀態換提示文字），會被我們強行改回舊值。
+   改為記住「我們上次寫入的值」：只要目前值不等於上次寫入值，
+   代表是外部（React）改的 → 重新快照原文。
+   寫屬性只會觸發 attributes mutation，
+   而本引擎的觀察者只聽 childList + characterData，不會自己引發震盪。 */
+var ATTRS=['placeholder','title','aria-label'];
+var attrMemo=new WeakMap();
+function convAttr(el,lang){
+  var m=attrMemo.get(el);
+  if(!m){m={orig:{},last:{}};attrMemo.set(el,m);}
+  for(var i=0;i<ATTRS.length;i++){
+    var a=ATTRS[i];
+    if(!el.hasAttribute||!el.hasAttribute(a))continue;
+    var cv=el.getAttribute(a);
+    if(!(a in m.orig)||m.last[a]!==cv)m.orig[a]=cv;  /* 首次，或 React 改寫過 */
+    var v=convStr(m.orig[a],lang);
+    if(cv!==v)el.setAttribute(a,v);
+    m.last[a]=v;
+  }
+}
 window.__hubConvertText=function(node,lang){
-  if(!node||!document.createTreeWalker)return;
+  if(!node)return;
+  try{
+    if(node.querySelectorAll){
+      var els=node.querySelectorAll('[placeholder],[title],[aria-label]'),j;
+      for(j=0;j<els.length;j++)convAttr(els[j],lang);
+    }
+  }catch(e){}
+  if(!document.createTreeWalker)return;
   try{
     var tw=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,null,false);
     var list=[],n;while((n=tw.nextNode()))list.push(n);
