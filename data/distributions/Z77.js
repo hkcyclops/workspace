@@ -1,1 +1,1 @@
-window.__FUND_DATA__=window.__FUND_DATA__||{};window.__FUND_DATA__["data/distributions/Z77.js"]={"records":[{"recordDate":"2026-07-31","amountPerUnit":0.3709,"eligibleNav":57.0,"annualizedRate":7.81}]};
+window.__FUND_DATA__=window.__FUND_DATA__||{};window.__FUND_DATA__["data/distributions/Z77.js"]={"records":[{"recordDate":"2026-07-31","amountPerUnit":0.3709,"eligibleNav":57.0,"annualizedRate":7.81},{"recordDate":"2026-08-31","amountPerUnit":0.3709,"eligibleNav":57.92,"annualizedRate":7.68}]};
