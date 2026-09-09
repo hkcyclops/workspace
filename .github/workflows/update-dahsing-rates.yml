@@ -135,10 +135,29 @@ jobs:
             console.log("已更新 data/dahsing-rates.js");
           '
 
+      # ④b 把當天定盤寫進時間序列 data/hibor-history.js
+      #     鍵用大新的 hiborUpdated（資料日期）；週末沒有新定盤就自然不會有新的一筆。
+      - name: Append to HIBOR history
+        run: |
+          node -e '
+            const fs = require("fs");
+            const src = fs.readFileSync("/tmp/dahsing-rates.new.js", "utf8");
+            const o = JSON.parse(src.match(/window\.DAHSING_RATES\s*=\s*([\s\S]*?);\s*$/)[1]);
+            const date = o.hiborUpdated || "";
+            if (!date || !Number.isFinite(o.hibor) || !Number.isFinite(o.prime)) {
+              console.error("日期或利率異常"); process.exit(1);
+            }
+            require("child_process").execFileSync(
+              process.execPath,
+              ["scripts/append_history.js", "data/hibor-history.js",
+               "__HIBOR_HISTORY__", date, JSON.stringify({ hibor: o.hibor, prime: o.prime })],
+              { stdio: "inherit" });
+          '
+
       # ⑤ 有實際變動才提交
       - name: Commit only if changed
         run: |
-          git add data/dahsing-rates.js
+          git add data/dahsing-rates.js data/hibor-history.js
 
           if git diff --quiet --cached; then
             echo "利率未變動，略過提交"

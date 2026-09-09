@@ -84,10 +84,29 @@ jobs:
             console.log("已更新 data/rates.js");
           '
 
+      # ③b 把當天快照寫進時間序列 data/rates-history.js
+      #     鍵用 AIA 的 asOf（資料日期），不是 commit 日 —— cron 延遲時兩者可能差一天。
+      #     同日重跑會覆蓋、不會重複；值相同也不會觸發額外 commit。
+      - name: Append to rates history
+        run: |
+          node -e '
+            const fs = require("fs");
+            const src = fs.readFileSync("/tmp/rates.new.js", "utf8");
+            const o = JSON.parse(src.match(/window\.AIA_RATES\s*=\s*([\s\S]*?);\s*$/)[1]);
+            if (!o.asOf || !o.rates || !Object.keys(o.rates).length) {
+              console.error("asOf / rates 異常"); process.exit(1);
+            }
+            require("child_process").execFileSync(
+              process.execPath,
+              ["scripts/append_history.js", "data/rates-history.js",
+               "__RATES_HISTORY__", o.asOf, JSON.stringify(o.rates)],
+              { stdio: "inherit" });
+          '
+
       # ④ 有實際變動才提交
       - name: Commit only if changed
         run: |
-          git add data/rates.js
+          git add data/rates.js data/rates-history.js
 
           if git diff --quiet --cached; then
             echo "匯率未變動，略過提交"
