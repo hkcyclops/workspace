@@ -131,13 +131,14 @@ for y in (1, 3, 5):
 </section>""")
 
 end_disp = max(tables[1][0]["end"], tables[3][0]["end"], tables[5][0]["end"]).strftime("%Y-%m-%d")
+TITLE = f"派息基金每月排名 - {ANCHOR_YM[1]}月"
 
 HTML = f"""<!doctype html>
 <html lang="zh-HK">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>派息基金每月排名｜AIA TMP2</title>
+<title>{TITLE}｜AIA TMP2</title>
 <style>
   :root{{
     --page:#f4efe5; --surface:#fffdf8; --surface-2:#fffaf2; --surface-3:#f9f2e7;
@@ -152,21 +153,21 @@ HTML = f"""<!doctype html>
     background-image:linear-gradient(90deg,#20212407 1px,#0000 1px),linear-gradient(#20212405 1px,#0000 1px);
     background-size:32px 32px;
     font-family:"Noto Sans TC",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
-    font-size:14px;line-height:1.8;-webkit-font-smoothing:antialiased;min-width:320px}}
-  .wrap{{max-width:1080px;margin:0 auto;padding:34px 22px 70px}}
-  header.masthead{{border-bottom:2px solid var(--red);padding-bottom:16px;margin-bottom:22px}}
-  .eyebrow{{color:var(--gray);font-size:10px;font-weight:800;letter-spacing:.16em;margin:0 0 8px}}
-  h1{{font-family:Georgia,"Noto Serif TC",serif;font-size:27px;font-weight:500;margin:0;color:var(--ink);line-height:1.35}}
-  .sub{{color:var(--ink-2);font-size:12.5px;margin:10px 0 0;line-height:1.8}}
-  section.card{{background:#fffdf8e6;border:1px solid var(--line);box-shadow:0 13px 28px #422f2012;padding:22px;margin:20px 0}}
-  h2{{font-family:Georgia,"Noto Serif TC",serif;font-size:19px;font-weight:500;color:var(--red);margin:0 0 14px}}
-  h2 .num{{color:var(--gray);font-size:10px;font-weight:800;letter-spacing:.14em;display:block;margin-bottom:6px}}
+    font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased;min-width:320px}}
+  .wrap{{max-width:1160px;margin:0 auto;padding:38px 26px 74px}}
+  header.masthead{{border-bottom:2px solid var(--red);padding-bottom:18px;margin-bottom:24px}}
+  .eyebrow{{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.16em;margin:0 0 8px}}
+  h1{{font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;margin:0;color:var(--ink);line-height:1.35}}
+  .sub{{color:var(--ink-2);font-size:14px;margin:12px 0 0;line-height:1.8}}
+  section.card{{background:#fffdf8e6;border:1px solid var(--line);box-shadow:0 13px 28px #422f2012;padding:26px;margin:24px 0}}
+  h2{{font-family:Georgia,"Noto Serif TC",serif;font-size:22px;font-weight:500;color:var(--red);margin:0 0 16px}}
+  h2 .num{{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.14em;display:block;margin-bottom:6px}}
   .tw{{background:var(--surface);border:1px solid #decfb8;box-shadow:inset 0 2px var(--gold);overflow-x:auto;margin:12px 0}}
-  table{{border-collapse:collapse;width:100%;font-size:12.5px;min-width:820px}}
-  th,td{{border-bottom:1px solid var(--line-2);padding:9px 10px;text-align:right;white-space:nowrap;line-height:1.4}}
-  th{{color:var(--th-ink);background:var(--head);border-bottom:1px solid var(--line-3);font-weight:700;font-size:11.5px}}
+  table{{border-collapse:collapse;width:100%;font-size:14.5px;min-width:940px}}
+  th,td{{border-bottom:1px solid var(--line-2);padding:11px 12px;text-align:right;white-space:nowrap;line-height:1.4}}
+  th{{color:var(--th-ink);background:var(--head);border-bottom:1px solid var(--line-3);font-weight:700;font-size:13px}}
   th:nth-child(-n+4),td:nth-child(-n+4){{text-align:left}}
-  td.fname{{white-space:normal;min-width:230px;font-size:11.5px;color:var(--ink-2);line-height:1.5}}
+  td.fname{{white-space:normal;min-width:250px;font-size:13.5px;color:var(--ink-2);line-height:1.5}}
   td.code{{font-family:Georgia,serif;font-weight:700;color:var(--ink)}}
   tbody tr:nth-child(odd){{background:var(--surface-2)}}
   tbody tr:nth-child(2n){{background:var(--surface-3)}}
@@ -174,29 +175,28 @@ HTML = f"""<!doctype html>
   .num{{font-family:Georgia,serif;font-variant-numeric:tabular-nums lining-nums}}
   .pos{{color:var(--gain);font-weight:700}}
   .neg{{color:var(--loss);font-weight:700}}
-  .note{{color:var(--gray);font-size:11.5px;margin:8px 0 0}}
-  .backlink{{margin:8px 0 0;font-size:12px}}
-  .hint{{background:var(--surface-3);border-top:2px solid var(--gold);padding:9px 14px;margin:0 0 18px;font-size:12px;color:var(--ink-2)}}
-  .hint b{{color:var(--red)}}
+  .note{{color:var(--gray);font-size:13px;margin:10px 0 0}}
+  .backlink{{margin:8px 0 0;font-size:13.5px}}
+  .backlink a{{font-size:13.5px}}
 
   /* 表頭 ？ 說明（沿用 06 .calculation-tooltip 視覺） */
   .tip{{position:relative;display:inline-flex;vertical-align:middle;margin-left:4px}}
-  .tip-btn{{width:13px;height:13px;border-radius:50%;border:1px solid var(--gold);background:#fffdf8;color:#ae8a46;
-    font-size:9px;font-weight:700;line-height:1;display:grid;place-items:center;cursor:help;padding:0}}
+  .tip-btn{{width:16px;height:16px;border-radius:50%;border:1px solid var(--gold);background:#fffdf8;color:#ae8a46;
+    font-size:10.5px;font-weight:700;line-height:1;display:grid;place-items:center;cursor:help;padding:0}}
   .tip-btn:hover,.tip-btn:focus-visible{{background:var(--gold);border-color:var(--gold);color:#fff}}
   .tip-btn:focus-visible{{outline:2px solid #b78e42;outline-offset:2px}}
   .tip-pop{{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(-4px);
-    z-index:60;width:max-content;max-width:min(280px,76vw);display:grid;gap:4px;text-align:left;
+    z-index:60;width:max-content;max-width:min(320px,80vw);display:grid;gap:4px;text-align:left;
     background:#4b302b;color:#fffaf1;border:1px solid var(--gold-soft);
-    padding:9px 10px;font-size:11px;line-height:1.65;font-weight:400;white-space:normal;
+    padding:11px 13px;font-size:12.5px;line-height:1.7;font-weight:400;white-space:normal;
     box-shadow:0 8px 20px #422f2033;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}}
-  .tip-pop b{{color:#f1d58e;font-size:10.5px;font-weight:800;letter-spacing:.04em}}
+  .tip-pop b{{color:#f1d58e;font-size:12px;font-weight:800;letter-spacing:.04em}}
   .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}}
   @media (max-width:700px){{
     .tip-pop{{left:auto;right:0;transform:translateY(-4px)}}
     .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{{transform:translateY(0)}}
   }}
-  footer{{margin-top:26px;color:var(--gray);font-size:11px;line-height:1.8}}
+  footer{{margin-top:28px;color:var(--gray);font-size:13px;line-height:1.8}}
 </style>
 </head>
 <body>
@@ -204,13 +204,12 @@ HTML = f"""<!doctype html>
 
 <header class="masthead">
   <p class="eyebrow">AIA · TMP2 / DISTRIBUTION FUND MONTHLY RANKING</p>
-  <h1>派息基金每月排名</h1>
-  <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:12px">&larr; 返回 06 基金組合測算</a></p>
+  <h1>{TITLE}</h1>
+  <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:13.5px">&larr; 返回 06 基金組合測算</a></p>
   <p class="sub">計算基準日 <b>{end_disp}</b>（每月最後一個交易日；各檔取該月最後一個有資料的交易日）。
      實際總報酬 = 派息貢獻 + NAV 貢獻，依實際總報酬排序；資料不足的期間不列入。</p>
 </header>
 
-<p class="hint">將滑鼠移到表頭的 <b>？</b> 可看各欄位說明（觸控螢幕點一下即可）。</p>
 {''.join(blocks)}
 <footer>
   資料來源：AIA 官方日頻 NAV 與派息紀錄（本頁為每月手動更新）。
