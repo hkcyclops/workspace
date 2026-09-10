@@ -80,6 +80,28 @@ for y in (1, 3, 5):
 def cls(v): return "pos" if v >= 0 else "neg"
 def pct(v, sign=True): return f"{v:+.1f}%" if sign else f"{v:.1f}%"
 
+TIPS = {
+    "rate": ("年化派息率", "依最近一次派息推算的未來一年配息率（<b>預估</b>）。\n公式：最近一筆派息金額 ÷ 該筆派息日配對 NAV × 12。"),
+    "total": ("實際總報酬", "該期間「領到的息 + 淨值漲跌」合計（<b>實際</b>）。\n＝ 派息貢獻 + NAV 貢獻，未扣贖回費。"),
+    "ann": ("年化回報", "實際總報酬折算為每年複利（<b>實際</b>）。\n＝ (1 + 總報酬)^(1 ÷ 年數) − 1，方便比較 1／3／5 年。"),
+    "div": ("派息貢獻", "期間累計派息 ÷ 期初淨值（<b>實際領到多少</b>）。"),
+    "nav": ("NAV 貢獻", "淨值漲跌。\n＝ (期末 NAV − 期初 NAV) ÷ 期初 NAV。"),
+}
+
+def th(label, key=None):
+    """表頭；key 有值時附上 ？ 懸停說明"""
+    if not key:
+        return f"<th>{label}</th>"
+    t, body = TIPS[key]
+    body = body.replace("\n", "<br>")
+    return (f"<th>{label}"
+            f"<span class='tip'><button type='button' class='tip-btn' "
+            f"aria-label='{t}說明' aria-expanded='false'>?</button>"
+            f"<span class='tip-pop' role='tooltip'><b>{t}</b><span>{body}</span></span></span></th>")
+
+TH = (th("年化派息率", "rate") + th("實際總報酬", "total") + th("年化回報", "ann")
+      + th("派息貢獻", "div") + th("NAV 貢獻", "nav"))
+
 blocks = []
 for y in (1, 3, 5):
     rows = tables[y][:TOP[y]]
@@ -101,8 +123,7 @@ for y in (1, 3, 5):
   <h2><span class="num">{y} 年期</span>近 {y} 年實際總報酬排名</h2>
   <div class="tw">
     <table>
-      <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>時段</th><th>年化派息率</th>
-        <th>實際總報酬</th><th>年化回報</th><th>派息貢獻</th><th>NAV 貢獻</th></tr></thead>
+      <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>時段</th>{TH}</tr></thead>
       <tbody>{''.join(tr)}</tbody>
     </table>
   </div>
@@ -155,12 +176,26 @@ HTML = f"""<!doctype html>
   .neg{{color:var(--loss);font-weight:700}}
   .note{{color:var(--gray);font-size:11.5px;margin:8px 0 0}}
   .backlink{{margin:8px 0 0;font-size:12px}}
-  .defs{{background:var(--surface-3);border-top:2px solid var(--gold);padding:14px 16px;margin:0 0 20px;font-size:12.5px;line-height:1.9}}
-  .defs>b{{color:var(--red);font-size:10px;font-weight:800;letter-spacing:.1em;display:block;margin-bottom:8px}}
-  .defs dd b{{color:var(--red-2);font-weight:700}}
-  .defs dl{{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}}
-  .defs dt{{color:var(--th-ink);font-weight:700;white-space:nowrap}}
-  .defs dd{{margin:0;color:var(--ink-2)}}
+  .hint{{background:var(--surface-3);border-top:2px solid var(--gold);padding:9px 14px;margin:0 0 18px;font-size:12px;color:var(--ink-2)}}
+  .hint b{{color:var(--red)}}
+
+  /* 表頭 ？ 說明（沿用 06 .calculation-tooltip 視覺） */
+  .tip{{position:relative;display:inline-flex;vertical-align:middle;margin-left:4px}}
+  .tip-btn{{width:13px;height:13px;border-radius:50%;border:1px solid var(--gold);background:#fffdf8;color:#ae8a46;
+    font-size:9px;font-weight:700;line-height:1;display:grid;place-items:center;cursor:help;padding:0}}
+  .tip-btn:hover,.tip-btn:focus-visible{{background:var(--gold);border-color:var(--gold);color:#fff}}
+  .tip-btn:focus-visible{{outline:2px solid #b78e42;outline-offset:2px}}
+  .tip-pop{{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(-4px);
+    z-index:60;width:max-content;max-width:min(280px,76vw);display:grid;gap:4px;text-align:left;
+    background:#4b302b;color:#fffaf1;border:1px solid var(--gold-soft);
+    padding:9px 10px;font-size:11px;line-height:1.65;font-weight:400;white-space:normal;
+    box-shadow:0 8px 20px #422f2033;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}}
+  .tip-pop b{{color:#f1d58e;font-size:10.5px;font-weight:800;letter-spacing:.04em}}
+  .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}}
+  @media (max-width:700px){{
+    .tip-pop{{left:auto;right:0;transform:translateY(-4px)}}
+    .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{{transform:translateY(0)}}
+  }}
   footer{{margin-top:26px;color:var(--gray);font-size:11px;line-height:1.8}}
 </style>
 </head>
@@ -175,16 +210,7 @@ HTML = f"""<!doctype html>
      實際總報酬 = 派息貢獻 + NAV 貢獻，依實際總報酬排序；資料不足的期間不列入。</p>
 </header>
 
-<div class="defs">
-  <b>欄位說明</b>
-  <dl>
-    <dt>年化派息率</dt><dd>依最近一次派息推算的未來一年配息率（<b>預估</b>）</dd>
-    <dt>實際總報酬</dt><dd>該期間「領到的息 + 淨值漲跌」合計（<b>實際</b>）</dd>
-    <dt>年化回報</dt><dd>實際總報酬折算為每年複利（<b>實際</b>）</dd>
-    <dt>派息貢獻</dt><dd>期間累計派息 ÷ 期初淨值（<b>實際領到多少</b>）</dd>
-    <dt>NAV 貢獻</dt><dd>淨值漲跌</dd>
-  </dl>
-</div>
+<p class="hint">將滑鼠移到表頭的 <b>？</b> 可看各欄位說明（觸控螢幕點一下即可）。</p>
 {''.join(blocks)}
 <footer>
   資料來源：AIA 官方日頻 NAV 與派息紀錄（本頁為每月手動更新）。
@@ -193,6 +219,34 @@ HTML = f"""<!doctype html>
 </footer>
 
 </div>
+
+<script>
+/* 表頭 ？ 說明：hover / focus 由 CSS 處理；此處補點擊切換（觸控螢幕）與 Esc、點外部關閉 */
+(function(){{
+  var tips = Array.prototype.slice.call(document.querySelectorAll('.tip'));
+  function closeAll(except){{
+    tips.forEach(function(t){{
+      if (t === except) return;
+      t.classList.remove('is-open');
+      var b = t.querySelector('.tip-btn'); if (b) b.setAttribute('aria-expanded','false');
+    }});
+  }}
+  tips.forEach(function(t){{
+    var btn = t.querySelector('.tip-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function(e){{
+      e.preventDefault(); e.stopPropagation();
+      var open = t.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      closeAll(t);
+    }});
+  }});
+  document.addEventListener('click', function(e){{
+    if (!e.target.closest || !e.target.closest('.tip')) closeAll(null);
+  }});
+  document.addEventListener('keydown', function(e){{ if (e.key === 'Escape') closeAll(null); }});
+}})();
+</script>
 </body>
 </html>
 """
