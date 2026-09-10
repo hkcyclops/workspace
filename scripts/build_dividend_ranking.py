@@ -123,7 +123,7 @@ for y in (1, 3, 5):
   <h2><span class="num">{y} 年期</span>近 {y} 年實際總報酬排名</h2>
   <div class="tw">
     <table>
-      <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>時段</th>{TH}</tr></thead>
+      <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th>{TH}</tr></thead>
       <tbody>{''.join(tr)}</tbody>
     </table>
   </div>
