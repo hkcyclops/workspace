@@ -250,7 +250,8 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
             pr = prev.get(c, "NA") if is_latest else None
             out.append(
                 f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                f"<td class='fname'>{html.escape((meta[c].get('name') or '').strip())}</td><td>{b}</td>"
+                f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}' "
+                f"title='在 06 開啟 {c} 的走勢圖'>{html.escape((meta[c].get('name') or '').strip())}</a></td><td>{b}</td>"
                 f"<td class='num'>{rate:.2f}%</td>"
                 f"<td class='num {cls(r['total'])}'>{pct(r['total'])}</td>"
                 f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
@@ -488,9 +489,11 @@ STYLE = """
   .tip-pop b{color:#f1d58e;font-size:12px;font-weight:800;letter-spacing:.04em}
   .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
   .tip-cell{cursor:help;position:relative;border-bottom:1px dashed #cbbba2;padding-bottom:1px}
-  .tip-cell .tip-pop{left:auto;right:0;transform:translateY(-4px);max-width:min(300px,86vw)}
-  .tip-cell.is-open .tip-pop{opacity:1;visibility:visible;transform:translateY(0)}
   .tip-cell:focus{outline:2px solid #b78e42;outline-offset:2px}
+  /* 數值欄提示框：浮動到 body（避開表格容器的 overflow 裁切），空間不足自動上彈 */
+  .tip-pop.tip-float{position:fixed;left:0;top:0;z-index:200;max-width:min(300px,86vw);
+    transform:none;transition:opacity .12s;pointer-events:auto}
+  .tip-pop.tip-float.is-open{opacity:1;visibility:visible}
   .spark{width:262px;height:74px;display:block;background:#3f2823;margin:2px 0 4px}
   .spark .line{fill:none;stroke:#f1d58e;stroke-width:1.6;vector-effect:non-scaling-stroke}
   .spark .band-a{fill:#c8a85b;opacity:.30}
@@ -612,7 +615,7 @@ SCRIPT = """
 
   function buildPop(t){
     var key = t.getAttribute('data-s'), col = t.getAttribute('data-c'), d = SPARK[key];
-    if (!d) return;
+    if (!d) return null;
     var val = t.textContent, yrs = (key || '').split('|')[1] || '';
     var lines = [];
     if (col === 'r1') lines.push('近 ' + yrs + ' 年淨值漲跌 ' + val);
@@ -626,34 +629,81 @@ SCRIPT = """
     }
     lines.push(LEGEND);
     var pop = document.createElement('span');
-    pop.className = 'tip-pop';
+    pop.className = 'tip-pop tip-float';
     pop.setAttribute('role', 'tooltip');
     var b = document.createElement('b'); b.textContent = COLS[col] || '';
     var txt = document.createElement('span'); txt.innerHTML = lines.join('<br>');
     pop.appendChild(b); pop.appendChild(buildChart(d)); pop.appendChild(txt);
-    t.appendChild(pop);
+    pop.addEventListener('mouseenter', function(){ cancelClose(); });
+    pop.addEventListener('mouseleave', function(){ scheduleClose(t); });
+    document.body.appendChild(pop);
+    t.__pop = pop;
+    return pop;
   }
-  function closeTip(t){ t.classList.remove('is-open'); }
+
+  /* 浮動定位：預設貼在數值下方；下方空間不足就翻到上方；水平右對齊並夾在視窗內 */
+  function placePop(t){
+    var pop = t.__pop;
+    if (!pop) return;
+    var r = t.getBoundingClientRect();
+    pop.classList.add('is-open');
+    pop.style.visibility = 'hidden';
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var below = window.innerHeight - r.bottom, above = r.top;
+    var top = (below >= h + 14 || below >= above) ? (r.bottom + 8) : (r.top - h - 8);
+    var left = r.right - w;
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+    if (left < 8) left = 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+    if (top < 8) top = 8;
+    pop.style.top = Math.round(top) + 'px';
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.visibility = '';
+  }
+  function closeTip(t){
+    if (t.__pop) t.__pop.classList.remove('is-open');
+    t.classList.remove('is-open');
+  }
   function closeOthers(except){
     Array.prototype.forEach.call(document.querySelectorAll('.tip-cell.is-open'), function(x){
       if (x !== except) closeTip(x);
     });
   }
   function openTip(t){
-    if (!t.querySelector('.tip-pop')) buildPop(t);
+    cancelClose();
+    if (!t.__pop) buildPop(t);
+    if (!t.__pop) return;
     t.classList.add('is-open');
+    placePop(t);
   }
+  var closeTimer = null;
+  function scheduleClose(t){
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function(){ closeTip(t); }, 180);
+  }
+  function cancelClose(){ clearTimeout(closeTimer); }
   Array.prototype.forEach.call(document.querySelectorAll('.tip-cell'), function(t){
     t.addEventListener('mouseenter', function(){ closeOthers(t); openTip(t); });
-    t.addEventListener('mouseleave', function(){ closeTip(t); });
+    t.addEventListener('mouseleave', function(){ scheduleClose(t); });
     t.addEventListener('focusin', function(){ closeOthers(t); openTip(t); });
-    t.addEventListener('blur', function(){ closeTip(t); });
+    t.addEventListener('blur', function(){ scheduleClose(t); });
     t.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
       if (t.classList.contains('is-open')) closeTip(t); else { closeOthers(t); openTip(t); }
     });
   });
   document.addEventListener('click', function(){ closeOthers(null); });
+  window.addEventListener('scroll', function(){
+    var open = document.querySelector('.tip-cell.is-open');
+    if (!open) return;
+    var r = open.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight){ closeTip(open); return; }
+    placePop(open);
+  }, true);
+  window.addEventListener('resize', function(){
+    var open = document.querySelector('.tip-cell.is-open');
+    if (open) placePop(open);
+  });
 
   var m = /[?&]tab=(div|nav)/.exec(location.search);
   showTab(m ? m[1] : 'div');

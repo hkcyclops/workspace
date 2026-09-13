@@ -90,9 +90,11 @@
   .tip-pop b{color:#f1d58e;font-size:12px;font-weight:800;letter-spacing:.04em}
   .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
   .tip-cell{cursor:help;position:relative;border-bottom:1px dashed #cbbba2;padding-bottom:1px}
-  .tip-cell .tip-pop{left:auto;right:0;transform:translateY(-4px);max-width:min(300px,86vw)}
-  .tip-cell.is-open .tip-pop{opacity:1;visibility:visible;transform:translateY(0)}
   .tip-cell:focus{outline:2px solid #b78e42;outline-offset:2px}
+  /* 數值欄提示框：浮動到 body（避開表格容器的 overflow 裁切），空間不足自動上彈 */
+  .tip-pop.tip-float{position:fixed;left:0;top:0;z-index:200;max-width:min(300px,86vw);
+    transform:none;transition:opacity .12s;pointer-events:auto}
+  .tip-pop.tip-float.is-open{opacity:1;visibility:visible}
   .spark{width:262px;height:74px;display:block;background:#3f2823;margin:2px 0 4px}
   .spark .line{fill:none;stroke:#f1d58e;stroke-width:1.6;vector-effect:non-scaling-stroke}
   .spark .band-a{fill:#c8a85b;opacity:.30}
@@ -132,7 +134,7 @@
   <div class="tw">
     <table>
       <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th><th>年化派息率<span class='tip'><button type='button' class='tip-btn' aria-label='年化派息率說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化派息率</b><span>依最近一次派息推算的未來一年配息率（<b>預估</b>）。<br>公式：最近一筆派息金額 ÷ 該筆派息日配對 NAV × 12。</span></span></span></th><th>實際總報酬<span class='tip'><button type='button' class='tip-btn' aria-label='實際總報酬說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>實際總報酬</b><span>該期間「領到的息 + 淨值漲跌」合計（<b>實際</b>）。<br>＝ 派息貢獻 + NAV 貢獻，未扣贖回費。</span></span></span></th><th>年化回報<span class='tip'><button type='button' class='tip-btn' aria-label='年化回報說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化回報</b><span>期間回報折算為每年複利（<b>實際</b>）。<br>＝ (1 + 期間回報)^(1 ÷ 年數) − 1，方便比較 1／3／5 年。</span></span></span></th><th>派息貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='派息貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>派息貢獻</b><span>期間累計派息 ÷ 期初淨值（<b>實際領到多少</b>）。</span></span></span></th><th>NAV 貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='NAV 貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>NAV 貢獻</b><span>淨值漲跌。<br>＝ (期末 NAV − 期初 NAV) ÷ 期初 NAV。</span></span></span></th></tr></thead>
-      <tbody><tr><td class='rk'>1</td><td class='code'>Z01</td><td class='fname'>惠理高息股票基金A2 MDis類別（分派）</td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+20.3%</td><td class='num pos'>+20.3%</td><td class='num'>+5.2%</td><td class='num pos'>+15.1%</td></tr><tr><td class='rk'>2</td><td class='code'>Z21</td><td class='fname'>惠理高息股票基金A2人民幣對沖MDis類別（分派）</td><td>月底</td><td class='num'>2.63%</td><td class='num pos'>+17.2%</td><td class='num pos'>+17.2%</td><td class='num'>+3.2%</td><td class='num pos'>+14.1%</td></tr><tr><td class='rk'>3</td><td class='code'>Z03</td><td class='fname'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+16.2%</td><td class='num pos'>+16.2%</td><td class='num'>+4.5%</td><td class='num pos'>+11.7%</td></tr><tr><td class='rk'>4</td><td class='code'>Z51</td><td class='fname'>友邦投資基金 - 友邦股票入息基金（RDM 類美元）（分派）</td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+14.9%</td><td class='num pos'>+14.9%</td><td class='num'>+8.2%</td><td class='num pos'>+6.7%</td></tr><tr><td class='rk'>5</td><td class='code'>Z17</td><td class='fname'>貝萊德全球基金 - 系統分析環球股票高息基金&quot;A6&quot;股(分派)</td><td>月底</td><td class='num'>7.86%</td><td class='num pos'>+14.3%</td><td class='num pos'>+14.3%</td><td class='num'>+8.0%</td><td class='num pos'>+6.3%</td></tr><tr><td class='rk'>6</td><td class='code'>Z23</td><td class='fname'>摩根基金  -  亞太入息基金A（利率入息） -  人民幣對沖類別（分派）</td><td>月中</td><td class='num'>1.61%</td><td class='num pos'>+13.3%</td><td class='num pos'>+13.3%</td><td class='num'>+1.8%</td><td class='num pos'>+11.5%</td></tr><tr><td class='rk'>7</td><td class='code'>Z20</td><td class='fname'>施羅德環球基金系列 - 動力收息A類別（美元收息）MF2 （分派）</td><td>月底</td><td class='num'>8.50%</td><td class='num pos'>+11.8%</td><td class='num pos'>+11.8%</td><td class='num'>+7.7%</td><td class='num pos'>+4.1%</td></tr><tr><td class='rk'>8</td><td class='code'>Z18</td><td class='fname'>富蘭克林鄧普頓投資基金 - 富蘭克林入息基金A（每月派息）美元（分派）</td><td>月底</td><td class='num'>8.02%</td><td class='num pos'>+11.8%</td><td class='num pos'>+11.8%</td><td class='num'>+8.4%</td><td class='num pos'>+3.4%</td></tr><tr><td class='rk'>9</td><td class='code'>Z37</td><td class='fname'>貝萊德全球基金 - 系統分析環球股票高息基金 &quot;A8&quot; 人民幣對沖 (分派)</td><td>月底</td><td class='num'>5.36%</td><td class='num pos'>+11.5%</td><td class='num pos'>+11.5%</td><td class='num'>+5.1%</td><td class='num pos'>+6.4%</td></tr><tr><td class='rk'>10</td><td class='code'>Z06</td><td class='fname'>柏瑞環球基金  -  柏瑞環球動態資產配置基金ADC類基金單位（分派）</td><td>月初</td><td class='num'>7.20%</td><td class='num pos'>+10.9%</td><td class='num pos'>+10.9%</td><td class='num'>+7.6%</td><td class='num pos'>+3.2%</td></tr></tbody>
+      <tbody><tr><td class='rk'>1</td><td class='code'>Z01</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z01' title='在 06 開啟 Z01 的走勢圖'>惠理高息股票基金A2 MDis類別（分派）</a></td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+20.3%</td><td class='num pos'>+20.3%</td><td class='num'>+5.2%</td><td class='num pos'>+15.1%</td></tr><tr><td class='rk'>2</td><td class='code'>Z21</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z21' title='在 06 開啟 Z21 的走勢圖'>惠理高息股票基金A2人民幣對沖MDis類別（分派）</a></td><td>月底</td><td class='num'>2.63%</td><td class='num pos'>+17.2%</td><td class='num pos'>+17.2%</td><td class='num'>+3.2%</td><td class='num pos'>+14.1%</td></tr><tr><td class='rk'>3</td><td class='code'>Z03</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z03' title='在 06 開啟 Z03 的走勢圖'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</a></td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+16.2%</td><td class='num pos'>+16.2%</td><td class='num'>+4.5%</td><td class='num pos'>+11.7%</td></tr><tr><td class='rk'>4</td><td class='code'>Z51</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z51' title='在 06 開啟 Z51 的走勢圖'>友邦投資基金 - 友邦股票入息基金（RDM 類美元）（分派）</a></td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+14.9%</td><td class='num pos'>+14.9%</td><td class='num'>+8.2%</td><td class='num pos'>+6.7%</td></tr><tr><td class='rk'>5</td><td class='code'>Z17</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z17' title='在 06 開啟 Z17 的走勢圖'>貝萊德全球基金 - 系統分析環球股票高息基金&quot;A6&quot;股(分派)</a></td><td>月底</td><td class='num'>7.86%</td><td class='num pos'>+14.3%</td><td class='num pos'>+14.3%</td><td class='num'>+8.0%</td><td class='num pos'>+6.3%</td></tr><tr><td class='rk'>6</td><td class='code'>Z23</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z23' title='在 06 開啟 Z23 的走勢圖'>摩根基金  -  亞太入息基金A（利率入息） -  人民幣對沖類別（分派）</a></td><td>月中</td><td class='num'>1.61%</td><td class='num pos'>+13.3%</td><td class='num pos'>+13.3%</td><td class='num'>+1.8%</td><td class='num pos'>+11.5%</td></tr><tr><td class='rk'>7</td><td class='code'>Z20</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z20' title='在 06 開啟 Z20 的走勢圖'>施羅德環球基金系列 - 動力收息A類別（美元收息）MF2 （分派）</a></td><td>月底</td><td class='num'>8.50%</td><td class='num pos'>+11.8%</td><td class='num pos'>+11.8%</td><td class='num'>+7.7%</td><td class='num pos'>+4.1%</td></tr><tr><td class='rk'>8</td><td class='code'>Z18</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z18' title='在 06 開啟 Z18 的走勢圖'>富蘭克林鄧普頓投資基金 - 富蘭克林入息基金A（每月派息）美元（分派）</a></td><td>月底</td><td class='num'>8.02%</td><td class='num pos'>+11.8%</td><td class='num pos'>+11.8%</td><td class='num'>+8.4%</td><td class='num pos'>+3.4%</td></tr><tr><td class='rk'>9</td><td class='code'>Z37</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z37' title='在 06 開啟 Z37 的走勢圖'>貝萊德全球基金 - 系統分析環球股票高息基金 &quot;A8&quot; 人民幣對沖 (分派)</a></td><td>月底</td><td class='num'>5.36%</td><td class='num pos'>+11.5%</td><td class='num pos'>+11.5%</td><td class='num'>+5.1%</td><td class='num pos'>+6.4%</td></tr><tr><td class='rk'>10</td><td class='code'>Z06</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z06' title='在 06 開啟 Z06 的走勢圖'>柏瑞環球基金  -  柏瑞環球動態資產配置基金ADC類基金單位（分派）</a></td><td>月初</td><td class='num'>7.20%</td><td class='num pos'>+10.9%</td><td class='num pos'>+10.9%</td><td class='num'>+7.6%</td><td class='num pos'>+3.2%</td></tr></tbody>
     </table>
   </div>
   <p class="note">共 29 檔資料完整，取前 10 名；本頁為 7 月快照，不做前期比較</p>
@@ -142,7 +144,7 @@
   <div class="tw">
     <table>
       <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th><th>年化派息率<span class='tip'><button type='button' class='tip-btn' aria-label='年化派息率說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化派息率</b><span>依最近一次派息推算的未來一年配息率（<b>預估</b>）。<br>公式：最近一筆派息金額 ÷ 該筆派息日配對 NAV × 12。</span></span></span></th><th>實際總報酬<span class='tip'><button type='button' class='tip-btn' aria-label='實際總報酬說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>實際總報酬</b><span>該期間「領到的息 + 淨值漲跌」合計（<b>實際</b>）。<br>＝ 派息貢獻 + NAV 貢獻，未扣贖回費。</span></span></span></th><th>年化回報<span class='tip'><button type='button' class='tip-btn' aria-label='年化回報說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化回報</b><span>期間回報折算為每年複利（<b>實際</b>）。<br>＝ (1 + 期間回報)^(1 ÷ 年數) − 1，方便比較 1／3／5 年。</span></span></span></th><th>派息貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='派息貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>派息貢獻</b><span>期間累計派息 ÷ 期初淨值（<b>實際領到多少</b>）。</span></span></span></th><th>NAV 貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='NAV 貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>NAV 貢獻</b><span>淨值漲跌。<br>＝ (期末 NAV − 期初 NAV) ÷ 期初 NAV。</span></span></span></th></tr></thead>
-      <tbody><tr><td class='rk'>1</td><td class='code'>Z21</td><td class='fname'>惠理高息股票基金A2人民幣對沖MDis類別（分派）</td><td>月底</td><td class='num'>2.63%</td><td class='num pos'>+47.1%</td><td class='num pos'>+13.7%</td><td class='num'>+11.5%</td><td class='num pos'>+35.6%</td></tr><tr><td class='rk'>2</td><td class='code'>Z17</td><td class='fname'>貝萊德全球基金 - 系統分析環球股票高息基金&quot;A6&quot;股(分派)</td><td>月底</td><td class='num'>7.86%</td><td class='num pos'>+45.5%</td><td class='num pos'>+13.3%</td><td class='num'>+25.0%</td><td class='num pos'>+20.5%</td></tr><tr><td class='rk'>3</td><td class='code'>Z37</td><td class='fname'>貝萊德全球基金 - 系統分析環球股票高息基金 &quot;A8&quot; 人民幣對沖 (分派)</td><td>月底</td><td class='num'>5.36%</td><td class='num pos'>+42.3%</td><td class='num pos'>+12.5%</td><td class='num'>+16.7%</td><td class='num pos'>+25.6%</td></tr><tr><td class='rk'>4</td><td class='code'>Z01</td><td class='fname'>惠理高息股票基金A2 MDis類別（分派）</td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+42.0%</td><td class='num pos'>+12.4%</td><td class='num'>+16.7%</td><td class='num pos'>+25.3%</td></tr><tr><td class='rk'>5</td><td class='code'>Z05</td><td class='fname'>路博邁投資基金  -  NB 新興市場債券基金  -  強勢貨幣美元 A （每月）派息類別（分派）</td><td>月底</td><td class='num'>7.14%</td><td class='num pos'>+36.5%</td><td class='num pos'>+10.9%</td><td class='num'>+25.4%</td><td class='num pos'>+11.1%</td></tr><tr><td class='rk'>6</td><td class='code'>Z03</td><td class='fname'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+35.6%</td><td class='num pos'>+10.7%</td><td class='num'>+13.6%</td><td class='num pos'>+22.0%</td></tr><tr><td class='rk'>7</td><td class='code'>Z08</td><td class='fname'>安聯環球投資基金  -  安聯動力亞洲高收益債券基金收息股份（AMg類股份）（分派）</td><td>月中</td><td class='num'>7.91%</td><td class='num pos'>+29.9%</td><td class='num pos'>+9.1%</td><td class='num'>+22.8%</td><td class='num pos'>+7.1%</td></tr><tr><td class='rk'>8</td><td class='code'>Z07</td><td class='fname'>安聯環球投資基金  -  安聯收益及增長基金收息股份（AM類股份）（分派）</td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+29.1%</td><td class='num pos'>+8.9%</td><td class='num'>+24.3%</td><td class='num pos'>+4.8%</td></tr><tr><td class='rk'>9</td><td class='code'>Z18</td><td class='fname'>富蘭克林鄧普頓投資基金 - 富蘭克林入息基金A（每月派息）美元（分派）</td><td>月底</td><td class='num'>8.02%</td><td class='num pos'>+27.4%</td><td class='num pos'>+8.4%</td><td class='num'>+24.9%</td><td class='num pos'>+2.5%</td></tr><tr><td class='rk'>10</td><td class='code'>Z06</td><td class='fname'>柏瑞環球基金  -  柏瑞環球動態資產配置基金ADC類基金單位（分派）</td><td>月初</td><td class='num'>7.20%</td><td class='num pos'>+23.2%</td><td class='num pos'>+7.2%</td><td class='num'>+22.5%</td><td class='num pos'>+0.7%</td></tr></tbody>
+      <tbody><tr><td class='rk'>1</td><td class='code'>Z21</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z21' title='在 06 開啟 Z21 的走勢圖'>惠理高息股票基金A2人民幣對沖MDis類別（分派）</a></td><td>月底</td><td class='num'>2.63%</td><td class='num pos'>+47.1%</td><td class='num pos'>+13.7%</td><td class='num'>+11.5%</td><td class='num pos'>+35.6%</td></tr><tr><td class='rk'>2</td><td class='code'>Z17</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z17' title='在 06 開啟 Z17 的走勢圖'>貝萊德全球基金 - 系統分析環球股票高息基金&quot;A6&quot;股(分派)</a></td><td>月底</td><td class='num'>7.86%</td><td class='num pos'>+45.5%</td><td class='num pos'>+13.3%</td><td class='num'>+25.0%</td><td class='num pos'>+20.5%</td></tr><tr><td class='rk'>3</td><td class='code'>Z37</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z37' title='在 06 開啟 Z37 的走勢圖'>貝萊德全球基金 - 系統分析環球股票高息基金 &quot;A8&quot; 人民幣對沖 (分派)</a></td><td>月底</td><td class='num'>5.36%</td><td class='num pos'>+42.3%</td><td class='num pos'>+12.5%</td><td class='num'>+16.7%</td><td class='num pos'>+25.6%</td></tr><tr><td class='rk'>4</td><td class='code'>Z01</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z01' title='在 06 開啟 Z01 的走勢圖'>惠理高息股票基金A2 MDis類別（分派）</a></td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+42.0%</td><td class='num pos'>+12.4%</td><td class='num'>+16.7%</td><td class='num pos'>+25.3%</td></tr><tr><td class='rk'>5</td><td class='code'>Z05</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z05' title='在 06 開啟 Z05 的走勢圖'>路博邁投資基金  -  NB 新興市場債券基金  -  強勢貨幣美元 A （每月）派息類別（分派）</a></td><td>月底</td><td class='num'>7.14%</td><td class='num pos'>+36.5%</td><td class='num pos'>+10.9%</td><td class='num'>+25.4%</td><td class='num pos'>+11.1%</td></tr><tr><td class='rk'>6</td><td class='code'>Z03</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z03' title='在 06 開啟 Z03 的走勢圖'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</a></td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+35.6%</td><td class='num pos'>+10.7%</td><td class='num'>+13.6%</td><td class='num pos'>+22.0%</td></tr><tr><td class='rk'>7</td><td class='code'>Z08</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z08' title='在 06 開啟 Z08 的走勢圖'>安聯環球投資基金  -  安聯動力亞洲高收益債券基金收息股份（AMg類股份）（分派）</a></td><td>月中</td><td class='num'>7.91%</td><td class='num pos'>+29.9%</td><td class='num pos'>+9.1%</td><td class='num'>+22.8%</td><td class='num pos'>+7.1%</td></tr><tr><td class='rk'>8</td><td class='code'>Z07</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z07' title='在 06 開啟 Z07 的走勢圖'>安聯環球投資基金  -  安聯收益及增長基金收息股份（AM類股份）（分派）</a></td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+29.1%</td><td class='num pos'>+8.9%</td><td class='num'>+24.3%</td><td class='num pos'>+4.8%</td></tr><tr><td class='rk'>9</td><td class='code'>Z18</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z18' title='在 06 開啟 Z18 的走勢圖'>富蘭克林鄧普頓投資基金 - 富蘭克林入息基金A（每月派息）美元（分派）</a></td><td>月底</td><td class='num'>8.02%</td><td class='num pos'>+27.4%</td><td class='num pos'>+8.4%</td><td class='num'>+24.9%</td><td class='num pos'>+2.5%</td></tr><tr><td class='rk'>10</td><td class='code'>Z06</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z06' title='在 06 開啟 Z06 的走勢圖'>柏瑞環球基金  -  柏瑞環球動態資產配置基金ADC類基金單位（分派）</a></td><td>月初</td><td class='num'>7.20%</td><td class='num pos'>+23.2%</td><td class='num pos'>+7.2%</td><td class='num'>+22.5%</td><td class='num pos'>+0.7%</td></tr></tbody>
     </table>
   </div>
   <p class="note">共 19 檔資料完整，取前 10 名；本頁為 7 月快照，不做前期比較</p>
@@ -152,7 +154,7 @@
   <div class="tw">
     <table>
       <thead><tr><th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th><th>年化派息率<span class='tip'><button type='button' class='tip-btn' aria-label='年化派息率說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化派息率</b><span>依最近一次派息推算的未來一年配息率（<b>預估</b>）。<br>公式：最近一筆派息金額 ÷ 該筆派息日配對 NAV × 12。</span></span></span></th><th>實際總報酬<span class='tip'><button type='button' class='tip-btn' aria-label='實際總報酬說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>實際總報酬</b><span>該期間「領到的息 + 淨值漲跌」合計（<b>實際</b>）。<br>＝ 派息貢獻 + NAV 貢獻，未扣贖回費。</span></span></span></th><th>年化回報<span class='tip'><button type='button' class='tip-btn' aria-label='年化回報說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>年化回報</b><span>期間回報折算為每年複利（<b>實際</b>）。<br>＝ (1 + 期間回報)^(1 ÷ 年數) − 1，方便比較 1／3／5 年。</span></span></span></th><th>派息貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='派息貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>派息貢獻</b><span>期間累計派息 ÷ 期初淨值（<b>實際領到多少</b>）。</span></span></span></th><th>NAV 貢獻<span class='tip'><button type='button' class='tip-btn' aria-label='NAV 貢獻說明' aria-expanded='false'>?</button><span class='tip-pop' role='tooltip'><b>NAV 貢獻</b><span>淨值漲跌。<br>＝ (期末 NAV − 期初 NAV) ÷ 期初 NAV。</span></span></span></th></tr></thead>
-      <tbody><tr><td class='rk'>1</td><td class='code'>Z01</td><td class='fname'>惠理高息股票基金A2 MDis類別（分派）</td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+23.7%</td><td class='num pos'>+4.3%</td><td class='num'>+22.3%</td><td class='num pos'>+1.5%</td></tr><tr><td class='rk'>2</td><td class='code'>Z03</td><td class='fname'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+21.4%</td><td class='num pos'>+4.0%</td><td class='num'>+19.1%</td><td class='num pos'>+2.3%</td></tr><tr><td class='rk'>3</td><td class='code'>Z07</td><td class='fname'>安聯環球投資基金  -  安聯收益及增長基金收息股份（AM類股份）（分派）</td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+16.1%</td><td class='num pos'>+3.0%</td><td class='num'>+33.1%</td><td class='num neg'>-17.0%</td></tr><tr><td class='rk'>4</td><td class='code'>Z13</td><td class='fname'>富達基金  -  美元高收益基金A類別股份-每月特色派息(G)-美元(分派)</td><td>月底</td><td class='num'>7.19%</td><td class='num pos'>+14.3%</td><td class='num pos'>+2.7%</td><td class='num'>+28.8%</td><td class='num neg'>-14.5%</td></tr><tr><td class='rk'>5</td><td class='code'>Z05</td><td class='fname'>路博邁投資基金  -  NB 新興市場債券基金  -  強勢貨幣美元 A （每月）派息類別（分派）</td><td>月底</td><td class='num'>7.14%</td><td class='num pos'>+9.7%</td><td class='num pos'>+1.9%</td><td class='num'>+28.3%</td><td class='num neg'>-18.6%</td></tr></tbody>
+      <tbody><tr><td class='rk'>1</td><td class='code'>Z01</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z01' title='在 06 開啟 Z01 的走勢圖'>惠理高息股票基金A2 MDis類別（分派）</a></td><td>月底</td><td class='num'>4.52%</td><td class='num pos'>+23.7%</td><td class='num pos'>+4.3%</td><td class='num'>+22.3%</td><td class='num pos'>+1.5%</td></tr><tr><td class='rk'>2</td><td class='code'>Z03</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z03' title='在 06 開啟 Z03 的走勢圖'>摩根基金  -  亞太入息基金A（每月派息） -  美元股份類別（分派）</a></td><td>月中</td><td class='num'>4.10%</td><td class='num pos'>+21.4%</td><td class='num pos'>+4.0%</td><td class='num'>+19.1%</td><td class='num pos'>+2.3%</td></tr><tr><td class='rk'>3</td><td class='code'>Z07</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z07' title='在 06 開啟 Z07 的走勢圖'>安聯環球投資基金  -  安聯收益及增長基金收息股份（AM類股份）（分派）</a></td><td>月中</td><td class='num'>7.54%</td><td class='num pos'>+16.1%</td><td class='num pos'>+3.0%</td><td class='num'>+33.1%</td><td class='num neg'>-17.0%</td></tr><tr><td class='rk'>4</td><td class='code'>Z13</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z13' title='在 06 開啟 Z13 的走勢圖'>富達基金  -  美元高收益基金A類別股份-每月特色派息(G)-美元(分派)</a></td><td>月底</td><td class='num'>7.19%</td><td class='num pos'>+14.3%</td><td class='num pos'>+2.7%</td><td class='num'>+28.8%</td><td class='num neg'>-14.5%</td></tr><tr><td class='rk'>5</td><td class='code'>Z05</td><td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund=Z05' title='在 06 開啟 Z05 的走勢圖'>路博邁投資基金  -  NB 新興市場債券基金  -  強勢貨幣美元 A （每月）派息類別（分派）</a></td><td>月底</td><td class='num'>7.14%</td><td class='num pos'>+9.7%</td><td class='num pos'>+1.9%</td><td class='num'>+28.3%</td><td class='num neg'>-18.6%</td></tr></tbody>
     </table>
   </div>
   <p class="note">共 10 檔資料完整，取前 5 名；5 年區間含 2022 年股債雙殺，數字普遍偏低，屬區間效應；本頁為 7 月快照，不做前期比較</p>
@@ -426,7 +428,7 @@
 
   function buildPop(t){
     var key = t.getAttribute('data-s'), col = t.getAttribute('data-c'), d = SPARK[key];
-    if (!d) return;
+    if (!d) return null;
     var val = t.textContent, yrs = (key || '').split('|')[1] || '';
     var lines = [];
     if (col === 'r1') lines.push('近 ' + yrs + ' 年淨值漲跌 ' + val);
@@ -440,34 +442,81 @@
     }
     lines.push(LEGEND);
     var pop = document.createElement('span');
-    pop.className = 'tip-pop';
+    pop.className = 'tip-pop tip-float';
     pop.setAttribute('role', 'tooltip');
     var b = document.createElement('b'); b.textContent = COLS[col] || '';
     var txt = document.createElement('span'); txt.innerHTML = lines.join('<br>');
     pop.appendChild(b); pop.appendChild(buildChart(d)); pop.appendChild(txt);
-    t.appendChild(pop);
+    pop.addEventListener('mouseenter', function(){ cancelClose(); });
+    pop.addEventListener('mouseleave', function(){ scheduleClose(t); });
+    document.body.appendChild(pop);
+    t.__pop = pop;
+    return pop;
   }
-  function closeTip(t){ t.classList.remove('is-open'); }
+
+  /* 浮動定位：預設貼在數值下方；下方空間不足就翻到上方；水平右對齊並夾在視窗內 */
+  function placePop(t){
+    var pop = t.__pop;
+    if (!pop) return;
+    var r = t.getBoundingClientRect();
+    pop.classList.add('is-open');
+    pop.style.visibility = 'hidden';
+    var w = pop.offsetWidth, h = pop.offsetHeight;
+    var below = window.innerHeight - r.bottom, above = r.top;
+    var top = (below >= h + 14 || below >= above) ? (r.bottom + 8) : (r.top - h - 8);
+    var left = r.right - w;
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+    if (left < 8) left = 8;
+    if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+    if (top < 8) top = 8;
+    pop.style.top = Math.round(top) + 'px';
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.visibility = '';
+  }
+  function closeTip(t){
+    if (t.__pop) t.__pop.classList.remove('is-open');
+    t.classList.remove('is-open');
+  }
   function closeOthers(except){
     Array.prototype.forEach.call(document.querySelectorAll('.tip-cell.is-open'), function(x){
       if (x !== except) closeTip(x);
     });
   }
   function openTip(t){
-    if (!t.querySelector('.tip-pop')) buildPop(t);
+    cancelClose();
+    if (!t.__pop) buildPop(t);
+    if (!t.__pop) return;
     t.classList.add('is-open');
+    placePop(t);
   }
+  var closeTimer = null;
+  function scheduleClose(t){
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(function(){ closeTip(t); }, 180);
+  }
+  function cancelClose(){ clearTimeout(closeTimer); }
   Array.prototype.forEach.call(document.querySelectorAll('.tip-cell'), function(t){
     t.addEventListener('mouseenter', function(){ closeOthers(t); openTip(t); });
-    t.addEventListener('mouseleave', function(){ closeTip(t); });
+    t.addEventListener('mouseleave', function(){ scheduleClose(t); });
     t.addEventListener('focusin', function(){ closeOthers(t); openTip(t); });
-    t.addEventListener('blur', function(){ closeTip(t); });
+    t.addEventListener('blur', function(){ scheduleClose(t); });
     t.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
       if (t.classList.contains('is-open')) closeTip(t); else { closeOthers(t); openTip(t); }
     });
   });
   document.addEventListener('click', function(){ closeOthers(null); });
+  window.addEventListener('scroll', function(){
+    var open = document.querySelector('.tip-cell.is-open');
+    if (!open) return;
+    var r = open.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight){ closeTip(open); return; }
+    placePop(open);
+  }, true);
+  window.addEventListener('resize', function(){
+    var open = document.querySelector('.tip-cell.is-open');
+    if (open) placePop(open);
+  });
 
   var m = /[?&]tab=(div|nav)/.exec(location.search);
   showTab(m ? m[1] : 'div');

@@ -65,33 +65,57 @@ with sync_playwright() as p:
     print("  收復時間值樣本:", cells)
     ok &= any(v.endswith("月") for v in cells)
 
-    # 縮略圖：hover 最大回撤儲存格 → 生成 SVG（45 點折線 + 回撤／收復陰影）
-    pg.hover(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='mdd']")
+    # 縮略圖：hover 最大回撤儲存格 → 生成浮動 SVG（45 點折線 + 回撤／收復陰影）
+    pg.hover(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(1) .tip-cell[data-c='mdd']")
     pg.wait_for_timeout(400)
     sp = pg.evaluate("""() => {
-        const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='mdd']");
-        const svg = t.querySelector('.spark');
+        const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(1) .tip-cell[data-c='mdd']");
+        const pop = document.querySelector('.tip-pop.tip-float.is-open');
+        if (!pop) return {err: 'no floating pop'};
+        const svg = pop.querySelector('.spark');
         if (!svg) return {err: 'no .spark'};
-        const path = svg.querySelector('.line');
-        const pts = (path.getAttribute('d').match(/[ML]/g) || []).length;
-        return {打開: t.classList.contains('is-open'), 點數: pts,
+        const pts = (svg.querySelector('.line').getAttribute('d').match(/[ML]/g) || []).length;
+        const r = pop.getBoundingClientRect();
+        return {浮動到body: document.body.contains(pop) && !pop.closest('.tw'), 點數: pts,
                 陰影帶: svg.querySelectorAll('rect').length,
                 深色帶: !!svg.querySelector('.band-a'), 淺色帶: !!svg.querySelector('.band-b'),
                 虛線: svg.querySelectorAll('.dash').length, 圓點: svg.querySelectorAll('.dot').length,
-                提示文字: t.querySelector('.tip-pop').textContent.replace(/\\s+/g,' ').slice(0, 80),
-                全部提示寬: Math.round(t.querySelector('.tip-pop').getBoundingClientRect().width)};
+                在視窗內: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth,
+                提示文字: pop.textContent.replace(/\\s+/g,' ').slice(0, 70)};
     }""")
-    print("  縮略圖:", sp)
-    ok &= (not sp.get("err")) and sp["打開"] and 40 <= sp["點數"] <= 50 and sp["陰影帶"] == 2 \
+    print("  縮略圖（第 1 列）:", sp)
+    ok &= (not sp.get("err")) and sp["浮動到body"] and 40 <= sp["點數"] <= 50 and sp["陰影帶"] == 2 \
         and sp["深色帶"] and sp["淺色帶"] and sp["虛線"] == 2 and sp["圓點"] == 2
 
-    # 基金名連結 → 06 帶 ?fund=
+    # 第 10 列（表格底部）：先把該列捲到視窗底部再 hover → 提示框需自動上彈且完整可見
+    pg.evaluate("""() => {
+        const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(10) .tip-cell[data-c='mdd']");
+        t.scrollIntoView({block: 'end'});
+        window.scrollBy(0, -24);
+    }""")
+    pg.wait_for_timeout(500)
+    pg.hover(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(10) .tip-cell[data-c='mdd']")
+    pg.wait_for_timeout(450)
+    low = pg.evaluate("""() => {
+        const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(10) .tip-cell[data-c='mdd']");
+        const pop = t.__pop;
+        if (!pop || !pop.classList.contains('is-open')) return {err: 'pop 未開啟'};
+        const r = pop.getBoundingClientRect(), c = t.getBoundingClientRect();
+        return {完整可見: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth,
+                翻到上方: r.bottom <= c.top + 1, 高: Math.round(r.height)};
+    }""")
+    print("  縮略圖（第 10 列，表格底部）:", low)
+    ok &= (not low.get("err")) and low["完整可見"] and low["翻到上方"]
+
+    # 基金名連結 → 06 帶 ?fund=（兩張榜都要有）
     links = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .flink",
                                     "els=>els.slice(0,3).map(e=>e.getAttribute('href')+' | '+e.textContent.slice(0,18))")
+    div_links = pg.eval_on_selector_all(".panel[data-panel='div'] .flink", "els=>els.length")
     spark_n = pg.evaluate("() => Object.keys(window.__SPARK__ || {}).length")
-    print("  基金名連結樣本:", links)
+    print("  非派息榜名稱連結樣本:", links)
+    print(f"  派息榜名稱連結數: {div_links}（應 25）")
     print("  內嵌序列組數:", spark_n)
-    ok &= all("06-fund-portfolio-workbench.html?fund=" in l for l in links) and spark_n >= 85
+    ok &= all("06-fund-portfolio-workbench.html?fund=" in l for l in links) and div_links == 25 and spark_n >= 85
 
     # 版面寬度利用：1920 視窗下 .wrap 應接近全寬
     pg.set_viewport_size({"width": 1920, "height": 1000})
