@@ -53,9 +53,32 @@ with sync_playwright() as p:
     nav_rows = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on tbody tr", "els=>els.length")
     nav_mv = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on tbody .mv", "els=>els.length")
     nav_tips = pg.eval_on_selector_all(".panel[data-panel='nav'] .tip", "els=>els.length")
-    print(f"  全部榜：列 {nav_rows}（應 30）　箭頭 {nav_mv}（應 30）　? {nav_tips}（應 60）")
-    ok &= len(chips) == 5 and nav_rows == 30 and nav_mv == 30 and nav_tips == 60
-    ok &= nav_heads == ["名次", "代號", "基金名", "幣種", "類別", "期間回報", "年化回報", "波動率", "最大回撤"]
+    nav_all_rows = pg.eval_on_selector_all(".panel[data-panel='nav'] tbody tr", "els=>els.length")
+    nav_exp = 5 * 15 + nav_all_rows       # 表頭 5 個 ? × 15 張表 + 每列一個收復時間 ?
+    print(f"  全部榜：列 {nav_rows}（應 30）　箭頭 {nav_mv}（應 30）　? {nav_tips}（應 {nav_exp}）")
+    ok &= len(chips) == 5 and nav_rows == 30 and nav_mv == 30 and nav_tips == nav_exp
+    ok &= nav_heads == ["名次", "代號", "基金名", "幣種", "類別", "期間回報", "年化回報", "波動率", "最大回撤", "收復時間"]
+
+    # 收復時間欄：數值 + 懸停顯示時間段
+    cells = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .tip-cell .tip-val",
+                                    "els=>els.slice(0,6).map(e=>e.textContent)")
+    first_pop = pg.evaluate("""() => {
+        const c = document.querySelector(".panel[data-panel='nav'] .catblock.is-on .tip-cell");
+        return c.querySelector(".tip-pop").textContent.replace(/\\s+/g, " ").trim();
+    }""")
+    print("  收復時間值樣本:", cells)
+    print("  懸停內容樣本:", first_pop[:90])
+    ok &= any(v.endswith("月") for v in cells) and "高點" in first_pop and "低點" in first_pop
+
+    # 版面寬度利用：1920 視窗下 .wrap 應接近全寬
+    pg.set_viewport_size({"width": 1920, "height": 1000})
+    pg.wait_for_timeout(300)
+    wrap_w = pg.evaluate("document.querySelector('.wrap').getBoundingClientRect().width")
+    table_w = pg.evaluate("document.querySelector('.panel[data-panel=\"nav\"] .catblock.is-on table').getBoundingClientRect().width")
+    print(f"  1920 視窗：.wrap 寬 {wrap_w:.0f}（應 ≥1800）　表格寬 {table_w:.0f}")
+    ok &= wrap_w >= 1800
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    pg.wait_for_timeout(200)
 
     # 切到「貨幣市場」chips
     pg.click(".cat[data-cat='mm']")

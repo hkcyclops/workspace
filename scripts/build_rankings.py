@@ -138,12 +138,27 @@ def nav_perf(code, years, anchor):
     total = (navh - nav0) / nav0 * 100
     rets = [pts[i][1] / pts[i - 1][1] - 1 for i in range(1, len(pts)) if pts[i - 1][1] > 0]
     vol = st.pstdev(rets) * (252 ** 0.5) * 100 if len(rets) > 2 else None
-    peak, mdd = pts[0][1], 0.0
-    for _, v in pts:
-        peak = max(peak, v)
-        mdd = min(mdd, (v - peak) / peak * 100)
+    # 最大回撤：記錄高點日、低點日，以及之後是否收復（回到高點價位）
+    peak, peak_i, worst = pts[0][1], 0, (0.0, 0, 0)
+    for i, (_, v) in enumerate(pts):
+        if v > peak:
+            peak, peak_i = v, i
+        dd = (v - peak) / peak * 100
+        if dd < worst[0]:
+            worst = (dd, peak_i, i)
+    mdd, pi, ti = worst
+    peak_v = pts[pi][1]
+    rec_i = next((i for i in range(ti + 1, len(pts)) if pts[i][1] >= peak_v), None)
+    pk_date, tr_date = pts[pi][0], pts[ti][0]
+    cur = (pts[-1][1] / peak_v - 1) * 100
     return {"total": total, "ann": ((1 + total / 100) ** (1 / years) - 1) * 100,
-            "vol": vol, "mdd": mdd, "end": end_date}
+            "vol": vol, "mdd": mdd, "end": end_date,
+            "pk": pk_date, "tr": tr_date,
+            "rec": pts[rec_i][0] if rec_i is not None else None,
+            "rec_m": (pts[rec_i][0] - tr_date).days / 30.44 if rec_i is not None else None,
+            "uw_m": ((pts[rec_i][0] if rec_i is not None else pts[-1][0]) - pk_date).days / 30.44,
+            "cur": cur}
+
 
 
 def bucket(d):
@@ -188,6 +203,7 @@ TIPS = {
     "r1": ("期間回報", "該期間淨值漲跌（<b>累積型基金無派息</b>）。\n＝ (期末 NAV − 期初 NAV) ÷ 期初 NAV，未扣費用。"),
     "vol": ("波動率", "區間內日報酬標準差 × √252，<b>年化</b>。\n數字越大＝淨值上下起伏越劇烈（風險越高）。"),
     "mdd": ("最大回撤", "區間內由最高點回落的最大幅度。\n例：−32.8% 表示曾經由高位跌掉三成二，是「最壞時刻」的參考。"),
+    "rec": ("收復時間", "由最大回撤的低點，回到先前高點價位所需的時間（月）。\n<b>未收復</b>＝到基準日仍未回到該高點。滑鼠移到數字上看三個日期。"),
 }
 
 
@@ -256,10 +272,28 @@ def arrow_note(is_latest, m, extra=""):
             "<span class='mv flat'>新＝上月無同口徑資料</span>" + extra)
 
 
+def rec_cell(r):
+    """收復時間欄：數值 + 懸停顯示「高點 → 低點 → 收復」時間段"""
+    if r["rec"] is not None:
+        val = f"{r['rec_m']:.1f}月"
+        body = (f"高點 {r['pk']} → 低點 {r['tr']}<br>"
+                f"回到高點 {r['rec']}<br>"
+                f"低點起算 {r['rec_m']:.1f} 個月；自高點起水下 {r['uw_m']:.1f} 個月")
+    else:
+        val = "未收復"
+        body = (f"高點 {r['pk']} → 低點 {r['tr']}<br>"
+                f"至 {r['end']} 仍未回到該高點<br>"
+                f"已 {r['uw_m']:.1f} 個月，現距高點 {r['cur']:+.1f}%")
+    return (f"<td class='num'><span class='tip tip-cell' tabindex='0'>"
+            f"<span class='tip-val'>{val}</span>"
+            f"<span class='tip-pop' role='tooltip'><b>最大回撤收復</b><span>{body}</span></span></span></td>")
+
+
 def build_nav_panel(y, m, is_latest, anchor, prev_anchor):
     """非派息榜：5 個類別 chips × 3 個期間"""
     head = ("<th>名次</th><th>代號</th><th>基金名</th><th>幣種</th><th>類別</th>"
-            + th("期間回報", "r1") + th("年化回報", "ann") + th("波動率", "vol") + th("最大回撤", "mdd"))
+            + th("期間回報", "r1") + th("年化回報", "ann") + th("波動率", "vol")
+            + th("最大回撤", "mdd") + th("收復時間", "rec"))
     counts, catblocks, ends = {}, [], []
     for key, label in CATS:
         codes = NCODES if key == "all" else [c for c in NCODES if CAT_OF.get(c) == key]
@@ -288,7 +322,8 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor):
                     f"<td class='num {cls(r['total'])}'>{pct(r['total'])}</td>"
                     f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
                     f"<td class='num'>{r['vol']:.1f}%</td>"
-                    f"<td class='num {cls(r['mdd'])}'>{r['mdd']:.1f}%</td></tr>")
+                    f"<td class='num {cls(r['mdd'])}'>{r['mdd']:.1f}%</td>"
+                    + rec_cell(r) + "</tr>")
             note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名"
             note += arrow_note(is_latest, m)
             inner.append(table((f"{yrs} 年期", f"近 {yrs} 年淨值回報排名"), head, out, note))
@@ -339,7 +374,7 @@ STYLE = """
     background-size:32px 32px;
     font-family:"Noto Sans TC",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
     font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased;min-width:320px}
-  .wrap{max-width:1200px;margin:0 auto;padding:38px 26px 74px}
+  .wrap{max-width:100%;margin:0 auto;padding:34px clamp(16px,2.2vw,44px) 70px}
   header.masthead{border-bottom:2px solid var(--red);padding-bottom:18px;margin-bottom:20px}
   .eyebrow{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.16em;margin:0 0 8px}
   h1{font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;margin:0;color:var(--ink);line-height:1.35}
@@ -375,9 +410,11 @@ STYLE = """
   h2{font-family:Georgia,"Noto Serif TC",serif;font-size:22px;font-weight:500;color:var(--red);margin:0 0 16px}
   h2 .num{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.14em;display:block;margin-bottom:6px}
   .tw{background:var(--surface);border:1px solid #decfb8;box-shadow:inset 0 2px var(--gold);overflow-x:auto;margin:12px 0}
-  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:960px}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:1080px}
   th,td{border-bottom:1px solid var(--line-2);padding:11px 12px;text-align:right;white-space:nowrap;line-height:1.4}
   th{color:var(--th-ink);background:var(--head);border-bottom:1px solid var(--line-3);font-weight:700;font-size:13px}
+  @media (min-width:1500px){table{font-size:15px}th,td{padding:12px 15px}th{font-size:13.5px}td.fname{font-size:14px}}
+  @media (min-width:1900px){table{font-size:15.5px}th,td{padding:13px 17px}}
   th:nth-child(-n+5),td:nth-child(-n+5){text-align:left}
   td.fname{white-space:normal;min-width:240px;font-size:13.5px;color:var(--ink-2);line-height:1.5}
   td.code{font-family:Georgia,serif;font-weight:700;color:var(--ink)}
@@ -407,6 +444,11 @@ STYLE = """
     box-shadow:0 8px 20px #422f2033;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}
   .tip-pop b{color:#f1d58e;font-size:12px;font-weight:800;letter-spacing:.04em}
   .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+  .tip-cell{cursor:help}
+  .tip-cell .tip-val{border-bottom:1px dashed #cbbba2;padding-bottom:1px}
+  .tip-cell .tip-pop{left:auto;right:0;transform:translateY(-4px)}
+  .tip-cell:hover .tip-pop,.tip-cell:focus .tip-pop{opacity:1;visibility:visible;transform:translateY(0)}
+  .tip-cell:focus{outline:2px solid #b78e42;outline-offset:2px}
   @media (max-width:700px){
     .tip-pop{left:auto;right:0;transform:translateY(-4px)}
     .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{transform:translateY(0)}
