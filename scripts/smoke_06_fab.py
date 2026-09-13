@@ -29,7 +29,7 @@ with sync_playwright() as p:
     print(f"fab box: {box}")
     print(f"旧表头入口存在: {old_link is not None}")
     print(f"JS pageerror: {errors[:3] if errors else '无'}")
-    ok = root_len > 1000 and fab_vis and fab_href == "./dividend-ranking.html" \
+    ok = root_len > 1000 and fab_vis and fab_href == "./fund-ranking.html" \
          and fab_target is None and old_link is None and not errors
     print("SMOKE:", "PASS" if ok else "FAIL")
     b.close() if False else None

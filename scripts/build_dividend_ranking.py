@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""已淘汰（superseded）：派息榜已併入「基金月榜」。
+請改用 `scripts/build_rankings.py`（產生 fund-ranking*.html，並把舊網址寫成轉址頁）。
+本檔保留僅供回溯，直接執行會被擋下，以免覆蓋新頁面。
+"""
+import sys
+sys.exit("此腳本已淘汰：請執行 scripts/build_rankings.py（基金月榜，含派息／非派息兩分頁）")
+
 """
 產生「派息基金每月排名」頁面（多月份版本）。
 
