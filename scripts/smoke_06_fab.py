@@ -17,7 +17,7 @@ with sync_playwright() as p:
     # 1) React 渲染：#root 有内容
     root_len = pg.evaluate("document.querySelector('#root').innerHTML.length")
     # 2) 浮动按钮存在、可见、href 正确
-    fab = pg.query_selector("#dividend-ranking-fab")
+    fab = pg.query_selector("#fund-ranking-fab")
     fab_vis = fab.is_visible() if fab else False
     fab_href = fab.get_attribute("href") if fab else None
     fab_target = fab.get_attribute("target") if fab else None

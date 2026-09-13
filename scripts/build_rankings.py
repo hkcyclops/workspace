@@ -19,7 +19,6 @@
 產出：
   fund-ranking.html                 （永遠等於最新月份；含兩分頁）
   fund-ranking-YYYY-MM.html         （各月份永久存檔）
-  dividend-ranking*.html            （舊網址轉址頁，導向 fund-ranking*.html?tab=div）
 """
 import re, os, json, datetime, bisect, html, statistics as st
 
@@ -32,7 +31,6 @@ TOP_DIV = {1: 10, 3: 10, 5: 5}        # 派息榜名額
 TOP_NAV = {1: 10, 3: 10, 5: 10}       # 非派息榜名額
 PERIODS = (1, 3, 5)
 CATS = [("all", "全部"), ("stock", "股票"), ("fi", "固定收入"), ("multi", "多元資產"), ("mm", "貨幣市場")]
-LEGACY = "dividend-ranking"
 
 # 非派息比較窗口內另有零星派息的 3 檔（未計入回報，頁尾註明）
 STALE_DIV = {"Q01": "2022-02-09", "Q02": "2022-02-09", "F07": "2021-09-08"}
@@ -533,25 +531,6 @@ def build_page(y, m, is_latest):
     return HTML, f"fund-ranking-{y}-{m:02d}.html", end_disp, len(ZCODES), n_ok_nav
 
 
-def redirect_page(target, title):
-    return f"""<!doctype html>
-<html lang="zh-HK">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url={target}">
-<title>{title}</title>
-<link rel="canonical" href="{target}">
-<style>body{{font-family:"Noto Sans TC",system-ui,sans-serif;background:#f4efe5;color:#342d28;
-padding:60px 26px;text-align:center}}a{{color:#8f0d25}}</style>
-</head>
-<body>
-<p>頁面已合併至「基金月榜」，正在前往…</p>
-<p><a href="{target}">若未自動跳轉，請點此</a></p>
-</body>
-</html>
-"""
-
-
 for i, (y, m) in enumerate(MONTHS):
     is_latest = (i == 0)
     HTML, fname_month, end_disp, nz, nnz = build_page(y, m, is_latest)
@@ -560,16 +539,8 @@ for i, (y, m) in enumerate(MONTHS):
         paths.append(os.path.join(DEPLOY, "fund-ranking.html"))
     for p in paths:
         open(p, "w", encoding="utf-8", newline="").write(HTML)
-    # 舊網址轉址
-    legs = {LEGACY + ".html": f"./fund-ranking.html?tab=div",
-            f"{LEGACY}-{y}-{m:02d}.html": f"./fund-ranking-{y}-{m:02d}.html?tab=div"}
-    if is_latest:
-        legs[f"{LEGACY}-{y}-{m:02d}.html"] = f"./fund-ranking.html?tab=div"
-    for old, tgt in legs.items():
-        open(os.path.join(DEPLOY, old), "w", encoding="utf-8", newline="").write(
-            redirect_page(tgt, "基金月榜｜AIA TMP2"))
     print(f"{y}-{m:02d}：{fname_month}{' ＋ fund-ranking.html' if is_latest else ''}"
-          f"　基準 {end_disp}　{len(HTML)} bytes　轉址 {len(legs)} 個")
+          f"　基準 {end_disp}　{len(HTML)} bytes")
     for yrs in PERIODS:
         _, pm = rank_map(ZCODES, yrs, month_end(y, m), div_perf)
         if pm:

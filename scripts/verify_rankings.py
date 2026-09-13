@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """驗證「基金月榜」：兩分頁、類別 chips、欄位、箭頭、舊網址轉址"""
-import os
+import os, io
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,17 +72,13 @@ with sync_playwright() as p:
     print("== 7月存檔頁 ==  箭頭數（應 0）:", mv7)
     ok &= mv7 == 0
 
-    # 舊網址轉址
-    pg.goto(url("dividend-ranking.html"), wait_until="domcontentloaded")
-    pg.wait_for_timeout(1200)
-    print("== 舊網址 dividend-ranking.html ==")
-    print("  最終 URL:", os.path.basename(pg.url.split("?")[0]), pg.evaluate("location.search"))
-    print("  h1:", pg.inner_text("h1"))
-    ok &= "fund-ranking.html" in pg.url
-    pg.goto(url("dividend-ranking-2026-07.html"), wait_until="domcontentloaded")
-    pg.wait_for_timeout(1200)
-    print("  舊 7月存檔 →", os.path.basename(pg.url.split("?")[0]), pg.evaluate("location.search"))
-    ok &= "fund-ranking-2026-07.html" in pg.url
+    # 舊網址已移除、06 入口指向基金月榜
+    legacy = sorted(f for f in os.listdir(D) if f.startswith("dividend-ranking"))
+    print("== 舊網址檔案（應為空） ==", legacy)
+    h06 = io.open(os.path.join(D, "06-fund-portfolio-workbench.html"), encoding="utf-8").read()
+    fab_ok = 'id="fund-ranking-fab" href="./fund-ranking.html"' in h06 and "dividend-ranking" not in h06
+    print("== 06 FAB 指向 ./fund-ranking.html ==", fab_ok)
+    ok &= (not legacy) and fab_ok
 
     print(f"  JS 錯誤: {errs[:3] if errs else '無'}")
     ok &= not errs
