@@ -272,24 +272,61 @@ def arrow_note(is_latest, m, extra=""):
             "<span class='mv flat'>新＝上月無同口徑資料</span>" + extra)
 
 
-def rec_cell(r):
-    """收復時間欄：數值 + 懸停顯示「高點 → 低點 → 收復」時間段"""
-    if r["rec"] is not None:
-        val = f"{r['rec_m']:.1f}月"
-        body = (f"高點 {r['pk']} → 低點 {r['tr']}<br>"
-                f"回到高點 {r['rec']}<br>"
-                f"低點起算 {r['rec_m']:.1f} 個月；自高點起水下 {r['uw_m']:.1f} 個月")
-    else:
-        val = "未收復"
-        body = (f"高點 {r['pk']} → 低點 {r['tr']}<br>"
-                f"至 {r['end']} 仍未回到該高點<br>"
-                f"已 {r['uw_m']:.1f} 個月，現距高點 {r['cur']:+.1f}%")
-    return (f"<td class='num'><span class='tip tip-cell' tabindex='0'>"
-            f"<span class='tip-val'>{val}</span>"
-            f"<span class='tip-pop' role='tooltip'><b>最大回撤收復</b><span>{body}</span></span></span></td>")
+def rec_txt(r):
+    """收復時間欄的顯示值"""
+    return f"{r['rec_m']:.1f}月" if r["rec"] is not None else "未收復"
 
 
-def build_nav_panel(y, m, is_latest, anchor, prev_anchor):
+SPARK_N = 45          # 縮略圖點數
+
+
+def spark(code, years, anchor):
+    """縮略圖資料：降採樣 0–100 序列 + 回撤／收復時間比例 + 文字用的日期與數值"""
+    w = window(code, years, anchor)
+    if not w:
+        return None
+    _, _, _, pts = w
+    if len(pts) < 20:
+        return None
+    vals = [v for _, v in pts]
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    step = max(1, len(pts) // SPARK_N)
+    sampled = pts[::step]
+    if sampled[-1][0] != pts[-1][0]:
+        sampled.append(pts[-1])
+    v = [int(round((val - lo) / rng * 100)) for _, val in sampled]
+
+    peak, pi, worst = vals[0], 0, (0.0, 0, 0)
+    for i, x in enumerate(vals):
+        if x > peak:
+            peak, pi = x, i
+        d = (x - peak) / peak * 100
+        if d < worst[0]:
+            worst = (d, pi, i)
+    mdd, pi, ti = worst
+    rec_i = next((i for i in range(ti + 1, len(vals)) if vals[i] >= vals[pi]), None)
+    n = len(vals) - 1 or 1
+    pk_d, tr_d = pts[pi][0], pts[ti][0]
+    rec_d = pts[rec_i][0] if rec_i is not None else None
+    end_d = pts[-1][0]
+    return {"v": v, "pk": round(pi / n, 3), "tr": round(ti / n, 3),
+            "rec": round(rec_i / n, 3) if rec_i is not None else None,
+            "pkd": pk_d.isoformat(), "trd": tr_d.isoformat(),
+            "recd": rec_d.isoformat() if rec_d else None,
+            "rm": round((rec_d - tr_d).days / 30.44, 1) if rec_d else None,
+            "uw": round(((rec_d or end_d) - pk_d).days / 30.44, 1),
+            "cur": round((pts[-1][1] / pts[pi][1] - 1) * 100, 1),
+            "end": end_d.isoformat()}
+
+
+def tip_cell(value, skey, col, cls_extra=""):
+    """數值欄：標記精簡，hover 時由 JS 依 __SPARK__ 組出提示（含縮略圖）"""
+    return (f"<td class='num {cls_extra}'>"
+            f"<span class='tip tip-cell' tabindex='0' data-s='{skey}' data-c='{col}'>{value}</span></td>")
+
+
+def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
     """非派息榜：5 個類別 chips × 3 個期間"""
     head = ("<th>名次</th><th>代號</th><th>基金名</th><th>幣種</th><th>類別</th>"
             + th("期間回報", "r1") + th("年化回報", "ann") + th("波動率", "vol")
@@ -314,16 +351,22 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor):
                 pr = prev.get(c, "NA") if is_latest else None
                 catlabel = dict(CATS).get(CAT_OF.get(c), "其他")
                 hedged = "（對沖）" if f.get("hedged") else ""
+                skey = f"{c}|{yrs}"
+                sp = spark(c, yrs, anchor)
+                if sp:
+                    sparks[skey] = sp
                 out.append(
                     f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                    f"<td class='fname'>{html.escape((f.get('name') or '').strip())}"
+                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}' "
+                    f"title='在 06 開啟 {c} 的走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
                     f"<span class='tag'>{hedged}</span></td>"
                     f"<td>{f.get('currencyCode') or '—'}</td><td>{catlabel}</td>"
-                    f"<td class='num {cls(r['total'])}'>{pct(r['total'])}</td>"
-                    f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
-                    f"<td class='num'>{r['vol']:.1f}%</td>"
-                    f"<td class='num {cls(r['mdd'])}'>{r['mdd']:.1f}%</td>"
-                    + rec_cell(r) + "</tr>")
+                    + tip_cell(pct(r["total"]), skey, "r1", cls(r["total"]))
+                    + tip_cell(pct(r["ann"]), skey, "ann", cls(r["ann"]))
+                    + tip_cell(f"{r['vol']:.1f}%", skey, "vol")
+                    + tip_cell(f"{r['mdd']:.1f}%", skey, "mdd", cls(r["mdd"]))
+                    + tip_cell(rec_txt(r), skey, "rec")
+                    + "</tr>")
             note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名"
             note += arrow_note(is_latest, m)
             inner.append(table((f"{yrs} 年期", f"近 {yrs} 年淨值回報排名"), head, out, note))
@@ -444,14 +487,22 @@ STYLE = """
     box-shadow:0 8px 20px #422f2033;opacity:0;visibility:hidden;transition:opacity .16s,transform .16s,visibility .16s}
   .tip-pop b{color:#f1d58e;font-size:12px;font-weight:800;letter-spacing:.04em}
   .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
-  .tip-cell{cursor:help}
-  .tip-cell .tip-val{border-bottom:1px dashed #cbbba2;padding-bottom:1px}
-  .tip-cell .tip-pop{left:auto;right:0;transform:translateY(-4px)}
-  .tip-cell:hover .tip-pop,.tip-cell:focus .tip-pop{opacity:1;visibility:visible;transform:translateY(0)}
+  .tip-cell{cursor:help;position:relative;border-bottom:1px dashed #cbbba2;padding-bottom:1px}
+  .tip-cell .tip-pop{left:auto;right:0;transform:translateY(-4px);max-width:min(300px,86vw)}
+  .tip-cell.is-open .tip-pop{opacity:1;visibility:visible;transform:translateY(0)}
   .tip-cell:focus{outline:2px solid #b78e42;outline-offset:2px}
+  .spark{width:262px;height:74px;display:block;background:#3f2823;margin:2px 0 4px}
+  .spark .line{fill:none;stroke:#f1d58e;stroke-width:1.6;vector-effect:non-scaling-stroke}
+  .spark .band-a{fill:#c8a85b;opacity:.30}
+  .spark .band-b{fill:#c8a85b;opacity:.13}
+  .spark .dash{stroke:#e8dcc0;stroke-width:1;stroke-dasharray:3 3}
+  .spark .dot{fill:#f1d58e}
+  a.flink{color:inherit;text-decoration:none;border-bottom:1px solid #d8c8b3}
+  a.flink:hover{color:var(--red);border-bottom-color:var(--red)}
   @media (max-width:700px){
     .tip-pop{left:auto;right:0;transform:translateY(-4px)}
     .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{transform:translateY(0)}
+    .spark{width:200px;height:58px}
   }
   footer{margin-top:28px;color:var(--gray);font-size:13px;line-height:1.8}
 """
@@ -509,6 +560,101 @@ SCRIPT = """
       });
     });
   });
+
+  /* 數值欄提示：第一次 hover 才組內容（文字 + 45 點縮略圖 + 回撤／收復陰影） */
+  var SPARK = window.__SPARK__ || {};
+  var NS = 'http://www.w3.org/2000/svg';
+  var LEGEND = '深色＝回撤期（高點→低點）、淺色＝收復期';
+  var COLS = {r1: '期間回報', ann: '年化回報', vol: '波動率', mdd: '最大回撤', rec: '最大回撤收復'};
+
+  function buildChart(d){
+    var W = 262, H = 74, pad = 3, n = d.v.length;
+    var X = function(i){ return pad + i * (W - 2 * pad) / (n - 1); };
+    var Y = function(val){ return H - pad - val * (H - 2 * pad) / 100; };
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'spark');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    var idx = function(f){ return f * (n - 1); };
+    function band(x0, x1, cls){
+      if (x1 <= x0) return;
+      var r = document.createElementNS(NS, 'rect');
+      r.setAttribute('class', cls);
+      r.setAttribute('x', X(x0)); r.setAttribute('y', 0);
+      r.setAttribute('width', Math.max(0.5, X(x1) - X(x0))); r.setAttribute('height', H);
+      svg.appendChild(r);
+    }
+    var ipk = idx(d.pk), itr = idx(d.tr);
+    band(ipk, itr, 'band-a');
+    band(itr, (d.rec === null || d.rec === undefined) ? n - 1 : idx(d.rec), 'band-b');
+    [ipk, itr].forEach(function(i){
+      var l = document.createElementNS(NS, 'line');
+      l.setAttribute('class', 'dash');
+      l.setAttribute('x1', X(i)); l.setAttribute('x2', X(i));
+      l.setAttribute('y1', 0); l.setAttribute('y2', H);
+      svg.appendChild(l);
+    });
+    var path = document.createElementNS(NS, 'path');
+    path.setAttribute('class', 'line');
+    path.setAttribute('d', d.v.map(function(val, i){
+      return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(val).toFixed(1);
+    }).join(' '));
+    svg.appendChild(path);
+    [[ipk, d.v[Math.round(ipk)]], [itr, d.v[Math.round(itr)]]].forEach(function(p){
+      var c = document.createElementNS(NS, 'circle');
+      c.setAttribute('class', 'dot');
+      c.setAttribute('r', 2.6);
+      c.setAttribute('cx', X(p[0])); c.setAttribute('cy', Y(p[1]));
+      svg.appendChild(c);
+    });
+    return svg;
+  }
+
+  function buildPop(t){
+    var key = t.getAttribute('data-s'), col = t.getAttribute('data-c'), d = SPARK[key];
+    if (!d) return;
+    var val = t.textContent, yrs = (key || '').split('|')[1] || '';
+    var lines = [];
+    if (col === 'r1') lines.push('近 ' + yrs + ' 年淨值漲跌 ' + val);
+    else if (col === 'ann') lines.push('年化 ' + val);
+    else if (col === 'vol') lines.push('年化波動率 ' + val);
+    else if (col === 'mdd') lines.push('最大回撤 ' + val + '<br>高點 ' + d.pkd + ' → 低點 ' + d.trd);
+    else {
+      lines.push('高點 ' + d.pkd + ' → 低點 ' + d.trd);
+      if (d.recd) lines.push('回到高點 ' + d.recd + '<br>低點起算 ' + d.rm + ' 個月；自高點起水下 ' + d.uw + ' 個月');
+      else lines.push('至 ' + d.end + ' 仍未回到該高點<br>已 ' + d.uw + ' 個月，現距高點 ' + d.cur + '%');
+    }
+    lines.push(LEGEND);
+    var pop = document.createElement('span');
+    pop.className = 'tip-pop';
+    pop.setAttribute('role', 'tooltip');
+    var b = document.createElement('b'); b.textContent = COLS[col] || '';
+    var txt = document.createElement('span'); txt.innerHTML = lines.join('<br>');
+    pop.appendChild(b); pop.appendChild(buildChart(d)); pop.appendChild(txt);
+    t.appendChild(pop);
+  }
+  function closeTip(t){ t.classList.remove('is-open'); }
+  function closeOthers(except){
+    Array.prototype.forEach.call(document.querySelectorAll('.tip-cell.is-open'), function(x){
+      if (x !== except) closeTip(x);
+    });
+  }
+  function openTip(t){
+    if (!t.querySelector('.tip-pop')) buildPop(t);
+    t.classList.add('is-open');
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tip-cell'), function(t){
+    t.addEventListener('mouseenter', function(){ closeOthers(t); openTip(t); });
+    t.addEventListener('mouseleave', function(){ closeTip(t); });
+    t.addEventListener('focusin', function(){ closeOthers(t); openTip(t); });
+    t.addEventListener('blur', function(){ closeTip(t); });
+    t.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      if (t.classList.contains('is-open')) closeTip(t); else { closeOthers(t); openTip(t); }
+    });
+  });
+  document.addEventListener('click', function(){ closeOthers(null); });
+
   var m = /[?&]tab=(div|nav)/.exec(location.search);
   showTab(m ? m[1] : 'div');
 })();
@@ -521,8 +667,10 @@ def build_page(y, m, is_latest):
     prev_anchor = month_end(py, pm) if is_latest else None
 
     div_html, div_ends = build_div_panel(y, m, is_latest, anchor, prev_anchor)
-    nav_html, nav_ends = build_nav_panel(y, m, is_latest, anchor, prev_anchor)
+    sparks = {}
+    nav_html, nav_ends = build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks)
     end_disp = max(div_ends + nav_ends).strftime("%Y-%m-%d")
+    spark_json = json.dumps(sparks, separators=(",", ":"), ensure_ascii=False)
 
     n_ok_nav = sum(1 for c in NCODES if nav_perf(c, 1, anchor))
     TITLE = f"基金月榜 - {m}月"
@@ -562,10 +710,12 @@ def build_page(y, m, is_latest):
   非派息基金回報以各基金自身幣別計，<b>不含匯率影響</b>；名稱後標「（對沖）」者為對沖股份類別。
   另有 3 檔非派息基金在比較窗口內曾派息（{stale}），本頁僅計淨值變動，該等派息未計入，實際總回報略高於表列。
   非派息榜前段多為單一行業或地區（黃金、台灣、韓國、科技），<b>高回報代表已漲多，並非買入建議</b>。
+  非派息榜的數值欄<a href='#top' style='color:inherit'>（期間回報／年化回報／波動率／最大回撤／收復時間）</a>可<b>滑鼠懸停看該期間淨值走勢圖</b>（深色＝回撤期、淺色＝收復期）；<b>點基金名</b>會在 06 開啟該檔走勢圖。
   歷史資料不代表未來表現，非投資建議。
 </footer>
 
 </div>
+<script>var __SPARK__={spark_json};</script>
 <script>{SCRIPT}</script>
 </body>
 </html>

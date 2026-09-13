@@ -54,21 +54,44 @@ with sync_playwright() as p:
     nav_mv = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on tbody .mv", "els=>els.length")
     nav_tips = pg.eval_on_selector_all(".panel[data-panel='nav'] .tip", "els=>els.length")
     nav_all_rows = pg.eval_on_selector_all(".panel[data-panel='nav'] tbody tr", "els=>els.length")
-    nav_exp = 5 * 15 + nav_all_rows       # 表頭 5 個 ? × 15 張表 + 每列一個收復時間 ?
+    nav_exp = 5 * 15 + 5 * nav_all_rows   # 表頭 5 個 ? × 15 張表 + 每列 5 個數值欄提示
     print(f"  全部榜：列 {nav_rows}（應 30）　箭頭 {nav_mv}（應 30）　? {nav_tips}（應 {nav_exp}）")
     ok &= len(chips) == 5 and nav_rows == 30 and nav_mv == 30 and nav_tips == nav_exp
     ok &= nav_heads == ["名次", "代號", "基金名", "幣種", "類別", "期間回報", "年化回報", "波動率", "最大回撤", "收復時間"]
 
     # 收復時間欄：數值 + 懸停顯示時間段
-    cells = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .tip-cell .tip-val",
+    cells = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='rec']",
                                     "els=>els.slice(0,6).map(e=>e.textContent)")
-    first_pop = pg.evaluate("""() => {
-        const c = document.querySelector(".panel[data-panel='nav'] .catblock.is-on .tip-cell");
-        return c.querySelector(".tip-pop").textContent.replace(/\\s+/g, " ").trim();
-    }""")
     print("  收復時間值樣本:", cells)
-    print("  懸停內容樣本:", first_pop[:90])
-    ok &= any(v.endswith("月") for v in cells) and "高點" in first_pop and "低點" in first_pop
+    ok &= any(v.endswith("月") for v in cells)
+
+    # 縮略圖：hover 最大回撤儲存格 → 生成 SVG（45 點折線 + 回撤／收復陰影）
+    pg.hover(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='mdd']")
+    pg.wait_for_timeout(400)
+    sp = pg.evaluate("""() => {
+        const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='mdd']");
+        const svg = t.querySelector('.spark');
+        if (!svg) return {err: 'no .spark'};
+        const path = svg.querySelector('.line');
+        const pts = (path.getAttribute('d').match(/[ML]/g) || []).length;
+        return {打開: t.classList.contains('is-open'), 點數: pts,
+                陰影帶: svg.querySelectorAll('rect').length,
+                深色帶: !!svg.querySelector('.band-a'), 淺色帶: !!svg.querySelector('.band-b'),
+                虛線: svg.querySelectorAll('.dash').length, 圓點: svg.querySelectorAll('.dot').length,
+                提示文字: t.querySelector('.tip-pop').textContent.replace(/\\s+/g,' ').slice(0, 80),
+                全部提示寬: Math.round(t.querySelector('.tip-pop').getBoundingClientRect().width)};
+    }""")
+    print("  縮略圖:", sp)
+    ok &= (not sp.get("err")) and sp["打開"] and 40 <= sp["點數"] <= 50 and sp["陰影帶"] == 2 \
+        and sp["深色帶"] and sp["淺色帶"] and sp["虛線"] == 2 and sp["圓點"] == 2
+
+    # 基金名連結 → 06 帶 ?fund=
+    links = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .flink",
+                                    "els=>els.slice(0,3).map(e=>e.getAttribute('href')+' | '+e.textContent.slice(0,18))")
+    spark_n = pg.evaluate("() => Object.keys(window.__SPARK__ || {}).length")
+    print("  基金名連結樣本:", links)
+    print("  內嵌序列組數:", spark_n)
+    ok &= all("06-fund-portfolio-workbench.html?fund=" in l for l in links) and spark_n >= 85
 
     # 版面寬度利用：1920 視窗下 .wrap 應接近全寬
     pg.set_viewport_size({"width": 1920, "height": 1000})
