@@ -75,11 +75,11 @@ with sync_playwright() as p:
         儲存格提示: c.querySelectorAll('tbody .tip-cell').length
     }))""")
     print("  非派息 YTD 表欄位:", nav_heads)
-    print("  非派息四張表結構:", nav_structure)
+    print("  非派息五張表結構:", nav_structure)
     ok &= nav_heads == ["名次", "代號", "基金名", "幣種", "類別", "期間回報", "波動率", "最大回撤", "收復時間"]
-    ok &= [t["欄"] for t in nav_structure] == [9, 10, 10, 10]
-    ok &= [t["列"] for t in nav_structure] == [10, 10, 10, 10]
-    ok &= [t["表頭提示"] for t in nav_structure] == [4, 5, 5, 5]
+    ok &= [t["欄"] for t in nav_structure] == [9, 10, 10, 10, 10]
+    ok &= [t["列"] for t in nav_structure] == [10, 10, 10, 10, 10]
+    ok &= [t["表頭提示"] for t in nav_structure] == [4, 5, 5, 5, 5]
     ok &= all(t["儲存格提示"] == t["列"] * (4 if t["欄"] == 9 else 5) for t in nav_structure)
     nav_rows = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on tbody tr", "els=>els.length")
     nav_mv = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on tbody .mv", "els=>els.length")
@@ -98,8 +98,8 @@ with sync_playwright() as p:
         });
         return bad;
     }""")
-    print(f"  全部榜：列 {nav_rows}（應 40=YTD+1Y+3Y+5Y 各 10）　箭頭 {nav_mv}（應 40）　? {nav_tips}　不符結構的表: {nav_bad}")
-    ok &= len(chips) == 5 and nav_rows == 40 and nav_mv == 40 and not nav_bad
+    print(f"  全部榜：列 {nav_rows}（應 50=YTD+1Y+3Y+5Y+10Y 各 10）　箭頭 {nav_mv}（應 50）　? {nav_tips}　不符結構的表: {nav_bad}")
+    ok &= len(chips) == 5 and nav_rows == 50 and nav_mv == 50 and not nav_bad
 
     # 收復時間欄：數值 + 懸停顯示時間段
     cells = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .tip-cell[data-c='rec']",
@@ -169,9 +169,13 @@ with sync_playwright() as p:
         .map(card => Array.from(card.querySelectorAll('.flink')).map(a => {
             const m = /[?&]y=(YTD|\\d+)/.exec(a.getAttribute('href')); return m ? m[1] : null;
         }))""")
+    t10 = pg.evaluate("""() => Array.from(document.querySelectorAll(".catblock.is-on section.card"))[4]
+        .querySelector('.flink').getAttribute('title')""")
+    print("  10Y 表連結標題:", t10)
+    ok &= "5 年" in t10
     print("  非派息各表期間:", [sorted(set(v)) for v in per_table])
     print("  派息各表期間:", [sorted(set(v)) for v in div_y])
-    ok &= [sorted(set(v)) for v in per_table] == [["YTD"], ["1"], ["3"], ["5"]]
+    ok &= [sorted(set(v)) for v in per_table] == [["YTD"], ["1"], ["3"], ["5"], ["5"]]   # 10Y 無對應按鈕 → 退回 y=5
     ok &= [sorted(set(v)) for v in div_y] == [["YTD"], ["1"], ["3"], ["5"]]
 
     links = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .flink",
@@ -199,7 +203,7 @@ with sync_playwright() as p:
     blocks = pg.eval_on_selector_all(".catblock", "els=>els.map(e=>e.getAttribute('data-cat')+':'+e.classList.contains('is-on'))")
     mm_rows = pg.eval_on_selector_all(".catblock[data-cat='mm'] tbody tr", "els=>els.length")
     print("  切『貨幣市場』後:", blocks, f"　該類別列數 {mm_rows}（3 檔 × 期間，缺資料者少列）")
-    ok &= blocks == ["all:false", "stock:false", "fi:false", "multi:false", "mm:true"] and 3 <= mm_rows <= 12
+    ok &= blocks == ["all:false", "stock:false", "fi:false", "multi:false", "mm:true"] and 3 <= mm_rows <= 15
 
     # 7 月存檔頁：無箭頭
     pg.goto(url("fund-ranking-2026-07.html"), wait_until="domcontentloaded")

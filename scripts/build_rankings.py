@@ -27,9 +27,11 @@ DEPLOY = os.path.join(ROOT, "_deploy-workspace")
 DATA = os.path.join(DEPLOY, "data")
 
 MONTHS = [(2026, 8), (2026, 7)]       # 由新到舊；第一個＝最新月份
-TOP_DIV = {"YTD": 10, 1: 10, 3: 10, 5: 5}     # 派息榜名額
-TOP_NAV = {"YTD": 10, 1: 10, 3: 10, 5: 10}    # 非派息榜名額
-PERIODS = ("YTD", 1, 3, 5)          # YTD 排最前（最短區間）
+TOP_DIV = {"YTD": 10, 1: 10, 3: 10, 5: 5}          # 派息榜名額
+TOP_NAV = {"YTD": 10, 1: 10, 3: 10, 5: 10, 10: 10}  # 非派息榜名額（含 10 年）
+DIV_PERIODS = ("YTD", 1, 3, 5)          # 派息：Z 系列最長只 8.5 年，做不了 10Y
+NAV_PERIODS = ("YTD", 1, 3, 5, 10)      # 非派息：10Y 有 75 檔可用
+PERIODS = ("YTD", 1, 3, 5)              # 給摘要輸出用（兩榜共同的）
 
 
 def plabel(p):
@@ -55,6 +57,17 @@ def ptitle(p):
 def ptag(p):
     """deep link 用的期間代號（06 的按鈕文字：YTD／1年／3年／5年）"""
     return "YTD" if p == "YTD" else f"{p}"
+
+
+def plink(p):
+    """06 實際提供的期間按鈕只有 3個月／6個月／YTD／1年／3年／5年；10 年沒有對應 → 退回 5 年"""
+    return p if p in ("YTD", 1, 3, 5) else 5
+
+
+def plink_title(p, code):
+    if p in ("YTD", 1, 3, 5):
+        return f"在 06 開啟 {code} 的 {plabel(p)}走勢圖"
+    return f"在 06 開啟 {code} 的走勢圖（06 期間最長只到 5 年）"
 CATS = [("all", "全部"), ("stock", "股票"), ("fi", "固定收入"), ("multi", "多元資產"), ("mm", "貨幣市場")]
 
 # 非派息比較窗口內另有零星派息的 3 檔（未計入回報，頁尾註明）
@@ -279,7 +292,7 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
           + th("派息貢獻", "div") + th("NAV 貢獻", "nav"))
     TH_YTD = (th("年化派息率", "rate") + th("實際總報酬", "total")
               + th("派息貢獻", "div") + th("NAV 貢獻", "nav"))
-    for p in PERIODS:
+    for p in DIV_PERIODS:
         ytd = (p == "YTD")
         head = f"<th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th>{TH_YTD if ytd else TH}"
         ranks, pm = rank_map(ZCODES, p, anchor, div_perf)
@@ -390,7 +403,7 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
         pcodes = codes
         inner = []
         n_ok = 0
-        for p in PERIODS:
+        for p in NAV_PERIODS:
             ytd = (p == "YTD")
             ranks, pm = rank_map(pcodes, p, anchor, nav_perf)
             n_ok = max(n_ok, len(pm))
@@ -410,8 +423,8 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
                 ann_cell = "" if ytd else tip_cell(pct(r["ann"]), skey, "ann", cls(r["ann"]))
                 out.append(
                     f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={ptag(p)}' "
-                    f"title='在 06 開啟 {c} 的 {plabel(p)}走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
+                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={plink(p)}' "
+                    f"title='{plink_title(p, c)}'>{html.escape((f.get('name') or '').strip())}</a>"
                     f"<span class='tag'>{hedged}</span></td>"
                     f"<td>{f.get('currencyCode') or '—'}</td><td>{catlabel}</td>"
                     + tip_cell(pct(r["total"]), skey, "r1", cls(r["total"]))
@@ -423,6 +436,8 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
             note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名；依<b>淨值回報</b>排序"
             if ytd:
                 note += "；<b>YTD</b>＝去年最後一個交易日至基準日，期間未滿一年故不列年化回報"
+            if p == 10:
+                note += "；10 年區間橫跨 2018 貿易戰、2020 疫情崩盤、2022 股債雙殺，數字含三次大型波動"
             note += arrow_note(is_latest, m)
             inner.append(table((plabel(p) if ytd else f"{p} 年期", ptitle(p)),
                                head_ytd if ytd else head, out, note))
@@ -905,7 +920,8 @@ def build_page(y, m, is_latest):
   <h1>{TITLE}</h1>
   <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:13.5px">&larr; 返回 06 基金組合測算</a></p>
   <p class="sub">計算基準日 <b>{end_disp}</b>（每月最後一個交易日；各檔取該月最後一個有資料的交易日）。
-     統一以<b>YTD／近 1／3／5 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。</p>
+     統一以<b>YTD／近 1／3／5／10 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。
+     （<b>10 年</b>只有非派息基金有足夠資料；派息基金最長只 8.5 年，故不列 10 年）</p>
   {month_nav_tpl(y, m, is_latest)}
 </header>
 
@@ -923,7 +939,7 @@ def build_page(y, m, is_latest):
   非派息基金回報以各基金自身幣別計，<b>不含匯率影響</b>；名稱後標「（對沖）」者為對沖股份類別。
   另有 3 檔非派息基金在比較窗口內曾派息（{stale}），本頁僅計淨值變動，該等派息未計入，實際總回報略高於表列。
   非派息榜前段多為單一行業或地區（黃金、台灣、韓國、科技），<b>高回報代表已漲多，並非買入建議</b>。
-  YTD 榜＝去年最後一個交易日至基準日（未滿一年，不列年化回報）。
+  YTD 榜＝去年最後一個交易日至基準日（未滿一年，不列年化回報）。<b>10 年榜只有非派息基金</b>（派息基金最長只 8.5 年）。
   非派息榜的數值欄<a href='#top' style='color:inherit'>（期間回報／年化回報／波動率／最大回撤／收復時間）</a>可<b>滑鼠懸停看該期間淨值走勢圖</b>（深色＝回撤期、淺色＝收復期）；<b>點基金名</b>會在 06 開啟該檔走勢圖。
   歷史資料不代表未來表現，非投資建議。
   漲跌色跟隨語言：繁體版<b>綠漲紅跌</b>、簡體版<b>紅漲綠跌</b>（由 06 的語言設定決定，本頁右上可切換）。
@@ -958,11 +974,12 @@ for i, (y, m) in enumerate(MONTHS):
         open(os.path.join(DEPLOY, fn), "w", encoding="utf-8", newline="").write(out)
         written.append(f"{fn}（{len(out)} bytes）")
     print(f"{y}-{m:02d}　基準 {end_disp}：" + "、".join(written))
-    for p_ in PERIODS:
+    for p_ in DIV_PERIODS:
         _, pm = rank_map(ZCODES, p_, month_end(y, m), div_perf)
         if pm:
             c, r = max(pm.items(), key=lambda x: x[1]["total"])
             print(f"   派息 {plabel(p_)}：{len(pm)} 檔，冠軍 {c} {r['total']:+.1f}%")
+    for p_ in NAV_PERIODS:
         _, pn = rank_map(NCODES, p_, month_end(y, m), nav_perf)
         if pn:
             c, r = max(pn.items(), key=lambda x: x[1]["total"])
