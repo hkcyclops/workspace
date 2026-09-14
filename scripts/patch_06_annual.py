@@ -12,10 +12,10 @@ import io, os, re, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET = os.path.join(HERE, "_deploy-workspace", "06-fund-portfolio-workbench.html")
-MARKER = "HUB_ANNUAL_RETURNS_V10"
+MARKER = "HUB_ANNUAL_RETURNS_V11"
 
 JS = r"""
-/* HUB_ANNUAL_RETURNS_V10：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V11：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
@@ -306,15 +306,45 @@ JS = r"""
     return h ? h.closest('article') : null;
   }
 
+  /* 列印模板的小 bug：資料最小值為 0 時，「0%」基準標籤與最小值標籤（如 +0.0%）會畫在同一個 y，
+     印出來變成疊字（0%0%）。這裡把「同位置且數值相同」的重複軸標籤隱藏，保留文字較短的那個。 */
+  function numOf(t){
+    var s = (t || '').replace(/[^0-9.+-]/g, '');
+    var v = parseFloat(s);
+    return isNaN(v) ? null : v;
+  }
+  function fixAxisLabels(doc){
+    Array.prototype.forEach.call(doc.querySelectorAll('article.chart-card svg'), function(svg){
+      var labs = Array.prototype.slice.call(svg.querySelectorAll('text'))
+        .filter(function(t){ return parseFloat(t.getAttribute('x')) < 20 && t.style.display !== 'none'; });
+      var kept = [];
+      labs.sort(function(a, b){ return parseFloat(a.getAttribute('y')) - parseFloat(b.getAttribute('y')); });
+      labs.forEach(function(t){
+        var y = parseFloat(t.getAttribute('y')), v = numOf(t.textContent);
+        var dup = kept.filter(function(k){
+          return Math.abs(parseFloat(k.getAttribute('y')) - y) < 6 && numOf(k.textContent) === v;
+        })[0];
+        if (!dup){ kept.push(t); return; }
+        var a = (dup.textContent || '').trim(), b = (t.textContent || '').trim();
+        var worse = (a.length <= b.length) ? t : dup;
+        worse.style.display = 'none';
+        worse.setAttribute('data-hub-axis-hidden', '1');
+      });
+    });
+  }
+
   function watchPrintWindow(w){
-    var tries = 0;
+    var tries = 0, inserted = false;
     var t = setInterval(function(){
       tries++;
       try {
         var doc = w.document;
-        if (doc && doc.body && !doc.querySelector('.hub-annual-print')){
-          var art = printTarget(doc);
-          if (art) art.insertAdjacentHTML('afterend', buildPrintHTML());
+        if (doc && doc.body){
+          fixAxisLabels(doc);
+          if (!inserted && !doc.querySelector('.hub-annual-print')){
+            var art = printTarget(doc);
+            if (art){ art.insertAdjacentHTML('afterend', buildPrintHTML()); inserted = true; }
+          }
         }
       } catch (e) {}
       if (tries > 60) clearInterval(t);

@@ -233,6 +233,34 @@ with sync_playwright() as p:
     ok &= "各期" in (pr["接在各期後"] or "") and "年度" in (pr["主標題"] or "")
     ok &= pr["卡金線"] == "rgb(186, 141, 53)"
 
+    # ⑧ 列印模板的 y 軸疊字修正：同位置、同數值的重複標籤要被隱藏
+    axis = pop.evaluate("""() => {
+        const h = Array.from(document.querySelectorAll('article.chart-card h3')).find(x => /各期/.test(x.textContent));
+        const svg = h.closest('article').querySelector('svg');
+        return Array.from(svg.querySelectorAll('text'))
+            .filter(t => parseFloat(t.getAttribute('x')) < 20)
+            .map(t => ({txt: t.textContent.trim(), y: parseFloat(t.getAttribute('y')), hidden: t.style.display === 'none'}));
+    }""")
+
+    def axis_num(s):
+        m = re.sub(r"[^0-9.+-]", "", s or "")
+        try:
+            return float(m)
+        except ValueError:
+            return None
+
+    vis = [a for a in axis if not a["hidden"]]
+    clash = [(a["txt"], b["txt"]) for i, a in enumerate(vis) for b in vis[i + 1:]
+             if abs(a["y"] - b["y"]) < 6 and axis_num(a["txt"]) == axis_num(b["txt"])]
+    # 不變式：同一個 y 位置、同一個數值，最多只能有一個「可見」標籤（重複者需被隱藏）
+    groups = {}
+    for a in axis:
+        key = (round(a["y"] / 6), axis_num(a["txt"]))
+        groups[key] = groups.get(key, 0) + (0 if a["hidden"] else 1)
+    over = [k for k, v in groups.items() if v > 1]
+    print(f"⑧ 列印『各期』y 軸：可見 {[a['txt'] for a in vis]}｜隱藏 {[a['txt'] for a in axis if a['hidden']]}｜重疊衝突 {clash}｜超額 {over}")
+    ok &= not clash and not over
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")
