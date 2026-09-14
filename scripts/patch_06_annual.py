@@ -12,10 +12,10 @@ import io, os, re, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET = os.path.join(HERE, "_deploy-workspace", "06-fund-portfolio-workbench.html")
-MARKER = "HUB_ANNUAL_RETURNS_V3"
+MARKER = "HUB_ANNUAL_RETURNS_V4"
 
 JS = r"""
-/* HUB_ANNUAL_RETURNS_V3：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V4：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
@@ -26,7 +26,8 @@ JS = r"""
     '.hub-annual-sub{margin:8px 0 0;font-size:12.5px;line-height:1.7;color:var(--hub-gray,#6b6d70)}' +
     '.hub-annual-plot{position:relative;height:170px;margin:20px 0 0;border-bottom:1px solid var(--hub-line,#e3dccd)}' +
     '.hub-annual-zero{position:absolute;left:0;right:0;height:1px;background:var(--hub-line,#e3dccd)}' +
-    '.hub-annual-bar{position:absolute;left:12%;right:12%;background:currentColor;border-radius:3px}' +
+    '.hub-annual-col{position:absolute;top:0;bottom:0}' +
+    '.hub-annual-bar{position:absolute;left:14%;right:14%;background:currentColor;border-radius:3px}' +
     '.hub-annual-bar.na{opacity:.22}' +
     '.hub-annual-x{display:flex;margin-top:6px}' +
     '.hub-annual-x span{flex:1;text-align:center;font-size:12px;color:var(--hub-gray,#6b6d70)}' +
@@ -134,8 +135,11 @@ JS = r"""
 
     var plot = el('div', 'hub-annual-plot');
     plot.appendChild((function(){ var z = el('div', 'hub-annual-zero'); z.style.top = Math.round(y0) + 'px'; return z; })());
-    vals.forEach(function(v){
+    vals.forEach(function(v, i){
       var isN = (v === null || v === undefined || isNaN(v));
+      var col = el('div', 'hub-annual-col');
+      col.style.left = (i * 100 / YS.length) + '%';
+      col.style.width = (100 / YS.length) + '%';
       var bar = el('div', 'hub-annual-bar ' + clsOf(v));
       if (isN){
         bar.style.top = Math.round(y0) + 'px';
@@ -145,7 +149,8 @@ JS = r"""
         if (v >= 0){ bar.style.top = Math.round(yv) + 'px'; bar.style.height = Math.max(2, Math.round(y0 - yv)) + 'px'; }
         else { bar.style.top = Math.round(y0) + 'px'; bar.style.height = Math.max(2, Math.round(yv - y0)) + 'px'; }
       }
-      plot.appendChild(bar);
+      col.appendChild(bar);
+      plot.appendChild(col);
     });
     box.appendChild(plot);
 

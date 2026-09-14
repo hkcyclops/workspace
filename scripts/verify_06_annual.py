@@ -60,7 +60,23 @@ with sync_playwright() as p:
         const sec = document.querySelector('.hub-annual');
         return !!(cross && sec && (cross.compareDocumentPosition(sec) & 4));
     }""")
+    geom = pg.evaluate("""() => {
+        const plot = document.querySelector('.hub-annual-plot');
+        const pr = plot.getBoundingClientRect();
+        return Array.from(plot.querySelectorAll('.hub-annual-bar')).map(b => {
+            const r = b.getBoundingClientRect();
+            return {left: Math.round(r.left - pr.left), w: Math.round(r.width), h: Math.round(r.height)};
+        });
+    }""")
+    xs = [g["left"] for g in geom]
     print(f"① 區塊位置：在「各期間表現」之後 = {pos_ok}｜資料檔載入 = {loaded}｜標題 = {s0['標題']}")
+    print(f"   柱幾何 = {geom}")
+    plot_w = pg.evaluate("() => Math.round(document.querySelector('.hub-annual-plot').getBoundingClientRect().width)")
+    widths = [g["w"] for g in geom]
+    distinct = len(set(xs)) == len(xs)
+    narrow = all(w < plot_w / 5 for w in widths)
+    print(f"   柱幾何檢查：位置互異={distinct}｜每根寬 {widths} < 圖寬/5 ({round(plot_w / 5)})={narrow}")
+    ok &= distinct and narrow and len(geom) == 5
     print(f"   卡片 = {[c['y'] + ' ' + c['v'] for c in s0['卡片']]}")
     ok &= pos_ok and loaded and s0["柱數"] == 5 and len(s0["卡片"]) == 5 and "no .hub-annual" not in s0
     for c in s0["卡片"]:
