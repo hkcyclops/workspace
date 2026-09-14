@@ -70,6 +70,12 @@ jobs:
       - name: Pack to JS
         run: python scripts/fund_data.py pack
 
+      # ④-2 重建 06 的年度回報資料（data/annual-returns.js）
+      #      年度回報只採計「已完結的日曆年」，所以同一年內每天重跑結果完全相同，
+      #      不會產生多餘提交；跨年後會自動多一個年份（起點固定 2021）。
+      - name: Rebuild annual returns (06)
+        run: python scripts/build_annual_returns.py
+
       # ⑤ 抓取後的快照
       - name: After
         run: python scripts/fund_data.py check | tee /tmp/after.txt
