@@ -12,26 +12,31 @@ import io, os, re, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET = os.path.join(HERE, "_deploy-workspace", "06-fund-portfolio-workbench.html")
-MARKER = "HUB_ANNUAL_RETURNS_V6"
+MARKER = "HUB_ANNUAL_RETURNS_V8"
 
 JS = r"""
-/* HUB_ANNUAL_RETURNS_V6：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V8：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
   var CSS =
-    '.hub-annual{background:#fffdf8;border:1px solid #e1d6c4;padding:20px 22px;margin:22px 0 0;' +
+    '.hub-annual{border-top:1px solid #dfd3c2;margin:24px 0 0;padding:20px 0 0;' +
       'font-family:"Noto Sans TC",ui-sans-serif,system-ui,sans-serif;color:#202124}' +
-    '.hub-annual-eyebrow{margin:0 0 5px;font-size:10px;font-weight:800;letter-spacing:1.5px;line-height:15px;color:#9b1730}' +
+    '.hub-annual-eyebrow{display:flex;align-items:center;margin:0 0 5px;font-size:10px;font-weight:800;' +
+      'letter-spacing:1.5px;line-height:15px;color:#9b1730}' +
+    '.hub-annual-eyebrow span{display:block;width:20px;height:1px;background:#c8a85b;flex:0 0 auto}' +
     '.hub-annual-title{margin:0;font-family:Georgia,"Noto Serif TC",serif;font-size:20px;font-weight:500;line-height:30px;color:#202124}' +
-    '.hub-annual-plot{position:relative;height:170px;margin:18px 0 0;border-bottom:1px solid #e1d6c4}' +
-    '.hub-annual-zero{position:absolute;left:0;right:0;height:1px;background:#e1d6c4}' +
+    '.hub-annual-chart{position:relative;margin:18px 0 0;padding-left:42px}' +
+    '.hub-annual-plot{position:relative;height:170px}' +
+    '.hub-annual-grid{position:absolute;left:0;right:0;height:1px;background:#eadfce}' +
+    '.hub-annual-zero{position:absolute;left:0;right:0;height:1px;background:#dfd3c2}' +
+    '.hub-annual-ylab{position:absolute;left:0;width:36px;text-align:right;font-size:10px;line-height:1;color:#938878}' +
     '.hub-annual-col{position:absolute;top:0;bottom:0}' +
-    '.hub-annual-bar{position:absolute;left:14%;right:14%}' +
-    '.hub-annual-x{display:flex;margin-top:7px}' +
-    '.hub-annual-x span{flex:1;text-align:center;font-size:11px;font-weight:400;color:#202124}' +
+    '.hub-annual-bar{position:absolute;left:14%;right:14%;border-radius:3px}' +
+    '.hub-annual-x{display:flex;margin:7px 0 0 42px}' +
+    '.hub-annual-x span{flex:1;text-align:center;font-size:10px;font-weight:400;color:#202124}' +
     '.hub-annual-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:9px}' +
-    '.hub-annual-card{background:#f9f2e7;padding:8px}' +
+    '.hub-annual-card{background:#f9f2e7;border-top:2px solid #c8a85b;padding:8px}' +
     '.hub-annual-card b{display:block;font-size:10px;font-weight:700;line-height:15px;color:#8f0d25}' +
     '.hub-annual-card span{display:block;margin-top:2px;font-family:Georgia,serif;font-size:15px;font-weight:400;line-height:22.5px;color:#403126}' +
     '.hub-annual-dca{margin:12px 0 0;font-size:12px;line-height:1.7;color:#6b6d70}' +
@@ -121,39 +126,66 @@ JS = r"""
     return e;
   }
 
+  function niceTicks(lo, hi, count){
+    var span = (hi - lo) || 1;
+    var raw = span / count;
+    var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+    var start = Math.floor(lo / step) * step, end = Math.ceil(hi / step) * step;
+    var ticks = [];
+    for (var v = start; v <= end + step / 2; v += step) ticks.push(Math.round(v * 1000) / 1000);
+    return ticks;
+  }
+
   function renderOverview(box){
     var YS = years();
     var vals = YS.map(function(y){ return portValue(y, 0); });
     var ratios = YS.map(function(y){ return portValue(y, 1); });
     var finite = vals.filter(function(v){ return v !== null && v !== undefined && !isNaN(v); });
-    var top = Math.max.apply(null, [0].concat(finite));
-    var bot = Math.min.apply(null, [0].concat(finite));
-    if (finite.length === 0){ top = 1; bot = 0; }
-    var span = (top - bot) || 1, H = 170;
-    var y0 = top / span * H;
+    var lo = Math.min.apply(null, [0].concat(finite));
+    var hi = Math.max.apply(null, [0].concat(finite));
+    var ticks = niceTicks(lo, hi, 4);
+    var tMin = ticks[0], tMax = ticks[ticks.length - 1];
+    var H = 170;
+    var Y = function(v){ return (tMax - v) / ((tMax - tMin) || 1) * H; };
 
+    var chart = el('div', 'hub-annual-chart');
     var plot = el('div', 'hub-annual-plot');
-    plot.appendChild((function(){ var z = el('div', 'hub-annual-zero'); z.style.top = Math.round(y0) + 'px'; return z; })());
+    ticks.forEach(function(t){
+      var g = el('div', 'hub-annual-grid');
+      g.style.top = Math.round(Y(t)) + 'px';
+      plot.appendChild(g);
+      var lab = el('div', 'hub-annual-ylab');
+      lab.textContent = Math.round(t) + '%';
+      lab.style.top = Math.round(Y(t) - 5) + 'px';
+      chart.appendChild(lab);
+    });
+    var zl = el('div', 'hub-annual-zero');
+    zl.style.top = Math.round(Y(0)) + 'px';
+    plot.appendChild(zl);
+
     vals.forEach(function(v, i){
       var isN = (v === null || v === undefined || isNaN(v));
       var col = el('div', 'hub-annual-col');
       col.style.left = (i * 100 / YS.length) + '%';
       col.style.width = (100 / YS.length) + '%';
       var bar = el('div', 'hub-annual-bar');
-      bar.style.background = (v === null || v === undefined || isNaN(v)) ? '#cbbfae'
-                           : (v >= 0 ? '#8f0d25' : '#b77a45');
+      bar.style.background = isN ? '#cbbfae' : (v >= 0 ? '#8f0d25' : '#b77a45');
+      var y0 = Y(0);
       if (isN){
         bar.style.top = Math.round(y0) + 'px';
         bar.style.height = '2px';
       } else {
-        var yv = (top - v) / span * H;
+        var yv = Y(v);
         if (v >= 0){ bar.style.top = Math.round(yv) + 'px'; bar.style.height = Math.max(2, Math.round(y0 - yv)) + 'px'; }
         else { bar.style.top = Math.round(y0) + 'px'; bar.style.height = Math.max(2, Math.round(yv - y0)) + 'px'; }
       }
       col.appendChild(bar);
       plot.appendChild(col);
     });
-    box.appendChild(plot);
+    chart.appendChild(plot);
+    box.appendChild(chart);
 
     var ax = el('div', 'hub-annual-x');
     YS.forEach(function(y){ ax.appendChild(el('span', '', String(y))); });
@@ -228,7 +260,10 @@ JS = r"""
       sec.setAttribute('data-hub-annual', 'v1');
       sec.appendChild((function(){
         var head = el('div', 'hub-annual-head');
-        head.appendChild(el('p', 'hub-annual-eyebrow', '06 / CALENDAR-YEAR RETURNS'));
+        var eb = el('p', 'hub-annual-eyebrow');
+        eb.appendChild(el('span'));
+        eb.appendChild(document.createTextNode(' 06 / CALENDAR-YEAR RETURNS'));
+        head.appendChild(eb);
         var YS = years();
         head.appendChild(el('h3', 'hub-annual-title',
           '年度回报 ' + (YS.length ? (YS[0] + '–' + YS[YS.length - 1]) : '')));

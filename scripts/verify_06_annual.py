@@ -84,7 +84,18 @@ with sync_playwright() as p:
                 卡標籤色: getComputedStyle(cb).color, 卡數值字體: getComputedStyle(cs).fontFamily,
                 卡背景: getComputedStyle(sec.querySelector('.hub-annual-card')).backgroundColor,
                 柱: bars.slice(0, 5), 卡片值: cards,
-                有副標: !!sec.querySelector('.hub-annual-sub'), 有頁尾: !!sec.querySelector('.hub-annual-foot')};
+                有副標: !!sec.querySelector('.hub-annual-sub'), 有頁尾: !!sec.querySelector('.hub-annual-foot'),
+                // 四項與頁面統一的細節
+                section上線: getComputedStyle(sec).borderTop, section下線: getComputedStyle(sec).borderBottom,
+                眉標金線: (function(){ const s2 = sec.querySelector('.hub-annual-eyebrow span');
+                    if (!s2) return null; const c = getComputedStyle(s2);
+                    return {w: c.width, h: c.height, bg: c.backgroundColor}; })(),
+                卡片金線: getComputedStyle(sec.querySelector('.hub-annual-card')).borderTop,
+                柱圓角: getComputedStyle(sec.querySelector('.hub-annual-bar')).borderRadius,
+                網格線數: sec.querySelectorAll('.hub-annual-grid').length,
+                y刻度: Array.from(sec.querySelectorAll('.hub-annual-ylab')).map(x => x.textContent),
+                x標籤: (function(){ const e = sec.querySelector('.hub-annual-x span'); const c = getComputedStyle(e);
+                    return {weight: c.fontWeight, size: c.fontSize, color: c.color}; })()};
     }""")
     print(f"① 位置在「各期間表現」後 = {pos_ok}｜資料載入 = {loaded}｜標題 = {s0['標題']}")
     print(f"   眉標 {style['眉標色']} / {style['眉標字級']}｜標題 {style['標題字體'][:22]} / {style['標題字級']}")
@@ -97,6 +108,15 @@ with sync_playwright() as p:
     ok &= style["卡標籤色"] == "rgb(143, 13, 37)" and "Georgia" in style["卡數值字體"]
     ok &= style["卡背景"] == "rgb(249, 242, 231)"
     ok &= not style["有副標"] and not style["有頁尾"]
+    print(f"   統一細節：section 上線 {style['section上線']}｜眉標金線 {style['眉標金線']}｜卡片金線 {style['卡片金線']}")
+    print(f"             柱圓角 {style['柱圓角']}｜網格線 {style['網格線數']} 條｜y 刻度 {style['y刻度']}")
+    ok &= style["section上線"].startswith("1px solid rgb(223, 211, 194)") and style["section下線"].startswith("0px")
+    ok &= style["眉標金線"] == {"w": "20px", "h": "1px", "bg": "rgb(200, 168, 91)"}
+    ok &= style["卡片金線"].startswith("2px solid rgb(200, 168, 91)")
+    ok &= style["柱圓角"] == "3px" and style["網格線數"] >= 3
+    ok &= len(style["y刻度"]) == style["網格線數"] and all(t.endswith("%") for t in style["y刻度"])
+    print(f"             x 標籤 {style['x標籤']}（頁面為 400 / 10px / rgb(32,33,36)）")
+    ok &= style["x標籤"] == {"weight": "400", "size": "10px", "color": "rgb(32, 33, 36)"}
     # 正值用 06 品牌紅、負值用棕（與 06 自己的各期間長條圖一致）
     for card, bar in zip(style["卡片值"], style["柱"]):
         if card.strip() == "N/A":
