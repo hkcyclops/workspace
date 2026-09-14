@@ -23,7 +23,7 @@
     font-family:"Noto Sans TC",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
     font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased;min-width:320px}
   .wrap{max-width:100%;margin:0 auto;padding:34px clamp(16px,2.2vw,44px) 70px}
-  header.masthead{border-bottom:2px solid var(--red);padding-bottom:18px;margin-bottom:20px}
+  header.masthead{border-bottom:2px solid var(--red);padding-bottom:18px;margin-bottom:20px;position:relative}
   .eyebrow{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.16em;margin:0 0 8px}
   h1{font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;margin:0;color:var(--ink);line-height:1.35}
   .sub{color:var(--ink-2);font-size:14px;margin:12px 0 0;line-height:1.8}
@@ -107,7 +107,7 @@
   a.flink{color:inherit;text-decoration:none;border-bottom:1px solid #d8c8b3}
   a.flink:hover{color:var(--red);border-bottom-color:var(--red)}
   .langsw{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line-3);background:var(--surface);
-    line-height:1;margin:16px 0 0;vertical-align:middle}
+    line-height:1;position:absolute;top:0;right:0;vertical-align:middle}
   .langsw-lbl{color:var(--gray);font-size:10px;font-weight:800;letter-spacing:.08em;padding:0 6px 0 5px;
     font-family:ui-monospace,Consolas,monospace}
   .langbtn{color:var(--ink-2);min-width:30px;text-align:center;text-decoration:none;padding:7px 6px;
@@ -118,6 +118,8 @@
     .tip-pop{left:auto;right:0;transform:translateY(-4px)}
     .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{transform:translateY(0)}
     .spark{width:200px;height:58px}
+    .langsw{position:static;margin:12px 0 0}
+    .langsw-lbl{display:none}
   }
   footer{margin-top:28px;color:var(--gray);font-size:13px;line-height:1.8}
 </style>
@@ -126,17 +128,17 @@
 <div class="wrap">
 
 <header class="masthead">
+  <div class="langsw" role="group" aria-label="切換中文顯示">
+    <span class="langsw-lbl">LANG</span>
+    <a class="langbtn is-on" data-lang="traditional" href="fund-ranking.html">繁</a>
+    <a class="langbtn" data-lang="simplified" href="fund-ranking-sc.html">简</a>
+  </div>
   <p class="eyebrow">AIA · TMP2 / FUND MONTHLY RANKING</p>
   <h1>基金月榜 - 8月</h1>
   <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:13.5px">&larr; 返回 06 基金組合測算</a></p>
   <p class="sub">計算基準日 <b>2026-08-31</b>（每月最後一個交易日；各檔取該月最後一個有資料的交易日）。
      統一以<b>近 1／3／5 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。</p>
   <nav class='monthnav' aria-label='月份切換'><a class='mnav' href='fund-ranking-2026-07.html'>&lsaquo; 前一月</a><label class='mnav mnav-sel'><span>月份</span><select aria-label='選擇月份' onchange="if(this.value) location.href=this.value"><option value='fund-ranking.html' selected>2026-08</option><option value='fund-ranking-2026-07.html'>2026-07</option></select></label><span class='mnav off'>最新月份 &rsaquo;</span></nav>
-  <div class="langsw" role="group" aria-label="切換中文顯示">
-    <span class="langsw-lbl">LANG</span>
-    <a class="langbtn is-on" data-lang="traditional" href="fund-ranking.html">繁</a>
-    <a class="langbtn" data-lang="simplified" href="fund-ranking-sc.html">简</a>
-  </div>
 </header>
 
 <div class="tabs" role="tablist">
@@ -375,22 +377,58 @@
       p.classList.toggle('is-on', p.getAttribute('data-panel') === name);
     });
   }
+  function showCat(k){
+    var found = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.cat'), function(x){
+      var on = x.getAttribute('data-cat') === k;
+      if (on) found = true;
+      x.classList.toggle('is-on', on);
+    });
+    if (!found) return false;
+    Array.prototype.forEach.call(document.querySelectorAll('.catblock'), function(x){
+      x.classList.toggle('is-on', x.getAttribute('data-cat') === k);
+    });
+    return true;
+  }
+
+  /* 檢視狀態（tab / 類別）寫進網址，並讓月份導覽與語言鈕帶住狀態 → 換月不跳回派息榜 */
+  var state = {tab: 'div', cat: 'all'};
+  function qs(){
+    var p = [];
+    if (state.tab !== 'div') p.push('tab=' + state.tab);
+    if (state.cat !== 'all') p.push('cat=' + state.cat);
+    return p.length ? '?' + p.join('&') : '';
+  }
+  function syncLinks(){
+    var q = qs();
+    function fix(el, attr){
+      var base = el.getAttribute('data-base');
+      if (base === null){
+        base = (attr === 'value' ? el.value : el.getAttribute('href')) || '';
+        el.setAttribute('data-base', base);
+      }
+      var url = base + q;
+      if (attr === 'value') el.value = url; else el.setAttribute('href', url);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.monthnav a.mnav[href]'), function(a){ fix(a, 'href'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.monthnav option'), function(o){ fix(o, 'value'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.langbtn[href]'), function(a){ fix(a, 'href'); });
+  }
+  function sync(){
+    if (history.replaceState) history.replaceState(null, '', location.pathname + qs());
+    syncLinks();
+  }
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
     b.addEventListener('click', function(){
-      var name = b.getAttribute('data-tab');
-      showTab(name);
-      if (history.replaceState) history.replaceState(null, '', '?tab=' + name);
+      state.tab = b.getAttribute('data-tab');
+      showTab(state.tab);
+      sync();
     });
   });
   Array.prototype.forEach.call(document.querySelectorAll('.cat'), function(b){
     b.addEventListener('click', function(){
       var k = b.getAttribute('data-cat');
-      Array.prototype.forEach.call(document.querySelectorAll('.cat'), function(x){
-        x.classList.toggle('is-on', x === b);
-      });
-      Array.prototype.forEach.call(document.querySelectorAll('.catblock'), function(x){
-        x.classList.toggle('is-on', x.getAttribute('data-cat') === k);
-      });
+      if (showCat(k)){ state.cat = k; sync(); }
     });
   });
 
@@ -535,8 +573,12 @@
     if (open) placePop(open);
   });
 
-  var m = /[?&]tab=(div|nav)/.exec(location.search);
-  showTab(m ? m[1] : 'div');
+  var mTab = /[?&]tab=(div|nav)/.exec(location.search);
+  if (mTab) state.tab = mTab[1];
+  var mCat = /[?&]cat=([a-z]+)/.exec(location.search);
+  if (mCat && showCat(mCat[1])) state.cat = mCat[1];
+  showTab(state.tab);
+  sync();
 
   /* 語言：1) 跟隨 06（同源 localStorage 'calculator-hub-language'）2) 本頁切換時寫回同一鍵 */
   var PAGE_LANG = 'tr';
