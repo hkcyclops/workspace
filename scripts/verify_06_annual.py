@@ -233,33 +233,55 @@ with sync_playwright() as p:
     ok &= "各期" in (pr["接在各期後"] or "") and "年度" in (pr["主標題"] or "")
     ok &= pr["卡金線"] == "rgb(186, 141, 53)"
 
-    # ⑧ 列印模板的 y 軸疊字修正：同位置、同數值的重複標籤要被隱藏
+    # ⑧ 列印版所有圖表的 y 軸：可見標籤之間不得靠太近（<12px 會疊字），且字體需一致
     axis = pop.evaluate("""() => {
-        const h = Array.from(document.querySelectorAll('article.chart-card h3')).find(x => /各期/.test(x.textContent));
-        const svg = h.closest('article').querySelector('svg');
-        return Array.from(svg.querySelectorAll('text'))
-            .filter(t => parseFloat(t.getAttribute('x')) < 20)
-            .map(t => ({txt: t.textContent.trim(), y: parseFloat(t.getAttribute('y')), hidden: t.style.display === 'none'}));
+        const out = [];
+        Array.from(document.querySelectorAll('article.chart-card')).forEach(art => {
+            const h = ((art.querySelector('h3') || {}).textContent || '').trim();
+            const svg = art.querySelector('svg');
+            if (!svg) return;
+            const labs = Array.from(svg.querySelectorAll('text'))
+                .filter(t => parseFloat(t.getAttribute('x')) < 20)
+                .map(t => {
+                    const c = getComputedStyle(t);
+                    return {txt: t.textContent.trim(), y: parseFloat(t.getAttribute('y')),
+                            hidden: t.style.display === 'none', size: c.fontSize, weight: c.fontWeight, fill: c.fill};
+                });
+            out.push({chart: h, labs: labs});
+        });
+        return out;
     }""")
+    bad = []
+    for ch in axis:
+        vis_ch = sorted([a for a in ch["labs"] if not a["hidden"]], key=lambda x: x["y"])
+        for i in range(1, len(vis_ch)):
+            if vis_ch[i]["y"] - vis_ch[i - 1]["y"] < 12:
+                bad.append((ch["chart"], vis_ch[i - 1]["txt"], vis_ch[i]["txt"], round(vis_ch[i]["y"] - vis_ch[i - 1]["y"], 1)))
+    styles = set((a["size"], a["weight"], a["fill"]) for ch in axis for a in ch["labs"])
+    print(f"⑧ 列印 y 軸：靠太近的標籤 {bad}")
+    for ch in axis:
+        if ch["labs"]:
+            print(f"     {ch['chart']}: 可見 {[a['txt'] for a in ch['labs'] if not a['hidden']]}"
+                  f"｜隱藏 {[a['txt'] for a in ch['labs'] if a['hidden']]}")
+    print(f"     標籤字體集合（所有圖表）：{styles}（應只有一組，代表字體一致）")
+    ok &= not bad and len(styles) == 1
 
-    def axis_num(s):
-        m = re.sub(r"[^0-9.+-]", "", s or "")
-        try:
-            return float(m)
-        except ValueError:
-            return None
-
-    vis = [a for a in axis if not a["hidden"]]
-    clash = [(a["txt"], b["txt"]) for i, a in enumerate(vis) for b in vis[i + 1:]
-             if abs(a["y"] - b["y"]) < 6 and axis_num(a["txt"]) == axis_num(b["txt"])]
-    # 不變式：同一個 y 位置、同一個數值，最多只能有一個「可見」標籤（重複者需被隱藏）
-    groups = {}
-    for a in axis:
-        key = (round(a["y"] / 6), axis_num(a["txt"]))
-        groups[key] = groups.get(key, 0) + (0 if a["hidden"] else 1)
-    over = [k for k, v in groups.items() if v > 1]
-    print(f"⑧ 列印『各期』y 軸：可見 {[a['txt'] for a in vis]}｜隱藏 {[a['txt'] for a in axis if a['hidden']]}｜重疊衝突 {clash}｜超額 {over}")
-    ok &= not clash and not over
+    # ⑨ 柱值標籤不得壓到 x 軸標籤列（負值小柱原本會疊在「3个月」上）
+    barhit = pop.evaluate("""() => {
+        const hits = [];
+        Array.from(document.querySelectorAll('article.chart-card svg')).forEach(svg => {
+            const xRow = Math.max(...Array.from(svg.querySelectorAll('text.bar-label'))
+                .map(t => parseFloat(t.getAttribute('y')) || 0), 0);
+            if (!xRow) return;
+            Array.from(svg.querySelectorAll('text.bar-value')).forEach(t => {
+                const y = parseFloat(t.getAttribute('y'));
+                if (Math.abs(y - xRow) < 15) hits.push(t.textContent.trim());
+            });
+        });
+        return hits;
+    }""")
+    print(f"⑨ 列印柱值標籤壓到 x 標籤列：{barhit}（應為空）")
+    ok &= not barhit
 
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs

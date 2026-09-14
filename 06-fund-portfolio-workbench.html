@@ -869,7 +869,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   window.addEventListener('load', function(){ setTimeout(cleanup, 4000); });
 })();
 </script><script>
-/* HUB_ANNUAL_RETURNS_V11：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V13：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
@@ -1160,8 +1160,10 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
     return h ? h.closest('article') : null;
   }
 
-  /* 列印模板的小 bug：資料最小值為 0 時，「0%」基準標籤與最小值標籤（如 +0.0%）會畫在同一個 y，
-     印出來變成疊字（0%0%）。這裡把「同位置且數值相同」的重複軸標籤隱藏，保留文字較短的那個。 */
+  /* 列印模板的軸標籤問題：最大值／基準線／最小值三個標籤是各自算 y 的，
+     當最小值接近 0（或最小值為 0）時會與「0%」基準標籤畫在幾乎同一位置 →
+     印出來疊字（看起來又粗又大）。規則：同一位置（<12px）的標籤只留一個，
+     優先保留「0%」基準標籤，否則保留最上面那個。 */
   function numOf(t){
     var s = (t || '').replace(/[^0-9.+-]/g, '');
     var v = parseFloat(s);
@@ -1171,18 +1173,52 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
     Array.prototype.forEach.call(doc.querySelectorAll('article.chart-card svg'), function(svg){
       var labs = Array.prototype.slice.call(svg.querySelectorAll('text'))
         .filter(function(t){ return parseFloat(t.getAttribute('x')) < 20 && t.style.display !== 'none'; });
-      var kept = [];
       labs.sort(function(a, b){ return parseFloat(a.getAttribute('y')) - parseFloat(b.getAttribute('y')); });
+      var kept = [];
       labs.forEach(function(t){
-        var y = parseFloat(t.getAttribute('y')), v = numOf(t.textContent);
-        var dup = kept.filter(function(k){
-          return Math.abs(parseFloat(k.getAttribute('y')) - y) < 6 && numOf(k.textContent) === v;
-        })[0];
-        if (!dup){ kept.push(t); return; }
-        var a = (dup.textContent || '').trim(), b = (t.textContent || '').trim();
-        var worse = (a.length <= b.length) ? t : dup;
-        worse.style.display = 'none';
-        worse.setAttribute('data-hub-axis-hidden', '1');
+        var y = parseFloat(t.getAttribute('y'));
+        var near = kept.filter(function(k){ return Math.abs(parseFloat(k.getAttribute('y')) - y) < 12; });
+        if (!near.length){ kept.push(t); return; }
+        var group = near.concat([t]);
+        var keeper = group.filter(function(k){ return numOf(k.textContent) === 0; })[0] || group[0];
+        group.forEach(function(k){
+          if (k === keeper) return;
+          k.style.display = 'none';
+          k.setAttribute('data-hub-axis-hidden', '1');
+          var idx = kept.indexOf(k);
+          if (idx > -1) kept.splice(idx, 1);
+        });
+        if (kept.indexOf(keeper) < 0) kept.push(keeper);
+      });
+
+      /* 第二種疊字：負值柱的數值標籤會落在 x 軸標籤那一列上（例如 -0.8% 疊在「3个月」上）。
+         這些柱值標籤改放到柱頂上方（若太靠頂就改放柱底下方）。 */
+      var xRow = 0;
+      Array.prototype.forEach.call(svg.querySelectorAll('text.bar-label'), function(t){
+        xRow = Math.max(xRow, parseFloat(t.getAttribute('y')) || 0);
+      });
+      if (!xRow) return;
+      var rects = Array.prototype.slice.call(svg.querySelectorAll('rect'));
+      Array.prototype.forEach.call(svg.querySelectorAll('text.bar-value'), function(t){
+        var y = parseFloat(t.getAttribute('y'));
+        if (Math.abs(y - xRow) >= 15) return;
+        var cx = parseFloat(t.getAttribute('x'));
+        var best = null, bestD = 1e9;
+        rects.forEach(function(r){
+          var rx = parseFloat(r.getAttribute('x')) + parseFloat(r.getAttribute('width')) / 2;
+          var d = Math.abs(rx - cx);
+          if (d < bestD){ bestD = d; best = r; }
+        });
+        var ny = null;
+        if (best && bestD < 40){
+          var top = parseFloat(best.getAttribute('y'));
+          ny = top - 4;
+          if (ny < 12) ny = top + parseFloat(best.getAttribute('height')) + 10;
+        } else {
+          ny = y - 16;
+        }
+        t.setAttribute('y', ny.toFixed(1));
+        t.setAttribute('data-hub-moved', '1');
       });
     });
   }
