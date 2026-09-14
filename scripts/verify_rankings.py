@@ -107,7 +107,20 @@ with sync_playwright() as p:
     print("  縮略圖（第 10 列，表格底部）:", low)
     ok &= (not low.get("err")) and low["完整可見"] and low["翻到上方"]
 
-    # 基金名連結 → 06 帶 ?fund=（兩張榜都要有）
+    # 基金名連結 → 06 帶 ?fund= 與期間 &y=1|3|5（每張表要對應自己的期間）
+    per_table = pg.evaluate("""() => Array.from(document.querySelectorAll(".catblock.is-on section.card"))
+        .map(card => Array.from(card.querySelectorAll('.flink')).map(a => {
+            const m = /[?&]y=(\\d+)/.exec(a.getAttribute('href')); return m ? m[1] : null;
+        }))""")
+    div_y = pg.evaluate("""() => Array.from(document.querySelectorAll(".panel[data-panel='div'] section.card"))
+        .map(card => Array.from(card.querySelectorAll('.flink')).map(a => {
+            const m = /[?&]y=(\\d+)/.exec(a.getAttribute('href')); return m ? m[1] : null;
+        }))""")
+    print("  非派息各表期間:", [sorted(set(v)) for v in per_table])
+    print("  派息各表期間:", [sorted(set(v)) for v in div_y])
+    ok &= [sorted(set(v)) for v in per_table] == [["1"], ["3"], ["5"]]
+    ok &= [sorted(set(v)) for v in div_y] == [["1"], ["3"], ["5"]]
+
     links = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .flink",
                                     "els=>els.slice(0,3).map(e=>e.getAttribute('href')+' | '+e.textContent.slice(0,18))")
     div_links = pg.eval_on_selector_all(".panel[data-panel='div'] .flink", "els=>els.length")

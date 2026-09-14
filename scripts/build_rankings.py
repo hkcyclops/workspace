@@ -250,8 +250,8 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
             pr = prev.get(c, "NA") if is_latest else None
             out.append(
                 f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}' "
-                f"title='在 06 開啟 {c} 的走勢圖'>{html.escape((meta[c].get('name') or '').strip())}</a></td><td>{b}</td>"
+                f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={yrs}' "
+                f"title='在 06 開啟 {c} 的 {yrs} 年走勢圖'>{html.escape((meta[c].get('name') or '').strip())}</a></td><td>{b}</td>"
                 f"<td class='num'>{rate:.2f}%</td>"
                 f"<td class='num {cls(r['total'])}'>{pct(r['total'])}</td>"
                 f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
@@ -358,8 +358,8 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
                     sparks[skey] = sp
                 out.append(
                     f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}' "
-                    f"title='在 06 開啟 {c} 的走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
+                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={yrs}' "
+                    f"title='在 06 開啟 {c} 的 {yrs} 年走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
                     f"<span class='tag'>{hedged}</span></td>"
                     f"<td>{f.get('currencyCode') or '—'}</td><td>{catlabel}</td>"
                     + tip_cell(pct(r["total"]), skey, "r1", cls(r["total"]))
