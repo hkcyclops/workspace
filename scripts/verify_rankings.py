@@ -87,13 +87,13 @@ with sync_playwright() as p:
     ok &= (not sp.get("err")) and sp["浮動到body"] and 40 <= sp["點數"] <= 50 and sp["陰影帶"] == 2 \
         and sp["深色帶"] and sp["淺色帶"] and sp["虛線"] == 2 and sp["圓點"] == 2
 
-    # 第 10 列（表格底部）：先把該列捲到視窗底部再 hover → 提示框需自動上彈且完整可見
+    # 第 10 列：把該列精準定位到「視窗底部上方 60px」再 hover → 提示框必須自動上彈且完整可見
     pg.evaluate("""() => {
         const t = document.querySelector(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(10) .tip-cell[data-c='mdd']");
-        t.scrollIntoView({block: 'end'});
-        window.scrollBy(0, -24);
+        const r = t.getBoundingClientRect();
+        window.scrollTo(0, window.scrollY + r.bottom - window.innerHeight + 60);
     }""")
-    pg.wait_for_timeout(500)
+    pg.wait_for_timeout(350)
     pg.hover(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(10) .tip-cell[data-c='mdd']")
     pg.wait_for_timeout(450)
     low = pg.evaluate("""() => {

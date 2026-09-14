@@ -257,11 +257,11 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
                 f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
                 f"<td class='num'>{pct(r['div'])}</td>"
                 f"<td class='num {cls(r['nav'])}'>{pct(r['nav'])}</td></tr>")
-        note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名"
+        note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名；依<b>實際總報酬</b>（派息＋淨值）排序"
         if yrs == 5:
             note += "；5 年區間含 2022 年股債雙殺，數字普遍偏低，屬區間效應"
         note += arrow_note(is_latest, m)
-        blocks.append(table((f"{yrs} 年期", f"近 {yrs} 年實際總報酬排名"), head, out, note))
+        blocks.append(table((f"{yrs} 年期", f"近 {yrs} 年最佳表現基金"), head, out, note))
     return ''.join(blocks), ends
 
 
@@ -368,9 +368,9 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
                     + tip_cell(f"{r['mdd']:.1f}%", skey, "mdd", cls(r["mdd"]))
                     + tip_cell(rec_txt(r), skey, "rec")
                     + "</tr>")
-            note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名"
+            note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名；依<b>淨值回報</b>排序"
             note += arrow_note(is_latest, m)
-            inner.append(table((f"{yrs} 年期", f"近 {yrs} 年淨值回報排名"), head, out, note))
+            inner.append(table((f"{yrs} 年期", f"近 {yrs} 年最佳表現基金"), head, out, note))
         counts[key] = n_ok
         on = " is-on" if key == "all" else ""
         catblocks.append(f"<div class='catblock{on}' data-cat='{key}'>{''.join(inner)}</div>")
@@ -384,23 +384,49 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
     return f"<div class='catbar'>{''.join(chips)}</div>{''.join(catblocks)}", ends
 
 
-def month_nav(y, m, is_latest):
+def fname_for(y, m, lang):
+    """各月份／語言的檔名（最新月份的繁體版固定為 fund-ranking.html）"""
+    latest = (y, m) == MONTHS[0]
+    suf = "" if lang == "tr" else "-sc"
+    return ("fund-ranking" if latest else f"fund-ranking-{y}-{m:02d}") + suf + ".html"
+
+
+def month_nav_tpl(y, m, is_latest):
+    """月份導覽（以 __URL_*__ 佔位，產檔時再依語言替換）"""
     opts = []
     for (yy, mm) in MONTHS:
         sel = " selected" if (yy, mm) == (y, m) else ""
-        opts.append(f"<option value='./fund-ranking-{yy}-{mm:02d}.html'{sel}>{yy}-{mm:02d}</option>")
+        opts.append(f"<option value='__URL_{yy}-{mm:02d}__'{sel}>{yy}-{mm:02d}</option>")
     idx = MONTHS.index((y, m))
     if idx + 1 < len(MONTHS):
         oy, om = MONTHS[idx + 1]
-        prev_html = f"<a class='mnav' href='./fund-ranking-{oy}-{om:02d}.html'>&lsaquo; 前一月</a>"
+        prev_html = f"<a class='mnav' href='__URL_{oy}-{om:02d}__'>&lsaquo; 前一月</a>"
     else:
         prev_html = "<span class='mnav off'>&lsaquo; 前一月</span>"
     next_html = ("<span class='mnav off'>最新月份 &rsaquo;</span>" if is_latest
-                 else "<a class='mnav' href='./fund-ranking.html'>最新月份 &rsaquo;</a>")
+                 else "<a class='mnav' href='__URL_LATEST__'>最新月份 &rsaquo;</a>")
     return (f"<nav class='monthnav' aria-label='月份切換'>{prev_html}"
             f"<label class='mnav mnav-sel'><span>月份</span>"
             f"<select aria-label='選擇月份' onchange=\"if(this.value) location.href=this.value\">"
             f"{''.join(opts)}</select></label>{next_html}</nav>")
+
+
+def localize(html, y, m, lang):
+    """把佔位符替換成該語言的網址與語言標記"""
+    other = "sc" if lang == "tr" else "tr"
+    out = (html
+           .replace("__URL_LATEST__", fname_for(MONTHS[0][0], MONTHS[0][1], lang))
+           .replace("__URL_TR__", fname_for(y, m, "tr"))
+           .replace("__URL_SC__", fname_for(y, m, "sc"))
+           .replace("__SELF__", fname_for(y, m, lang))
+           .replace("__OTHER__", fname_for(y, m, other))
+           .replace("__LANGTAG__", "zh-HK" if lang == "tr" else "zh-Hans")
+           .replace("__LANGVAL__", lang)
+           .replace("__TR_ON__", " is-on" if lang == "tr" else "")
+           .replace("__SC_ON__", " is-on" if lang == "sc" else ""))
+    for (yy, mm) in MONTHS:
+        out = out.replace(f"__URL_{yy}-{mm:02d}__", fname_for(yy, mm, lang))
+    return out
 
 
 STYLE = """
@@ -410,8 +436,11 @@ STYLE = """
     --line:#e1d6c4; --line-2:#eee3d4; --line-3:#d8c8b3;
     --ink:#342d28; --ink-2:#5e5145; --th-ink:#49372f;
     --red:#8f0d25; --gray:#8c7d70;
-    --gain:#b13446; --loss:#347558;
+    --up:#b13446; --down:#347558;
   }
+  /* 漲跌色：繁體版＝綠漲紅跌、簡體版＝紅漲綠跌（跟隨頁面 data-lang） */
+  html[data-lang="tr"]{--up:#347558;--down:#b13446}
+  html[data-lang="sc"]{--up:#b13446;--down:#347558}
   *{box-sizing:border-box}
   body{margin:0;background:var(--page);color:var(--ink);
     background-image:linear-gradient(90deg,#20212407 1px,#0000 1px),linear-gradient(#20212405 1px,#0000 1px);
@@ -469,10 +498,10 @@ STYLE = """
   tbody tr:nth-child(2n){background:var(--surface-3)}
   tbody tr:hover{background:#fcf5e9}
   .num{font-family:Georgia,serif;font-variant-numeric:tabular-nums lining-nums}
-  .pos{color:var(--gain);font-weight:700}
-  .neg{color:var(--loss);font-weight:700}
-  .mv.up{color:var(--gain)}
-  .mv.down{color:var(--loss)}
+  .pos{color:var(--up);font-weight:700}
+  .neg{color:var(--down);font-weight:700}
+  .mv.up{color:var(--up)}
+  .mv.down{color:var(--down)}
   .mv.flat{color:#a89b8c}
   .note{color:var(--gray);font-size:13px;margin:10px 0 0}
   .backlink{margin:8px 0 0;font-size:13.5px}
@@ -502,6 +531,14 @@ STYLE = """
   .spark .dot{fill:#f1d58e}
   a.flink{color:inherit;text-decoration:none;border-bottom:1px solid #d8c8b3}
   a.flink:hover{color:var(--red);border-bottom-color:var(--red)}
+  .langsw{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line-3);background:var(--surface);
+    line-height:1;margin:16px 0 0;vertical-align:middle}
+  .langsw-lbl{color:var(--gray);font-size:10px;font-weight:800;letter-spacing:.08em;padding:0 6px 0 5px;
+    font-family:ui-monospace,Consolas,monospace}
+  .langbtn{color:var(--ink-2);min-width:30px;text-align:center;text-decoration:none;padding:7px 6px;
+    font-size:13px;font-weight:700}
+  .langbtn:hover{color:var(--red)}
+  .langbtn.is-on{background:var(--ink);color:#fff}
   @media (max-width:700px){
     .tip-pop{left:auto;right:0;transform:translateY(-4px)}
     .tip:hover .tip-pop,.tip:focus-within .tip-pop,.tip.is-open .tip-pop{transform:translateY(0)}
@@ -707,6 +744,24 @@ SCRIPT = """
 
   var m = /[?&]tab=(div|nav)/.exec(location.search);
   showTab(m ? m[1] : 'div');
+
+  /* 語言：1) 跟隨 06（同源 localStorage 'calculator-hub-language'）2) 本頁切換時寫回同一鍵 */
+  var PAGE_LANG = '__LANGVAL__';
+  var OTHER_URL = '__OTHER__';
+  function swapTo(url){
+    if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+    location.replace(url + location.search);
+  }
+  try {
+    var want = localStorage.getItem('calculator-hub-language');
+    if (want === 'traditional' && PAGE_LANG !== 'tr') swapTo(OTHER_URL);
+    else if (want === 'simplified' && PAGE_LANG !== 'sc') swapTo(OTHER_URL);
+  } catch (e) {}
+  Array.prototype.forEach.call(document.querySelectorAll('.langbtn'), function(a){
+    a.addEventListener('click', function(){
+      try { localStorage.setItem('calculator-hub-language', a.getAttribute('data-lang')); } catch (e) {}
+    });
+  });
 })();
 """
 
@@ -727,7 +782,7 @@ def build_page(y, m, is_latest):
     stale = "、".join(f"{c}（{d}）" for c, d in sorted(STALE_DIV.items()))
 
     HTML = f"""<!doctype html>
-<html lang="zh-HK">
+<html lang="__LANGTAG__" data-lang="__LANGVAL__">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -742,8 +797,13 @@ def build_page(y, m, is_latest):
   <h1>{TITLE}</h1>
   <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:13.5px">&larr; 返回 06 基金組合測算</a></p>
   <p class="sub">計算基準日 <b>{end_disp}</b>（每月最後一個交易日；各檔取該月最後一個有資料的交易日）。
-     派息基金以「實際總報酬」（派息 + 淨值）排序；非派息基金以「淨值回報」排序，名次可切換類別。</p>
-  {month_nav(y, m, is_latest)}
+     統一以<b>近 1／3／5 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。</p>
+  {month_nav_tpl(y, m, is_latest)}
+  <div class="langsw" role="group" aria-label="切換中文顯示">
+    <span class="langsw-lbl">LANG</span>
+    <a class="langbtn__TR_ON__" data-lang="traditional" href="__URL_TR__">繁</a>
+    <a class="langbtn__SC_ON__" data-lang="simplified" href="__URL_SC__">简</a>
+  </div>
 </header>
 
 <div class="tabs" role="tablist">
@@ -762,6 +822,7 @@ def build_page(y, m, is_latest):
   非派息榜前段多為單一行業或地區（黃金、台灣、韓國、科技），<b>高回報代表已漲多，並非買入建議</b>。
   非派息榜的數值欄<a href='#top' style='color:inherit'>（期間回報／年化回報／波動率／最大回撤／收復時間）</a>可<b>滑鼠懸停看該期間淨值走勢圖</b>（深色＝回撤期、淺色＝收復期）；<b>點基金名</b>會在 06 開啟該檔走勢圖。
   歷史資料不代表未來表現，非投資建議。
+  漲跌色跟隨語言：繁體版<b>綠漲紅跌</b>、簡體版<b>紅漲綠跌</b>（由 06 的語言設定決定，本頁右上可切換）。
 </footer>
 
 </div>
@@ -770,19 +831,29 @@ def build_page(y, m, is_latest):
 </body>
 </html>
 """
-    return HTML, f"fund-ranking-{y}-{m:02d}.html", end_disp, len(ZCODES), n_ok_nav
+    return HTML, end_disp
 
+
+try:
+    from opencc import OpenCC
+    _T2S = OpenCC("t2s").convert
+except Exception as e:                                    # opencc 不可用時只產繁體版
+    print("⚠️ opencc 不可用（%s），本次只產繁體版" % e)
+    _T2S = None
 
 for i, (y, m) in enumerate(MONTHS):
     is_latest = (i == 0)
-    HTML, fname_month, end_disp, nz, nnz = build_page(y, m, is_latest)
-    paths = [os.path.join(DEPLOY, fname_month)]
-    if is_latest:
-        paths.append(os.path.join(DEPLOY, "fund-ranking.html"))
-    for p in paths:
-        open(p, "w", encoding="utf-8", newline="").write(HTML)
-    print(f"{y}-{m:02d}：{fname_month}{' ＋ fund-ranking.html' if is_latest else ''}"
-          f"　基準 {end_disp}　{len(HTML)} bytes")
+    base, end_disp = build_page(y, m, is_latest)
+    variants = [("tr", base)]
+    if _T2S:
+        variants.append(("sc", _T2S(base)))
+    written = []
+    for lang, doc in variants:
+        out = localize(doc, y, m, lang)
+        fn = fname_for(y, m, lang)
+        open(os.path.join(DEPLOY, fn), "w", encoding="utf-8", newline="").write(out)
+        written.append(f"{fn}（{len(out)} bytes）")
+    print(f"{y}-{m:02d}　基準 {end_disp}：" + "、".join(written))
     for yrs in PERIODS:
         _, pm = rank_map(ZCODES, yrs, month_end(y, m), div_perf)
         if pm:
