@@ -27,9 +27,34 @@ DEPLOY = os.path.join(ROOT, "_deploy-workspace")
 DATA = os.path.join(DEPLOY, "data")
 
 MONTHS = [(2026, 8), (2026, 7)]       # 由新到舊；第一個＝最新月份
-TOP_DIV = {1: 10, 3: 10, 5: 5}        # 派息榜名額
-TOP_NAV = {1: 10, 3: 10, 5: 10}       # 非派息榜名額
-PERIODS = (1, 3, 5)
+TOP_DIV = {"YTD": 10, 1: 10, 3: 10, 5: 5}     # 派息榜名額
+TOP_NAV = {"YTD": 10, 1: 10, 3: 10, 5: 10}    # 非派息榜名額
+PERIODS = ("YTD", 1, 3, 5)          # YTD 排最前（最短區間）
+
+
+def plabel(p):
+    """表頭用標籤"""
+    return "YTD" if p == "YTD" else f"{p} 年"
+
+
+def pname(p):
+    """表格標題用名稱"""
+    return "YTD" if p == "YTD" else f"近 {p} 年"
+
+
+def pyears(p):
+    """年化用的年數；YTD 不年化 → None"""
+    return None if p == "YTD" else p
+
+
+def ptitle(p):
+    """表格主標題"""
+    return "YTD 最佳表現基金" if p == "YTD" else f"近 {p} 年最佳表現基金"
+
+
+def ptag(p):
+    """deep link 用的期間代號（06 的按鈕文字：YTD／1年／3年／5年）"""
+    return "YTD" if p == "YTD" else f"{p}"
 CATS = [("all", "全部"), ("stock", "股票"), ("fi", "固定收入"), ("multi", "多元資產"), ("mm", "貨幣市場")]
 
 # 非派息比較窗口內另有零星派息的 3 檔（未計入回報，頁尾註明）
@@ -92,8 +117,9 @@ def prev_month(y, m):
     return (y - 1, 12) if m == 1 else (y, m - 1)
 
 
-def window(code, years, anchor):
-    """回傳 (期初NAV, 期末NAV, 期末日, 區間點列) 或 None"""
+def window(code, period, anchor):
+    """回傳 (期初NAV, 期末NAV, 期末日, 區間點列) 或 None
+    period：'YTD'（去年最後一個交易日為基準）或 1／3／5（自期末回推年數）"""
     nav = nav_of(code)
     if not nav:
         return None
@@ -101,35 +127,48 @@ def window(code, years, anchor):
     if ie < 0:
         return None
     end_date, navh = nav[ie]
-    start = end_date - datetime.timedelta(days=int(365.25 * years))
-    i0 = bisect.bisect_left([d for d, _ in nav], start)
-    if i0 >= len(nav) or not (0 <= (nav[i0][0] - start).days <= 31):
-        return None
+    if period == "YTD":
+        start = datetime.date(end_date.year - 1, 12, 31)
+        i0 = bisect.bisect_right([d for d, _ in nav], start) - 1     # 不晚於去年底的最近一點
+        if i0 < 0 or (start - nav[i0][0]).days > 45:
+            return None
+    else:
+        start = end_date - datetime.timedelta(days=int(365.25 * period))
+        i0 = bisect.bisect_left([d for d, _ in nav], start)
+        if i0 >= len(nav) or not (0 <= (nav[i0][0] - start).days <= 31):
+            return None
     nav0 = nav[i0][1]
     if nav0 <= 0:
         return None
     return nav0, navh, end_date, nav[i0:ie + 1]
 
 
-def div_perf(code, years, anchor):
-    w = window(code, years, anchor)
+def period_start(end_date, period):
+    return (datetime.date(end_date.year - 1, 12, 31) if period == "YTD"
+            else end_date - datetime.timedelta(days=int(365.25 * period)))
+
+
+def div_perf(code, period, anchor):
+    w = window(code, period, anchor)
     if not w:
         return None
     nav0, navh, end_date, _ = w
+    start = period_start(end_date, period)
     ds = dist_of(code)
-    if not ds or ds[0][0] > end_date - datetime.timedelta(days=int(365.25 * years)) + datetime.timedelta(days=40):
+    if not ds or ds[0][0] > start + datetime.timedelta(days=40):
         return None
-    start = end_date - datetime.timedelta(days=int(365.25 * years))
     cum = sum(a for rd, a in ds if start < rd <= end_date)
     dp = cum / nav0 * 100
     np_ = (navh - nav0) / nav0 * 100
     total = dp + np_
-    return {"total": total, "ann": ((1 + total / 100) ** (1 / years) - 1) * 100,
+    yrs = pyears(period)
+    return {"total": total,
+            "ann": ((1 + total / 100) ** (1 / yrs) - 1) * 100 if yrs else None,
             "div": dp, "nav": np_, "vol": None, "mdd": None, "end": end_date}
 
 
-def nav_perf(code, years, anchor):
-    w = window(code, years, anchor)
+def nav_perf(code, period, anchor):
+    w = window(code, period, anchor)
     if not w:
         return None
     nav0, navh, end_date, pts = w
@@ -151,7 +190,9 @@ def nav_perf(code, years, anchor):
     rec_i = next((i for i in range(ti + 1, len(pts)) if pts[i][1] >= peak_v), None)
     pk_date, tr_date = pts[pi][0], pts[ti][0]
     cur = (pts[-1][1] / peak_v - 1) * 100
-    return {"total": total, "ann": ((1 + total / 100) ** (1 / years) - 1) * 100,
+    yrs = pyears(period)
+    return {"total": total,
+            "ann": ((1 + total / 100) ** (1 / yrs) - 1) * 100 if yrs else None,
             "vol": vol, "mdd": mdd, "end": end_date,
             "pk": pk_date, "tr": tr_date,
             "rec": pts[rec_i][0] if rec_i is not None else None,
@@ -236,11 +277,14 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
     blocks, ends = [], []
     TH = (th("年化派息率", "rate") + th("實際總報酬", "total") + th("年化回報", "ann")
           + th("派息貢獻", "div") + th("NAV 貢獻", "nav"))
-    head = f"<th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th>{TH}"
-    for yrs in PERIODS:
-        ranks, pm = rank_map(ZCODES, yrs, anchor, div_perf)
-        prev = rank_map(ZCODES, yrs, prev_anchor, div_perf)[0] if is_latest else {}
-        rows = sorted(pm.items(), key=lambda x: -x[1]["total"])[:TOP_DIV[yrs]]
+    TH_YTD = (th("年化派息率", "rate") + th("實際總報酬", "total")
+              + th("派息貢獻", "div") + th("NAV 貢獻", "nav"))
+    for p in PERIODS:
+        ytd = (p == "YTD")
+        head = f"<th>名次</th><th>代號</th><th>基金名</th><th>紀錄日</th>{TH_YTD if ytd else TH}"
+        ranks, pm = rank_map(ZCODES, p, anchor, div_perf)
+        prev = rank_map(ZCODES, p, prev_anchor, div_perf)[0] if is_latest else {}
+        rows = sorted(pm.items(), key=lambda x: -x[1]["total"])[:TOP_DIV[p]]
         ends += [r["end"] for _, r in rows]
         out = []
         for i, (c, r) in enumerate(rows, 1):
@@ -248,20 +292,23 @@ def build_div_panel(y, m, is_latest, anchor, prev_anchor):
             b = bucket(ds[-1][0]) if ds else ""
             rate = refs.get(c, {}).get("annualizedDistributionRate") or 0
             pr = prev.get(c, "NA") if is_latest else None
+            ann_cell = "" if ytd else f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
             out.append(
                 f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={yrs}' "
-                f"title='在 06 開啟 {c} 的 {yrs} 年走勢圖'>{html.escape((meta[c].get('name') or '').strip())}</a></td><td>{b}</td>"
+                f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={ptag(p)}' "
+                f"title='在 06 開啟 {c} 的 {plabel(p)}走勢圖'>{html.escape((meta[c].get('name') or '').strip())}</a></td><td>{b}</td>"
                 f"<td class='num'>{rate:.2f}%</td>"
                 f"<td class='num {cls(r['total'])}'>{pct(r['total'])}</td>"
-                f"<td class='num {cls(r['ann'])}'>{pct(r['ann'])}</td>"
+                + ann_cell +
                 f"<td class='num'>{pct(r['div'])}</td>"
                 f"<td class='num {cls(r['nav'])}'>{pct(r['nav'])}</td></tr>")
         note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名；依<b>實際總報酬</b>（派息＋淨值）排序"
-        if yrs == 5:
+        if p == 5:
             note += "；5 年區間含 2022 年股債雙殺，數字普遍偏低，屬區間效應"
+        if ytd:
+            note += "；<b>YTD</b>＝去年最後一個交易日至基準日，期間未滿一年故不列年化回報"
         note += arrow_note(is_latest, m)
-        blocks.append(table((f"{yrs} 年期", f"近 {yrs} 年最佳表現基金"), head, out, note))
+        blocks.append(table((plabel(p) if ytd else f"{p} 年期", ptitle(p)), head, out, note))
     return ''.join(blocks), ends
 
 
@@ -328,10 +375,13 @@ def tip_cell(value, skey, col, cls_extra=""):
 
 
 def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
-    """非派息榜：5 個類別 chips × 3 個期間"""
+    """非派息榜：5 個類別 chips × 4 個期間（YTD／1／3／5）"""
     head = ("<th>名次</th><th>代號</th><th>基金名</th><th>幣種</th><th>類別</th>"
             + th("期間回報", "r1") + th("年化回報", "ann") + th("波動率", "vol")
             + th("最大回撤", "mdd") + th("收復時間", "rec"))
+    head_ytd = ("<th>名次</th><th>代號</th><th>基金名</th><th>幣種</th><th>類別</th>"
+                + th("期間回報", "r1") + th("波動率", "vol")
+                + th("最大回撤", "mdd") + th("收復時間", "rec"))
     counts, catblocks, ends = {}, [], []
     for key, label in CATS:
         codes = NCODES if key == "all" else [c for c in NCODES if CAT_OF.get(c) == key]
@@ -340,11 +390,12 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
         pcodes = codes
         inner = []
         n_ok = 0
-        for yrs in PERIODS:
-            ranks, pm = rank_map(pcodes, yrs, anchor, nav_perf)
+        for p in PERIODS:
+            ytd = (p == "YTD")
+            ranks, pm = rank_map(pcodes, p, anchor, nav_perf)
             n_ok = max(n_ok, len(pm))
-            prev = rank_map(pcodes, yrs, prev_anchor, nav_perf)[0] if is_latest else {}
-            rows = sorted(pm.items(), key=lambda x: -x[1]["total"])[:TOP_NAV[yrs]]
+            prev = rank_map(pcodes, p, prev_anchor, nav_perf)[0] if is_latest else {}
+            rows = sorted(pm.items(), key=lambda x: -x[1]["total"])[:TOP_NAV[p]]
             ends += [r["end"] for _, r in rows]
             out = []
             for i, (c, r) in enumerate(rows, 1):
@@ -352,25 +403,29 @@ def build_nav_panel(y, m, is_latest, anchor, prev_anchor, sparks):
                 pr = prev.get(c, "NA") if is_latest else None
                 catlabel = dict(CATS).get(CAT_OF.get(c), "其他")
                 hedged = "（對沖）" if f.get("hedged") else ""
-                skey = f"{c}|{yrs}"
-                sp = spark(c, yrs, anchor)
+                skey = f"{c}|{p}"
+                sp = spark(c, p, anchor)
                 if sp:
                     sparks[skey] = sp
+                ann_cell = "" if ytd else tip_cell(pct(r["ann"]), skey, "ann", cls(r["ann"]))
                 out.append(
                     f"<tr>{rank_cell(i, pr)}<td class='code'>{c}</td>"
-                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={yrs}' "
-                    f"title='在 06 開啟 {c} 的 {yrs} 年走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
+                    f"<td class='fname'><a class='flink' href='./06-fund-portfolio-workbench.html?fund={c}&y={ptag(p)}' "
+                    f"title='在 06 開啟 {c} 的 {plabel(p)}走勢圖'>{html.escape((f.get('name') or '').strip())}</a>"
                     f"<span class='tag'>{hedged}</span></td>"
                     f"<td>{f.get('currencyCode') or '—'}</td><td>{catlabel}</td>"
                     + tip_cell(pct(r["total"]), skey, "r1", cls(r["total"]))
-                    + tip_cell(pct(r["ann"]), skey, "ann", cls(r["ann"]))
+                    + ann_cell
                     + tip_cell(f"{r['vol']:.1f}%", skey, "vol")
                     + tip_cell(f"{r['mdd']:.1f}%", skey, "mdd", cls(r["mdd"]))
                     + tip_cell(rec_txt(r), skey, "rec")
                     + "</tr>")
             note = f"共 {len(pm)} 檔資料完整，取前 {len(rows)} 名；依<b>淨值回報</b>排序"
+            if ytd:
+                note += "；<b>YTD</b>＝去年最後一個交易日至基準日，期間未滿一年故不列年化回報"
             note += arrow_note(is_latest, m)
-            inner.append(table((f"{yrs} 年期", f"近 {yrs} 年最佳表現基金"), head, out, note))
+            inner.append(table((plabel(p) if ytd else f"{p} 年期", ptitle(p)),
+                               head_ytd if ytd else head, out, note))
         counts[key] = n_ok
         on = " is-on" if key == "all" else ""
         catblocks.append(f"<div class='catblock{on}' data-cat='{key}'>{''.join(inner)}</div>")
@@ -691,9 +746,10 @@ SCRIPT = """
   function buildPop(t){
     var key = t.getAttribute('data-s'), col = t.getAttribute('data-c'), d = SPARK[key];
     if (!d) return null;
-    var val = t.textContent, yrs = (key || '').split('|')[1] || '';
+    var val = t.textContent, per = (key || '').split('|')[1] || '';
+    var perTxt = /^[0-9]+$/.test(per) ? ('近 ' + per + ' 年') : 'YTD';
     var lines = [];
-    if (col === 'r1') lines.push('近 ' + yrs + ' 年淨值漲跌 ' + val);
+    if (col === 'r1') lines.push(perTxt + '淨值漲跌 ' + val);
     else if (col === 'ann') lines.push('年化 ' + val);
     else if (col === 'vol') lines.push('年化波動率 ' + val);
     else if (col === 'mdd') lines.push('最大回撤 ' + val + '<br>高點 ' + d.pkd + ' → 低點 ' + d.trd);
@@ -844,7 +900,7 @@ def build_page(y, m, is_latest):
   <h1>{TITLE}</h1>
   <p class="backlink"><a href="./06-fund-portfolio-workbench.html" style="color:var(--red);text-decoration:none;font-size:13.5px">&larr; 返回 06 基金組合測算</a></p>
   <p class="sub">計算基準日 <b>{end_disp}</b>（每月最後一個交易日；各檔取該月最後一個有資料的交易日）。
-     統一以<b>近 1／3／5 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。</p>
+     統一以<b>YTD／近 1／3／5 年最佳表現</b>排名：派息基金看「實際總報酬」（派息 + 淨值），非派息基金看「淨值回報」，名次可切換類別。</p>
   {month_nav_tpl(y, m, is_latest)}
 </header>
 
@@ -862,6 +918,7 @@ def build_page(y, m, is_latest):
   非派息基金回報以各基金自身幣別計，<b>不含匯率影響</b>；名稱後標「（對沖）」者為對沖股份類別。
   另有 3 檔非派息基金在比較窗口內曾派息（{stale}），本頁僅計淨值變動，該等派息未計入，實際總回報略高於表列。
   非派息榜前段多為單一行業或地區（黃金、台灣、韓國、科技），<b>高回報代表已漲多，並非買入建議</b>。
+  YTD 榜＝去年最後一個交易日至基準日（未滿一年，不列年化回報）。
   非派息榜的數值欄<a href='#top' style='color:inherit'>（期間回報／年化回報／波動率／最大回撤／收復時間）</a>可<b>滑鼠懸停看該期間淨值走勢圖</b>（深色＝回撤期、淺色＝收復期）；<b>點基金名</b>會在 06 開啟該檔走勢圖。
   歷史資料不代表未來表現，非投資建議。
   漲跌色跟隨語言：繁體版<b>綠漲紅跌</b>、簡體版<b>紅漲綠跌</b>（由 06 的語言設定決定，本頁右上可切換）。
@@ -896,12 +953,12 @@ for i, (y, m) in enumerate(MONTHS):
         open(os.path.join(DEPLOY, fn), "w", encoding="utf-8", newline="").write(out)
         written.append(f"{fn}（{len(out)} bytes）")
     print(f"{y}-{m:02d}　基準 {end_disp}：" + "、".join(written))
-    for yrs in PERIODS:
-        _, pm = rank_map(ZCODES, yrs, month_end(y, m), div_perf)
+    for p_ in PERIODS:
+        _, pm = rank_map(ZCODES, p_, month_end(y, m), div_perf)
         if pm:
             c, r = max(pm.items(), key=lambda x: x[1]["total"])
-            print(f"   派息 {yrs}Y：{len(pm)} 檔，冠軍 {c} {r['total']:+.1f}%")
-        _, pn = rank_map(NCODES, yrs, month_end(y, m), nav_perf)
+            print(f"   派息 {plabel(p_)}：{len(pm)} 檔，冠軍 {c} {r['total']:+.1f}%")
+        _, pn = rank_map(NCODES, p_, month_end(y, m), nav_perf)
         if pn:
             c, r = max(pn.items(), key=lambda x: x[1]["total"])
-            print(f"   非派息 {yrs}Y：{len(pn)} 檔，冠軍 {c} {r['total']:+.1f}%")
+            print(f"   非派息 {plabel(p_)}：{len(pn)} 檔，冠軍 {c} {r['total']:+.1f}%")

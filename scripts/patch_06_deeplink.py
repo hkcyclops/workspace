@@ -11,16 +11,16 @@ import io, os, re, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET = os.path.join(HERE, "_deploy-workspace", "06-fund-portfolio-workbench.html")
-MARKER = "HUB_FUND_DEEPLINK_V2"
+MARKER = "HUB_FUND_DEEPLINK_V3"
 
 JS = """
-/* HUB_FUND_DEEPLINK_V2：由基金月榜 ?fund=CODE&y=1|3|5 帶入基金並設定走勢圖期間 */
+/* HUB_FUND_DEEPLINK_V3：由基金月榜 ?fund=CODE&y=1|3|5 帶入基金並設定走勢圖期間 */
 (function(){
   var m = /[?&]fund=([A-Za-z]{1,2}\\d{2})\\b/.exec(location.search);
   if (!m) return;
   var code = m[1].toUpperCase();
-  var ym = /[?&]y=([1-9]\\d*)\\b/.exec(location.search);
-  var periodLabel = ym ? (ym[1] + '年') : null;
+  var ym = /[?&]y=(YTD|[1-9]\\d*)\\b/i.exec(location.search);
+  var periodLabel = ym ? (/^ytd$/i.test(ym[1]) ? 'YTD' : (ym[1] + '年')) : null;
   var tries = 0, clickedAll = false, added = false, periodDone = false, timer;
   function byText(txt, scope){
     var root = scope || document;
@@ -111,4 +111,4 @@ if idx < 0:
     sys.exit("找不到 </body>，中止")
 s = s[:idx] + "<script>" + JS + "</script>" + s[idx:]
 io.open(TARGET, "w", encoding="utf-8", newline="").write(s)
-print(f"{'已替換舊版；' if removed else ''}已注入 deep link 腳本 V2（{len(JS)} chars）→ {os.path.basename(TARGET)}")
+print(f"{'已替換舊版；' if removed else ''}已注入 deep link 腳本 V3（{len(JS)} chars）→ {os.path.basename(TARGET)}")

@@ -27,7 +27,7 @@ with sync_playwright() as p:
                     網址: location.search || '(已清空)'};
         }""")
 
-    for code, y, label in (("J08", "1", "1年"), ("Z01", "3", "3年"), ("A05", "5", "5年")):
+    for code, y, label in (("J08", "YTD", "YTD"), ("J08", "1", "1年"), ("Z01", "3", "3年"), ("A05", "5", "5年")):
         pg.goto(BASE + "?fund=" + code + "&y=" + y, wait_until="domcontentloaded")
         pg.wait_for_timeout(7000)
         s = state()
