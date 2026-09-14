@@ -12,10 +12,10 @@ import io, os, re, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TARGET = os.path.join(HERE, "_deploy-workspace", "06-fund-portfolio-workbench.html")
-MARKER = "HUB_ANNUAL_RETURNS_V9"
+MARKER = "HUB_ANNUAL_RETURNS_V10"
 
 JS = r"""
-/* HUB_ANNUAL_RETURNS_V9：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V10：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
@@ -250,6 +250,88 @@ JS = r"""
     box.appendChild(table);
   }
 
+  /* ── 列印版：06 是按鈕開新視窗、寫入自己組的 HTML 模板（無 @media print），
+        因此在 window.open 之後、等文件寫完，把年度回報插到「各期间表现」卡片後面 ── */
+  function esc(t){ return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function buildPrintHTML(){
+    var YS = years();
+    var vals = YS.map(function(y){ return portValue(y, 0); });
+    var finite = vals.filter(function(v){ return v !== null && v !== undefined && !isNaN(v); });
+    var lo = Math.min.apply(null, [0].concat(finite));
+    var hi = Math.max.apply(null, [0].concat(finite));
+    var ticks = niceTicks(lo, hi, 4);
+    var tMin = ticks[0], tMax = ticks[ticks.length - 1];
+    var X0 = 46, X1 = 704, Y0 = 12, Y1 = 138;
+    var Y = function(v){ return Y0 + (tMax - v) / ((tMax - tMin) || 1) * (Y1 - Y0); };
+    var step = (X1 - X0) / Math.max(1, YS.length);
+    var svg = ['<svg class="chart-svg" viewBox="0 0 720 180" role="img" aria-label="组合年度回报 2021-2025">'];
+    ticks.forEach(function(t){
+      if (t === 0) return;
+      svg.push('<line x1="' + X0 + '" x2="' + X1 + '" y1="' + Y(t).toFixed(1) + '" y2="' + Y(t).toFixed(1) + '" class="grid"/>');
+      svg.push('<text x="4" y="' + (Y(t) + 3.5).toFixed(1) + '">' + Math.round(t) + '%</text>');
+    });
+    svg.push('<line x1="' + X0 + '" x2="' + X1 + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" class="baseline"/>');
+    svg.push('<text x="4" y="' + (Y(0) + 3.5).toFixed(1) + '">0%</text>');
+    vals.forEach(function(v, i){
+      var cx = X0 + step * (i + 0.5);
+      var bw = Math.max(10, step * 0.5);
+      var isN = (v === null || v === undefined || isNaN(v));
+      if (isN){
+        svg.push('<text x="' + cx.toFixed(1) + '" y="' + (Y(0) - 4).toFixed(1) + '" text-anchor="middle" class="na">N/A</text>');
+      } else {
+        var y0 = Y(0), yv = Y(v), top = Math.min(y0, yv), h = Math.max(2, Math.abs(yv - y0));
+        svg.push('<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + bw.toFixed(1) +
+                 '" height="' + h.toFixed(1) + '" rx="3" fill="' + (v >= 0 ? '#8f0d25' : '#b77a45') + '"/>');
+        svg.push('<text x="' + cx.toFixed(1) + '" y="' + ((v >= 0 ? top - 4 : top + h + 11)).toFixed(1) +
+                 '" text-anchor="middle" class="bar-value">' + pct(v) + '</text>');
+      }
+      svg.push('<text x="' + cx.toFixed(1) + '" y="166" text-anchor="middle" class="bar-label">' + YS[i] + '</text>');
+    });
+    svg.push('</svg>');
+
+    var cards = YS.map(function(y, i){
+      return '<section class="metric"><span>' + y + '</span><strong>' + pct(vals[i]) + '</strong>' +
+             '<small>年度回报</small></section>';
+    }).join('');
+
+    return '<article class="chart-card wide hub-annual-print"><h3>年度回报 ' +
+           (YS.length ? (YS[0] + '–' + YS[YS.length - 1]) : '') + '</h3>' + svg.join('') + '</article>' +
+           '<div class="metric-grid hub-annual-print">' + cards + '</div>';
+  }
+
+  function printTarget(doc){
+    var hs = Array.prototype.slice.call(doc.querySelectorAll('article.chart-card h3'));
+    var h = hs.filter(function(x){ return /各期[间間]\s*表现|各期[间間]\s*表現/.test((x.textContent || '').trim()); })[0];
+    return h ? h.closest('article') : null;
+  }
+
+  function watchPrintWindow(w){
+    var tries = 0;
+    var t = setInterval(function(){
+      tries++;
+      try {
+        var doc = w.document;
+        if (doc && doc.body && !doc.querySelector('.hub-annual-print')){
+          var art = printTarget(doc);
+          if (art) art.insertAdjacentHTML('afterend', buildPrintHTML());
+        }
+      } catch (e) {}
+      if (tries > 60) clearInterval(t);
+    }, 120);
+  }
+
+  function hookPrint(){
+    if (window.__hubAnnualPrintHooked) return;
+    window.__hubAnnualPrintHooked = 1;
+    var orig = window.open;
+    window.open = function(){
+      var w = orig.apply(window, arguments);
+      try { if (w && w.document) watchPrintWindow(w); } catch (e) {}
+      return w;
+    };
+  }
+
   function render(){
     injectStyle();
     var sec = document.querySelector('.hub-annual');
@@ -306,6 +388,7 @@ JS = r"""
     document.addEventListener('click', function(){ setTimeout(schedule, 60); }, true);
   }
 
+  hookPrint();
   var tries = 0;
   function boot(){
     tries++;

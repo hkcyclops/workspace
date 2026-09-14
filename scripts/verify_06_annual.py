@@ -18,7 +18,8 @@ J08 = FUNDS["J08"]
 ok = True
 with sync_playwright() as p:
     b = p.chromium.launch()
-    pg = b.new_page(viewport={"width": 1440, "height": 1400})
+    ctx = b.new_context(viewport={"width": 1440, "height": 1400})
+    pg = ctx.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
 
@@ -203,6 +204,34 @@ with sync_playwright() as p:
     print(f"⑥ 切簡體：{json.dumps(sc, ensure_ascii=False)}")
     ok &= sc["語言"] == "simplified" and "回报" in sc["標題"]
     ok &= sc["第一卡"] not in (None, "N/A") and sc["第一卡色"] == "rgb(177, 52, 70)"
+
+    # ⑦ 列印版：按「打印／導出 PDF」開的新視窗，年度回報要接在「各期间表现」下方
+    with ctx.expect_page() as pinfo:
+        pg.click("button.scenario-print-button")
+    pop = pinfo.value
+    pop.wait_for_load_state("domcontentloaded")
+    pop.wait_for_timeout(2500)
+    pr = pop.evaluate("""() => {
+        const block = document.querySelector('.hub-annual-print');
+        const arts = Array.from(document.querySelectorAll('article.chart-card'))
+            .map(a => ((a.querySelector('h3') || {}).textContent || '').trim());
+        const metric = document.querySelector('.hub-annual-print .metric');
+        return {標題: document.title, 卡片順序: arts,
+                年度區塊數: document.querySelectorAll('.hub-annual-print').length,
+                接在各期後: block && block.previousElementSibling
+                    ? ((block.previousElementSibling.querySelector('h3') || {}).textContent || '').trim() : null,
+                柱數: document.querySelectorAll('.hub-annual-print rect[fill]').length,
+                年標籤: Array.from(document.querySelectorAll('.hub-annual-print .bar-label')).map(x => x.textContent),
+                卡值: Array.from(document.querySelectorAll('.hub-annual-print .metric strong')).map(x => x.textContent),
+                卡金線: metric ? getComputedStyle(metric).borderTopColor : null,
+                主標題: (document.querySelector('.hub-annual-print h3') || {}).textContent};
+    }""")
+    print(f"⑦ 列印版：{json.dumps(pr, ensure_ascii=False)}")
+    main_vals = [c["v"] for c in snap()["卡片"]]
+    ok &= pr["年度區塊數"] == 2 and pr["柱數"] == 5 and pr["年標籤"] == YEARS
+    ok &= pr["卡值"] == main_vals
+    ok &= "各期" in (pr["接在各期後"] or "") and "年度" in (pr["主標題"] or "")
+    ok &= pr["卡金線"] == "rgb(186, 141, 53)"
 
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
