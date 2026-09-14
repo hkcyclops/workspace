@@ -606,24 +606,17 @@ STYLE = """
 
 SCRIPT = """
 (function(){
-  var tips = Array.prototype.slice.call(document.querySelectorAll('.tip'));
+  /* 提示框一律浮動到 body（避開表格容器 overflow 的裁切），並自動避開視窗邊界 */
+  function closeTip(t){
+    t.classList.remove('is-open');
+    if (t.__pop) t.__pop.classList.remove('is-open');
+    var b = t.querySelector('.tip-btn'); if (b) b.setAttribute('aria-expanded', 'false');
+  }
   function closeAll(except){
-    tips.forEach(function(t){
-      if (t === except) return;
-      t.classList.remove('is-open');
-      var b = t.querySelector('.tip-btn'); if (b) b.setAttribute('aria-expanded','false');
+    Array.prototype.forEach.call(document.querySelectorAll('.tip.is-open'), function(t){
+      if (t !== except) closeTip(t);
     });
   }
-  tips.forEach(function(t){
-    var btn = t.querySelector('.tip-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function(e){
-      e.preventDefault(); e.stopPropagation();
-      var open = t.classList.toggle('is-open');
-      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      closeAll(t);
-    });
-  });
   document.addEventListener('click', function(e){
     if (!e.target.closest || !e.target.closest('.tip')) closeAll(null);
   });
@@ -772,17 +765,20 @@ SCRIPT = """
     return pop;
   }
 
-  /* 浮動定位：預設貼在數值下方；下方空間不足就翻到上方；水平右對齊並夾在視窗內 */
+  /* 浮動定位：預設貼在觸發點下方（空間不足翻到上方）；水平夾在視窗內不出界 */
   function placePop(t){
     var pop = t.__pop;
     if (!pop) return;
-    var r = t.getBoundingClientRect();
+    var isCell = t.classList.contains('tip-cell');
+    var anchor = isCell ? t : (t.querySelector('.tip-btn') || t);
+    var r = anchor.getBoundingClientRect();
     pop.classList.add('is-open');
     pop.style.visibility = 'hidden';
     var w = pop.offsetWidth, h = pop.offsetHeight;
     var below = window.innerHeight - r.bottom, above = r.top;
     var top = (below >= h + 14 || below >= above) ? (r.bottom + 8) : (r.top - h - 8);
-    var left = r.right - w;
+    // 數值欄右對齊；表頭 ? 以按鈕稍微靠左起算，兩者最後都夾在視窗內
+    var left = isCell ? (r.right - w) : (r.left - 10);
     if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
     if (left < 8) left = 8;
     if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
@@ -791,19 +787,24 @@ SCRIPT = """
     pop.style.left = Math.round(left) + 'px';
     pop.style.visibility = '';
   }
-  function closeTip(t){
-    if (t.__pop) t.__pop.classList.remove('is-open');
-    t.classList.remove('is-open');
-  }
   function closeOthers(except){
-    Array.prototype.forEach.call(document.querySelectorAll('.tip-cell.is-open'), function(x){
+    Array.prototype.forEach.call(document.querySelectorAll('.tip.is-open'), function(x){
       if (x !== except) closeTip(x);
     });
   }
   function openTip(t){
     cancelClose();
-    if (!t.__pop) buildPop(t);
-    if (!t.__pop) return;
+    if (!t.__pop){
+      // 數值欄：動態組出（含縮略圖）；表頭 ?：用既有靜態內容，移到 body 以免被表格裁切
+      var pop = buildPop(t) || t.querySelector('.tip-pop');
+      if (!pop) return;
+      if (pop.parentNode !== document.body) document.body.appendChild(pop);
+      pop.classList.add('tip-float');
+      pop.addEventListener('mouseenter', function(){ cancelClose(); });
+      pop.addEventListener('mouseleave', function(){ scheduleClose(t); });
+      t.__pop = pop;
+    }
+    closeOthers(t);
     t.classList.add('is-open');
     placePop(t);
   }
@@ -813,26 +814,30 @@ SCRIPT = """
     closeTimer = setTimeout(function(){ closeTip(t); }, 180);
   }
   function cancelClose(){ clearTimeout(closeTimer); }
-  Array.prototype.forEach.call(document.querySelectorAll('.tip-cell'), function(t){
-    t.addEventListener('mouseenter', function(){ closeOthers(t); openTip(t); });
+  Array.prototype.forEach.call(document.querySelectorAll('.tip-cell, .tip'), function(t){
+    var isCell = t.classList.contains('tip-cell');
+    if (!isCell && !t.querySelector('.tip-btn')) return;      // 只處理數值欄與表頭 ?
+    t.setAttribute('tabindex', '0');
+    t.addEventListener('mouseenter', function(){ openTip(t); });
     t.addEventListener('mouseleave', function(){ scheduleClose(t); });
-    t.addEventListener('focusin', function(){ closeOthers(t); openTip(t); });
+    t.addEventListener('focusin', function(){ openTip(t); });
     t.addEventListener('blur', function(){ scheduleClose(t); });
     t.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
-      if (t.classList.contains('is-open')) closeTip(t); else { closeOthers(t); openTip(t); }
+      if (t.classList.contains('is-open')) closeTip(t); else openTip(t);
     });
   });
   document.addEventListener('click', function(){ closeOthers(null); });
   window.addEventListener('scroll', function(){
-    var open = document.querySelector('.tip-cell.is-open');
+    var open = document.querySelector('.tip.is-open');
     if (!open) return;
-    var r = open.getBoundingClientRect();
+    var anchor = open.classList.contains('tip-cell') ? open : (open.querySelector('.tip-btn') || open);
+    var r = anchor.getBoundingClientRect();
     if (r.bottom < 0 || r.top > window.innerHeight){ closeTip(open); return; }
     placePop(open);
   }, true);
   window.addEventListener('resize', function(){
-    var open = document.querySelector('.tip-cell.is-open');
+    var open = document.querySelector('.tip.is-open');
     if (open) placePop(open);
   });
 

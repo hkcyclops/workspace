@@ -38,6 +38,22 @@ with sync_playwright() as p:
     ok &= div_titles == ["YTD YTD 最佳表現基金", "1 年期 近 1 年最佳表現基金",
                          "3 年期 近 3 年最佳表現基金", "5 年期 近 5 年最佳表現基金"]
 
+    # 最右欄「表頭 ?」提示不得被表格容器裁切（原 bug：貼右邊被切掉）
+    EDGE_JS = """() => {
+        const t = document.querySelector('.tip.is-open');
+        if (!t || !t.__pop) return {err: 'no pop'};
+        const r = t.__pop.getBoundingClientRect();
+        return {欄: (t.closest('th') || {}).childNodes ? t.closest('th').childNodes[0].textContent.trim() : '',
+                在body: t.__pop.parentNode === document.body,
+                完整可見: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth,
+                右緣: Math.round(r.right), 視窗寬: window.innerWidth};
+    }"""
+    pg.hover(".panel[data-panel='div'] section.card thead th:last-child .tip-btn")
+    pg.wait_for_timeout(400)
+    div_edge = pg.evaluate(EDGE_JS)
+    print("  派息最右欄表頭提示:", div_edge)
+    ok &= (not div_edge.get("err")) and div_edge["在body"] and div_edge["完整可見"]
+
     # 切到非派息分頁
     pg.click(".tab[data-tab='nav']")
     pg.wait_for_timeout(300)
@@ -90,6 +106,17 @@ with sync_playwright() as p:
                                     "els=>els.slice(0,6).map(e=>e.textContent)")
     print("  收復時間值樣本:", cells)
     ok &= any(v.endswith("月") for v in cells)
+
+    # 非派息最右欄（收復時間）表頭提示：窄視窗下也要完整可見
+    pg.set_viewport_size({"width": 900, "height": 800})
+    pg.wait_for_timeout(250)
+    pg.hover(".panel[data-panel='nav'] .catblock.is-on section.card thead th:last-child .tip-btn")
+    pg.wait_for_timeout(400)
+    nav_edge = pg.evaluate(EDGE_JS)
+    print("  非派息最右欄表頭提示（900px）:", nav_edge)
+    ok &= (not nav_edge.get("err")) and nav_edge["在body"] and nav_edge["完整可見"]
+    pg.set_viewport_size({"width": 1440, "height": 900})
+    pg.wait_for_timeout(250)
 
     # 縮略圖：hover 最大回撤儲存格 → 生成浮動 SVG（45 點折線 + 回撤／收復陰影）
     pg.hover(".panel[data-panel='nav'] .catblock.is-on tbody tr:nth-child(1) .tip-cell[data-c='mdd']")
