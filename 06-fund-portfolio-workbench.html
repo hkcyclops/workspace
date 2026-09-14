@@ -748,14 +748,18 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 })();
 </script>
 <script>
-/* HUB_FUND_DEEPLINK_V3：由基金月榜 ?fund=CODE&y=1|3|5 帶入基金並設定走勢圖期間 */
+/* HUB_FUND_DEEPLINK_V5：由基金月榜 ?fund=CODE&y=YTD|1|3|5|10 帶入基金並設定走勢圖區間
+   - YTD：點 06 的「YTD」期間鈕（用它自己的年度邏輯）
+   - 數字：直接設定下方「完整歷史起點／終點」兩個 range 滑桿（可支援 06 沒按鈕的 10 年）
+   設定完成後捲到「情景估算」並清掉網址參數 */
 (function(){
   var m = /[?&]fund=([A-Za-z]{1,2}\d{2})\b/.exec(location.search);
   if (!m) return;
   var code = m[1].toUpperCase();
   var ym = /[?&]y=(YTD|[1-9]\d*)\b/i.exec(location.search);
-  var periodLabel = ym ? (/^ytd$/i.test(ym[1]) ? 'YTD' : (ym[1] + '年')) : null;
+  var period = ym ? (/^ytd$/i.test(ym[1]) ? 'YTD' : ym[1]) : null;
   var tries = 0, clickedAll = false, added = false, periodDone = false, timer;
+
   function byText(txt, scope){
     var root = scope || document;
     return Array.prototype.slice.call(root.querySelectorAll('button'))
@@ -769,6 +773,14 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
     var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
     setter.call(inp, val);
     inp.dispatchEvent(new Event('input', {bubbles: true}));
+  }
+  function sliders(){
+    var rs = Array.prototype.slice.call(document.querySelectorAll('input[type=range]'));
+    var pick = function(word){
+      return rs.filter(function(e){ return (e.getAttribute('aria-label') || '').indexOf(word) > -1; })[0];
+    };
+    var s = pick('起點'), e = pick('終點');
+    return (s && e) ? {start: s, end: e} : null;
   }
   function chartSection(){
     var h = Array.prototype.slice.call(document.querySelectorAll('h1,h2,h3,h4'))
@@ -784,6 +796,52 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   function cleanup(){
     if (history.replaceState) history.replaceState(null, '', location.pathname);
   }
+  function setRange(years){
+    var sl = sliders();
+    if (!sl) return false;
+    var minV = +sl.start.min;
+    var endV = +sl.end.value || +sl.end.max;
+    var want = Math.max(minV, Math.round(endV - years * 365.25 * 24 * 3600 * 1000));
+    if (Math.abs(+sl.start.value - want) > 24 * 3600 * 1000){
+      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(sl.start, String(want));
+      sl.start.dispatchEvent(new Event('input', {bubbles: true}));
+      sl.start.dispatchEvent(new Event('change', {bubbles: true}));
+    }
+    return true;
+  }
+  function clickButton(label){
+    var b = byText(label, chartSection());
+    if (!b) return false;
+    if (!b.classList.contains('active')) b.click();
+    return true;
+  }
+  /* 有對應按鈕的期間（YTD／1／3／5 年）優先用按鈕，讓按鈕狀態與圖表一致；
+     06 沒有 10 年按鈕 → 直接設定下方區間滑桿。
+     注意：剛加入基金時按鈕可能還沒渲染，故先等幾輪再退回滑桿，避免按鈕狀態與圖表不一致 */
+  function tryApply(n){
+    var years = parseInt(period, 10);
+    if (period === 'YTD') return clickButton('YTD') || (n > 6 ? setRange(1) : false);
+    if (years === 1 || years === 3 || years === 5){
+      if (clickButton(years + '年')) return true;
+      if (n <= 5) return false;              // 先等按鈕出現
+    }
+    return setRange(years);
+  }
+  function applyPeriod(){
+    if (!period) return;
+    var n = 0;
+    var t = setInterval(function(){
+      n++;
+      if (periodDone || n > 15){ clearInterval(t); return; }
+      if (tryApply(n)){
+        periodDone = true;
+        clearInterval(t);
+        setTimeout(scrollToCharts, 600);
+      }
+    }, 400);
+  }
+
   timer = setInterval(function(){
     tries++;
     if (!clickedAll){
@@ -799,7 +857,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
         added = true;
         clearInterval(timer);
         cleanup();
-        setTimeout(applyPeriod, 800);
+        setTimeout(applyPeriod, 700);
         setTimeout(scrollToCharts, 1200);
         setTimeout(scrollToCharts, 2400);
         return;
@@ -808,23 +866,6 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
     if (tries > 50 || (added && tries > 20)) clearInterval(timer);
   }, 400);
 
-  /* 期間：把 1/3/5 轉成 06 的「1年/3年/5年」並點擊（限情景估算區塊內，避免誤點） */
-  function applyPeriod(){
-    if (!periodLabel) return;
-    var n = 0;
-    var t = setInterval(function(){
-      n++;
-      if (periodDone || n > 12){ clearInterval(t); return; }
-      var sec = chartSection();
-      var b = byText(periodLabel, sec);
-      if (b){
-        if (!b.classList.contains('active')) b.click();
-        periodDone = true;
-        clearInterval(t);
-        setTimeout(scrollToCharts, 600);
-      }
-    }, 400);
-  }
   window.addEventListener('load', function(){ setTimeout(cleanup, 4000); });
 })();
 </script></body></html>

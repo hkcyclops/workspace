@@ -60,14 +60,12 @@ def ptag(p):
 
 
 def plink(p):
-    """06 實際提供的期間按鈕只有 3個月／6個月／YTD／1年／3年／5年；10 年沒有對應 → 退回 5 年"""
-    return p if p in ("YTD", 1, 3, 5) else 5
+    """deep link 期間：06 沒有 10 年按鈕，但可用下方區間滑桿直接設定（見 patch_06_deeplink V4）"""
+    return ptag(p)
 
 
 def plink_title(p, code):
-    if p in ("YTD", 1, 3, 5):
-        return f"在 06 開啟 {code} 的 {plabel(p)}走勢圖"
-    return f"在 06 開啟 {code} 的走勢圖（06 期間最長只到 5 年）"
+    return f"在 06 開啟 {code} 的 {plabel(p)}走勢圖"
 CATS = [("all", "全部"), ("stock", "股票"), ("fi", "固定收入"), ("multi", "多元資產"), ("mm", "貨幣市場")]
 
 # 非派息比較窗口內另有零星派息的 3 檔（未計入回報，頁尾註明）

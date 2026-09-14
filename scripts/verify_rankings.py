@@ -172,10 +172,10 @@ with sync_playwright() as p:
     t10 = pg.evaluate("""() => Array.from(document.querySelectorAll(".catblock.is-on section.card"))[4]
         .querySelector('.flink').getAttribute('title')""")
     print("  10Y 表連結標題:", t10)
-    ok &= "5 年" in t10
+    ok &= "10 年走勢圖" in t10
     print("  非派息各表期間:", [sorted(set(v)) for v in per_table])
     print("  派息各表期間:", [sorted(set(v)) for v in div_y])
-    ok &= [sorted(set(v)) for v in per_table] == [["YTD"], ["1"], ["3"], ["5"], ["5"]]   # 10Y 無對應按鈕 → 退回 y=5
+    ok &= [sorted(set(v)) for v in per_table] == [["YTD"], ["1"], ["3"], ["5"], ["10"]]  # 10Y 由 06 的區間滑桿支援
     ok &= [sorted(set(v)) for v in div_y] == [["YTD"], ["1"], ["3"], ["5"]]
 
     links = pg.eval_on_selector_all(".panel[data-panel='nav'] .catblock.is-on .flink",
