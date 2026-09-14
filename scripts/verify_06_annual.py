@@ -115,8 +115,11 @@ with sync_playwright() as p:
     ok &= style["卡片金線"].startswith("2px solid rgb(200, 168, 91)")
     ok &= style["柱圓角"] == "3px" and style["網格線數"] >= 3
     ok &= len(style["y刻度"]) == style["網格線數"] and all(t.endswith("%") for t in style["y刻度"])
-    print(f"             x 標籤 {style['x標籤']}（頁面為 400 / 10px / rgb(32,33,36)）")
-    ok &= style["x標籤"] == {"weight": "400", "size": "10px", "color": "rgb(32, 33, 36)"}
+    print(f"             x 標籤 {style['x標籤']}（頁面為 400 / 11px / rgb(116,105,93)）")
+    ok &= style["x標籤"] == {"weight": "400", "size": "11px", "color": "rgb(116, 105, 93)"}
+    gapv = pg.evaluate("() => { const eb = document.querySelector('.hub-annual-eyebrow'); const sp = eb.querySelector('span'); const tn = Array.from(eb.childNodes).find(n => n.nodeType === 3 && n.textContent.trim()); const r = document.createRange(); r.selectNodeContents(tn); return Math.round(r.getBoundingClientRect().left - sp.getBoundingClientRect().right); }")
+    print(f"             眉標金線→文字間距 {gapv}px（頁面 7px）")
+    ok &= gapv == 7
     # 正值用 06 品牌紅、負值用棕（與 06 自己的各期間長條圖一致）
     for card, bar in zip(style["卡片值"], style["柱"]):
         if card.strip() == "N/A":

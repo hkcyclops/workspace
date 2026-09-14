@@ -869,14 +869,14 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   window.addEventListener('load', function(){ setTimeout(cleanup, 4000); });
 })();
 </script><script>
-/* HUB_ANNUAL_RETURNS_V8：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V9：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
   var CSS =
     '.hub-annual{border-top:1px solid #dfd3c2;margin:24px 0 0;padding:20px 0 0;' +
       'font-family:"Noto Sans TC",ui-sans-serif,system-ui,sans-serif;color:#202124}' +
-    '.hub-annual-eyebrow{display:flex;align-items:center;margin:0 0 5px;font-size:10px;font-weight:800;' +
+    '.hub-annual-eyebrow{display:flex;align-items:center;gap:7px;margin:0 0 5px;font-size:10px;font-weight:800;' +
       'letter-spacing:1.5px;line-height:15px;color:#9b1730}' +
     '.hub-annual-eyebrow span{display:block;width:20px;height:1px;background:#c8a85b;flex:0 0 auto}' +
     '.hub-annual-title{margin:0;font-family:Georgia,"Noto Serif TC",serif;font-size:20px;font-weight:500;line-height:30px;color:#202124}' +
@@ -888,7 +888,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
     '.hub-annual-col{position:absolute;top:0;bottom:0}' +
     '.hub-annual-bar{position:absolute;left:14%;right:14%;border-radius:3px}' +
     '.hub-annual-x{display:flex;margin:7px 0 0 42px}' +
-    '.hub-annual-x span{flex:1;text-align:center;font-size:10px;font-weight:400;color:#202124}' +
+    '.hub-annual-x span{flex:1;text-align:center;font-size:11px;font-weight:400;color:#74695d}' +
     '.hub-annual-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:9px}' +
     '.hub-annual-card{background:#f9f2e7;border-top:2px solid #c8a85b;padding:8px}' +
     '.hub-annual-card b{display:block;font-size:10px;font-weight:700;line-height:15px;color:#8f0d25}' +
