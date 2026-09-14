@@ -869,33 +869,32 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   window.addEventListener('load', function(){ setTimeout(cleanup, 4000); });
 })();
 </script><script>
-/* HUB_ANNUAL_RETURNS_V4：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
+/* HUB_ANNUAL_RETURNS_V6：年度回报区块（组合总览／逐只基金，跟随 06 的切换钮与语言） */
 (function(){
   if (window.__HUB_ANNUAL_V1__) return; window.__HUB_ANNUAL_V1__ = 1;
 
   var CSS =
-    '.hub-annual{background:#fffdf8;border:1px solid var(--hub-line,#e3dccd);border-radius:14px;padding:22px 24px;margin:20px 0 0}' +
-    '.hub-annual-eyebrow{margin:0;font-size:11px;letter-spacing:.12em;font-weight:800;color:var(--hub-red,#8f0d25)}' +
-    '.hub-annual-title{margin:6px 0 0;font-size:19px;font-weight:800;color:var(--hub-ink,#24211e)}' +
-    '.hub-annual-sub{margin:8px 0 0;font-size:12.5px;line-height:1.7;color:var(--hub-gray,#6b6d70)}' +
-    '.hub-annual-plot{position:relative;height:170px;margin:20px 0 0;border-bottom:1px solid var(--hub-line,#e3dccd)}' +
-    '.hub-annual-zero{position:absolute;left:0;right:0;height:1px;background:var(--hub-line,#e3dccd)}' +
+    '.hub-annual{background:#fffdf8;border:1px solid #e1d6c4;padding:20px 22px;margin:22px 0 0;' +
+      'font-family:"Noto Sans TC",ui-sans-serif,system-ui,sans-serif;color:#202124}' +
+    '.hub-annual-eyebrow{margin:0 0 5px;font-size:10px;font-weight:800;letter-spacing:1.5px;line-height:15px;color:#9b1730}' +
+    '.hub-annual-title{margin:0;font-family:Georgia,"Noto Serif TC",serif;font-size:20px;font-weight:500;line-height:30px;color:#202124}' +
+    '.hub-annual-plot{position:relative;height:170px;margin:18px 0 0;border-bottom:1px solid #e1d6c4}' +
+    '.hub-annual-zero{position:absolute;left:0;right:0;height:1px;background:#e1d6c4}' +
     '.hub-annual-col{position:absolute;top:0;bottom:0}' +
-    '.hub-annual-bar{position:absolute;left:14%;right:14%;background:currentColor;border-radius:3px}' +
-    '.hub-annual-bar.na{opacity:.22}' +
-    '.hub-annual-x{display:flex;margin-top:6px}' +
-    '.hub-annual-x span{flex:1;text-align:center;font-size:12px;color:var(--hub-gray,#6b6d70)}' +
-    '.hub-annual-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin-top:16px}' +
-    '.hub-annual-card{background:#f7f3ea;border-radius:10px;padding:10px 12px}' +
-    '.hub-annual-card b{display:block;font-size:11px;font-weight:700;color:var(--hub-gray,#6b6d70)}' +
-    '.hub-annual-card span{display:block;margin-top:3px;font-size:16px;font-weight:800}' +
-    '.hub-annual-dca{margin:14px 0 0;font-size:12.5px;line-height:1.8;color:var(--hub-gray,#6b6d70)}' +
-    '.hub-annual-foot{margin:14px 0 0;font-size:11.5px;line-height:1.7;color:var(--hub-gray,#6b6d70)}' +
+    '.hub-annual-bar{position:absolute;left:14%;right:14%}' +
+    '.hub-annual-x{display:flex;margin-top:7px}' +
+    '.hub-annual-x span{flex:1;text-align:center;font-size:11px;font-weight:400;color:#202124}' +
+    '.hub-annual-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:9px}' +
+    '.hub-annual-card{background:#f9f2e7;padding:8px}' +
+    '.hub-annual-card b{display:block;font-size:10px;font-weight:700;line-height:15px;color:#8f0d25}' +
+    '.hub-annual-card span{display:block;margin-top:2px;font-family:Georgia,serif;font-size:15px;font-weight:400;line-height:22.5px;color:#403126}' +
+    '.hub-annual-dca{margin:12px 0 0;font-size:12px;line-height:1.7;color:#6b6d70}' +
     '.hub-annual table{width:100%;border-collapse:collapse;margin-top:16px}' +
-    '.hub-annual th,.hub-annual td{border-bottom:1px solid var(--hub-line,#e3dccd);padding:9px 8px;font-size:13px;text-align:right;white-space:nowrap}' +
-    '.hub-annual th:first-child,.hub-annual td:first-child{text-align:left;white-space:normal}' +
-    '.hub-annual thead th{font-size:12px;font-weight:700;color:var(--hub-gray,#6b6d70)}' +
-    '@media (max-width:700px){.hub-annual-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}';
+    '.hub-annual th,.hub-annual td{border-bottom:1px solid #e7d6be;padding:8px;text-align:right;white-space:nowrap;' +
+      'font-family:Georgia,serif;font-size:15px;font-weight:400;color:#403126}' +
+    '.hub-annual th:first-child,.hub-annual td:first-child{text-align:left;white-space:normal;' +
+      'font-family:"Noto Sans TC",ui-sans-serif,system-ui,sans-serif;font-size:13px}' +
+    '.hub-annual thead th{font-family:"Noto Sans TC",ui-sans-serif,system-ui,sans-serif;font-size:10px;font-weight:700;color:#8f0d25}';
 
   function injectStyle(){
     if (document.getElementById('hub-annual-css')) return;
@@ -994,7 +993,9 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
       var col = el('div', 'hub-annual-col');
       col.style.left = (i * 100 / YS.length) + '%';
       col.style.width = (100 / YS.length) + '%';
-      var bar = el('div', 'hub-annual-bar ' + clsOf(v));
+      var bar = el('div', 'hub-annual-bar');
+      bar.style.background = (v === null || v === undefined || isNaN(v)) ? '#cbbfae'
+                           : (v >= 0 ? '#8f0d25' : '#b77a45');
       if (isN){
         bar.style.top = Math.round(y0) + 'px';
         bar.style.height = '2px';
@@ -1085,13 +1086,9 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
         var YS = years();
         head.appendChild(el('h3', 'hub-annual-title',
           '年度回报 ' + (YS.length ? (YS[0] + '–' + YS[YS.length - 1]) : '')));
-        head.appendChild(el('p', 'hub-annual-sub',
-          '按日历年计算（1/1–12/31）；派息基金含派息（实际总报酬），其余为净值回报。资料不足显示 N/A。'));
         return head;
       })());
       sec.appendChild(el('div', 'hub-annual-body'));
-      sec.appendChild(el('p', 'hub-annual-foot',
-        '年度回报为基金口径（年初一次性），可与基金年报直接对照；资料来源：AIA 官方日频 NAV 与派息纪录。'));
       cross.parentElement.insertBefore(sec, cross.nextSibling);
     }
     var body = sec.querySelector('.hub-annual-body');

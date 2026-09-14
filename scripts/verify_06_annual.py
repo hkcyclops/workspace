@@ -69,7 +69,40 @@ with sync_playwright() as p:
         });
     }""")
     xs = [g["left"] for g in geom]
-    print(f"① 區塊位置：在「各期間表現」之後 = {pos_ok}｜資料檔載入 = {loaded}｜標題 = {s0['標題']}")
+    style = pg.evaluate("""() => {
+        const sec = document.querySelector('.hub-annual');
+        const eb = sec.querySelector('.hub-annual-eyebrow');
+        const tt = sec.querySelector('.hub-annual-title');
+        const cb = sec.querySelector('.hub-annual-card b');
+        const cs = sec.querySelector('.hub-annual-card span');
+        const bars = Array.from(sec.querySelectorAll('.hub-annual-bar'))
+            .map(b => ({bg: getComputedStyle(b).backgroundColor, h: Math.round(b.getBoundingClientRect().height)}));
+        const cards = Array.from(sec.querySelectorAll('.hub-annual-card'))
+            .map(c => c.querySelector('span').textContent);
+        return {眉標色: getComputedStyle(eb).color, 眉標字級: getComputedStyle(eb).fontSize,
+                標題字體: getComputedStyle(tt).fontFamily, 標題字級: getComputedStyle(tt).fontSize,
+                卡標籤色: getComputedStyle(cb).color, 卡數值字體: getComputedStyle(cs).fontFamily,
+                卡背景: getComputedStyle(sec.querySelector('.hub-annual-card')).backgroundColor,
+                柱: bars.slice(0, 5), 卡片值: cards,
+                有副標: !!sec.querySelector('.hub-annual-sub'), 有頁尾: !!sec.querySelector('.hub-annual-foot')};
+    }""")
+    print(f"① 位置在「各期間表現」後 = {pos_ok}｜資料載入 = {loaded}｜標題 = {s0['標題']}")
+    print(f"   眉標 {style['眉標色']} / {style['眉標字級']}｜標題 {style['標題字體'][:22]} / {style['標題字級']}")
+    print(f"   卡片標籤 {style['卡標籤色']}｜卡片數值字體 {style['卡數值字體'][:14]}｜卡背景 {style['卡背景']}")
+    print(f"   說明文字：副標 {style['有副標']}／頁尾 {style['有頁尾']}（應都 False）")
+    print(f"   柱色 = {[b['bg'] for b in style['柱']]}")
+    print(f"   卡片值 = {style['卡片值']}")
+    ok &= style["眉標色"] == "rgb(155, 23, 48)" and style["眉標字級"] == "10px"
+    ok &= "Georgia" in style["標題字體"] and style["標題字級"] == "20px"
+    ok &= style["卡標籤色"] == "rgb(143, 13, 37)" and "Georgia" in style["卡數值字體"]
+    ok &= style["卡背景"] == "rgb(249, 242, 231)"
+    ok &= not style["有副標"] and not style["有頁尾"]
+    # 正值用 06 品牌紅、負值用棕（與 06 自己的各期間長條圖一致）
+    for card, bar in zip(style["卡片值"], style["柱"]):
+        if card.strip() == "N/A":
+            continue
+        want = "rgb(143, 13, 37)" if card.strip().startswith("+") else "rgb(183, 122, 69)"
+        ok &= bar["bg"] == want
     print(f"   柱幾何 = {geom}")
     plot_w = pg.evaluate("() => Math.round(document.querySelector('.hub-annual-plot').getBoundingClientRect().width)")
     widths = [g["w"] for g in geom]
@@ -140,13 +173,12 @@ with sync_playwright() as p:
         const bar = sec.querySelector('.hub-annual-bar');
         return {語言: document.documentElement.dataset.hubLanguage,
                 標題: sec.querySelector('.hub-annual-title').textContent,
-                副標: sec.querySelector('.hub-annual-sub').textContent.slice(0, 30),
                 第一卡: card ? card.textContent : null,
                 第一卡色: card ? getComputedStyle(card).color : null,
                 柱類: bar ? bar.className : null};
     }""")
     print(f"⑥ 切簡體：{json.dumps(sc, ensure_ascii=False)}")
-    ok &= sc["語言"] == "simplified" and "回报" in sc["標題"] and ("历年" in sc["副標"] or "日历年" in sc["副標"])
+    ok &= sc["語言"] == "simplified" and "回报" in sc["標題"]
     ok &= sc["第一卡"] not in (None, "N/A") and sc["第一卡色"] == "rgb(177, 52, 70)"
 
     print("JS 錯誤:", errs[:3] if errs else "無")
