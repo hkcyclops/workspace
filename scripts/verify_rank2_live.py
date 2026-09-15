@@ -299,6 +299,28 @@ with sync_playwright() as p:
         record("G 橫屏 %d×%d" % (vw, vh), g)
     pg.set_viewport_size({"width": 1440, "height": 1000})
 
+    # H 截圖模式（?shot=1）：https 上 Top 10 要在一張橫屏裡全塞下
+    for (vw, vh, tab, view) in [(844, 390, "nav", "cross"), (800, 360, "div", "detail")]:
+        pg.set_viewport_size({"width": vw, "height": vh})
+        nav(pg, TR + f"?tab={tab}&cat=all&basis=1&view={view}&shot=1", pause=1400)
+        h = pg.evaluate("""() => {
+            const rows=Array.from(document.querySelectorAll('tbody tr:not(.mrow)'));
+            const last=rows[rows.length-1].getBoundingClientRect();
+            const nm=rows[0].children[2], st=getComputedStyle(nm);
+            return {是shot: document.documentElement.classList.contains('shot'), 列數: rows.length,
+                    視窗高: innerHeight, 最後列底部: Math.round(last.bottom),
+                    餘高: Math.round(innerHeight-last.bottom), 列高: Math.round(rows[1].getBoundingClientRect().height),
+                    單行: st.whiteSpace==='nowrap' && st.textOverflow==='ellipsis',
+                    工具列隱藏: getComputedStyle(document.querySelector('.row')).display==='none',
+                    脈絡: document.getElementById('shotctx').textContent.trim(),
+                    按鈕: document.getElementById('shotbtn').textContent.trim()};
+        }""")
+        print("   H 截圖模式 %d×%d：%s" % (vw, vh, h))
+        if not (h["是shot"] and h["列數"] == 10 and h["餘高"] >= 20 and h["工具列隱藏"] and h["單行"]):
+            ok = False; notes.append("截圖模式 %d×%d 未能在單屏塞下 Top 10" % (vw, vh))
+        record("H 截圖模式 %d×%d" % (vw, vh), h)
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+
     print("   JS 錯誤：%s" % (errs[:3] if errs else "無"))
     if errs:
         ok = False; notes.append("JS 錯誤：%s" % errs[:2])

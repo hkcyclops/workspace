@@ -46,6 +46,10 @@ h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-
  text-decoration:none;color:#6b6d70}
 .langbtn:hover{color:var(--red)}
 .langbtn.is-on{background:#202124;color:#fff}
+.shotctx{display:none}
+.shotbtn{appearance:none;border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--gray);
+ cursor:pointer;padding:0 0 1px;margin-left:10px;border-bottom:1px dotted var(--line-3);white-space:nowrap}
+.shotbtn:hover{color:var(--red);border-bottom-color:var(--red)}
 .backlink{margin:8px 0 0;font-size:13.5px;line-height:1.6}
 .backlink a{color:var(--red);text-decoration:none}
 .tabs{display:flex;gap:0;border-bottom:2px solid var(--line-3);margin:22px 0 0;flex-wrap:wrap}
@@ -118,6 +122,28 @@ td.basis{background:#fbf6ea;font-weight:700}
 .sp-rc{fill:rgba(143,13,37,.06)}
 .sp-pt{fill:#8f0d25}
 .mrow{display:none}
+/* 截圖模式（?shot=1 或按「截圖模式」）：隱藏工具列，讓 Top 10 在一張橫屏裡截完
+   幾何前提：390px 高 ÷ (表頭+表頭列) 後每列只剩 ~23px → 基金名必須單行省略（table-layout:fixed） */
+html.shot .eyebrow,html.shot .backlink,html.shot .monthnav,html.shot .tabs,
+html.shot .row,html.shot .note,html.shot .foot,html.shot .langsw{display:none}
+html.shot .wrap{padding:6px 8px 6px}
+html.shot .masthead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;
+ padding-bottom:5px;margin-bottom:5px;cursor:pointer}
+html.shot h1{font-size:18px;line-height:1.25;margin:0}
+html.shot .sub{margin:0;font-size:12px;line-height:1.4}
+html.shot .shotctx{display:inline;font-size:12px;color:var(--ink-2);font-weight:700}
+html.shot .card{margin:0}
+html.shot table{table-layout:fixed;font-size:12px}
+html.shot th,html.shot td{padding:4px 8px;line-height:1.3}
+html.shot thead th{font-size:11.5px}
+html.shot thead th:nth-child(1),html.shot tbody tr:not(.mrow) td:nth-child(1){width:56px}
+html.shot thead th:nth-child(2),html.shot tbody tr:not(.mrow) td:nth-child(2){width:48px}
+html.shot thead th:nth-child(3),html.shot tbody tr:not(.mrow) td:nth-child(3){width:29%}
+html.shot td.name{font-size:11.5px;line-height:1.3;min-width:0;display:table-cell;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.shot td.cell-code .code{font-size:12px}
+html.shot td.rank .rk{font-size:12.5px}
+html.shot td.rank .mv{font-size:10.5px}
 @media (max-width:700px){
  .wrap{padding:8px 8px 90px}
  .masthead{padding-bottom:8px;margin-bottom:8px}
@@ -181,7 +207,8 @@ JS = r"""
     panel: (qs.get('tab')==='div'||qs.get('tab')==='nav') ? qs.get('tab') : 'div',
     cat:   qs.get('cat') || 'all',
     basis: qs.get('basis') || 'YTD',
-    view:  qs.get('view') || 'cross'
+    view:  qs.get('view') || 'cross',
+    shot:  qs.get('shot') === '1'
   };
   var CURR = {'USD':'美元','HKD':'港元','RMB':'人民幣','CNY':'人民幣','AUD':'澳元','EUR':'歐元','GBP':'英鎊','JPY':'日圓','SGD':'新加坡元','NZD':'紐元','CAD':'加元','TWD':'新台幣'};
   var CATNAME = {}; D.cats.forEach(function(x){ CATNAME[x[0]] = x[1]; });
@@ -416,6 +443,11 @@ JS = r"""
       });
     });
 
+    /* 截圖模式用的一行脈絡（一般模式隱藏） */
+    var ctx=document.getElementById('shotctx');
+    if(ctx) ctx.textContent=' · '+(S.panel==='div'?'派息基金':'非派息基金')+' · '+(CATNAME[S.cat]||'全部')
+      +' · 排名基準 '+(PL[S.basis]||S.basis)+' · Top '+list.length;
+
     var cov=D.cov[S.panel][S.basis];
     document.getElementById('note').innerHTML =
       (S.view==='cross'
@@ -458,11 +490,36 @@ JS = r"""
   function syncURL(){
     var q=new URLSearchParams();
     q.set('tab',S.panel); q.set('cat',S.cat); q.set('basis',S.basis); q.set('view',S.view);
+    if(S.shot) q.set('shot','1');
     if(history.replaceState) history.replaceState(null,'',location.pathname+'?'+q.toString());
   }
   function render(){ hideCard(); document.body.style.cursor=''; renderTabs(); renderCats(); renderPeriods(); renderTable(); syncURL(); }
   render();
   window.addEventListener('scroll', hideCard, true);
+
+  /* 截圖模式：只切換 html.shot 這個 class（工具列隱藏、基金名單行省略），資料完全不動
+     開啟後網址會帶 ?shot=1，可直接加入手機主畫面當「一張截完 Top 10」的書籤 */
+  var shotBtn=document.getElementById('shotbtn');
+  function applyShot(on){
+    S.shot=!!on;
+    document.documentElement.classList.toggle('shot', S.shot);
+    if(shotBtn){
+      shotBtn.textContent = S.shot ? '✕ 退出' : '截圖模式';
+      shotBtn.title = S.shot ? '退出截圖模式（也可點標題列或按 Esc）' : '截圖模式：隱藏工具列，一張截完 Top 10';
+    }
+    var mh=document.querySelector('.masthead');
+    if(mh) mh.title = S.shot ? '點此退出截圖模式' : '';
+    try{ localStorage.setItem('calculator-hub-rank-shot', S.shot ? '1' : '0'); }catch(e){}
+    syncURL();
+  }
+  if(shotBtn) shotBtn.addEventListener('click', function(e){ e.stopPropagation(); applyShot(!S.shot); });
+  var MH=document.querySelector('.masthead');   /* 截圖模式下點標題列也能退出 */
+  if(MH) MH.addEventListener('click', function(){ if(S.shot) applyShot(false); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && S.shot) applyShot(false); });
+  if(!qs.get('shot')){            /* 網址沒指定就跟隨本機上次的選擇 */
+    try{ if(localStorage.getItem('calculator-hub-rank-shot')==='1') S.shot=true; }catch(e){}
+  }
+  applyShot(S.shot);
 
   /* 語言：跟隨 06（同源 localStorage）＋ 本頁切換寫回同一鍵 */
   function swapTo(url){
@@ -496,7 +553,7 @@ TPL = """<!doctype html>
     <p class="eyebrow">AIA · TMP2 / FUND MONTHLY RANKING</p>
     <h1 id="h1">基金月榜</h1>
     <p class="backlink"><a href="./06-fund-portfolio-workbench.html">← 返回 06 基金組合測算</a></p>
-    <p class="sub">基準日 <b id="anchor"></b></p>
+    <p class="sub">基準日 <b id="anchor"></b><span id="shotctx" class="shotctx"></span><button type="button" id="shotbtn" class="shotbtn">截圖模式</button></p>
     __MONTHNAV__
     <div class="langsw" role="group" aria-label="切換中文顯示">
       <span class="langsw-lbl">LANG</span>

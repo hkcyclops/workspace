@@ -250,6 +250,36 @@ with sync_playwright() as p:
         ok &= lr["內距"] == "6px 8px" and lr["字級"] == "13px"
         ok &= lr["可見列數"] >= 3 and lr["chip行數"] <= 2   # 橫屏要真的看得到資料列、chip 不可散成三行
 
+    # ⑭ 截圖模式（?shot=1）：工具列隱藏、基金名單行省略、Top 10 要在一張橫屏裡全塞下
+    for (vw, vh, tab, basis, view, label) in [(844, 390, "nav", "1", "cross", "iPhone 14/15 8欄"),
+                                              (800, 360, "div", "1", "detail", "小機 派息明細9欄")]:
+        m.set_viewport_size({"width": vw, "height": vh})
+        m.goto(TR + f"?tab={tab}&cat=all&basis={basis}&view={view}&shot=1", wait_until="domcontentloaded")
+        m.wait_for_timeout(1300)
+        sh = m.evaluate("""() => {
+            const rows=Array.from(document.querySelectorAll('tbody tr:not(.mrow)'));
+            const last=rows[rows.length-1].getBoundingClientRect();
+            const ths=Array.from(document.querySelectorAll('thead th'));
+            const wrapx=document.querySelector('.wrapx');
+            const nm=rows[0].children[2], st=getComputedStyle(nm);
+            return {是shot: document.documentElement.classList.contains('shot'),
+                    列數: rows.length, 最後列底部: Math.round(last.bottom), 視窗高: innerHeight,
+                    餘高: Math.round(innerHeight-last.bottom),
+                    列高: Math.round(rows[1].getBoundingClientRect().height),
+                    單行: st.whiteSpace==='nowrap' && st.textOverflow==='ellipsis',
+                    工具列隱藏: getComputedStyle(document.querySelector('.row')).display==='none'
+                              && getComputedStyle(document.querySelector('.tabs')).display==='none'
+                              && getComputedStyle(document.querySelector('.langsw')).display==='none',
+                    脈絡: document.getElementById('shotctx').textContent.trim(),
+                    按鈕: document.getElementById('shotbtn').textContent.trim()};
+        }""")
+        print(f"⑭ 截圖模式 {label} {vw}×{vh}：列={sh['列數']} 最後列底={sh['最後列底部']}/{sh['視窗高']}"
+              f" 餘高={sh['餘高']} 列高={sh['列高']}｜工具列隱藏={sh['工具列隱藏']} 基金名單行={sh['單行']}"
+              f"｜脈絡「{sh['脈絡']}」按鈕={sh['按鈕']}")
+        ok &= sh["是shot"] and sh["列數"] == 10 and sh["餘高"] >= 20
+        ok &= sh["工具列隱藏"] and sh["單行"] and sh["按鈕"] == "✕ 退出"
+    m.set_viewport_size({"width": 390, "height": 844})
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")
