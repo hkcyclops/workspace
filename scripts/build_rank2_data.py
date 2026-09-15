@@ -78,16 +78,9 @@ def prev_ranks(codes, periods, fn, prev_anchor, top_of, cat_of):
     return out
 
 
-def main():
-    ym = None
-    if "--month" in sys.argv:
-        ym = sys.argv[sys.argv.index("--month") + 1]
-    if ym:
-        y, m = (int(x) for x in ym.split("-"))
-    else:
-        y, m = B.MONTHS[0]
+def pack(y, m):
+    """產生該月份的資料 JS 字串（不回寫檔案）"""
     anchor = B.month_end(y, m)
-
     div_p, div_cov = build_panel(B.ZCODES, B.DIV_PERIODS, B.div_perf, anchor, True)
     nav_p, nav_cov = build_panel(B.NCODES, B.NAV_PERIODS, B.nav_perf, anchor, False)
 
@@ -111,7 +104,6 @@ def main():
             "r": round((B.refs.get(c, {}).get("annualizedDistributionRate") or 0), 2),
         }
 
-    # 每個期間「Top10 聯集」的走勢圖（hover/展開用）
     sparks = {}
     for key, codes, by_p, periods in (("div", B.ZCODES, div_p, B.DIV_PERIODS),
                                       ("nav", B.NCODES, nav_p, B.NAV_PERIODS)):
@@ -127,7 +119,8 @@ def main():
                         sparks[sk] = sp
 
     payload = {
-        "meta": {"anchor": anchor.isoformat(), "months": [f"{a}-{b:02d}" for a, b in B.MONTHS],
+        "meta": {"anchor": anchor.isoformat(), "month": f"{y}-{m:02d}",
+                 "months": [f"{a}-{b:02d}" for a, b in B.MONTHS],
                  "built": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")},
         "cats": [[k, v] for k, v in B.CATS],
         "panels": {
@@ -141,14 +134,22 @@ def main():
         "prev": prev,
         "spark": sparks,
     }
+    return "window.__RANK2__=" + json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + ";"
+
+
+def main():
+    ym = None
+    if "--month" in sys.argv:
+        ym = sys.argv[sys.argv.index("--month") + 1]
+    y, m = (int(x) for x in ym.split("-")) if ym else B.MONTHS[0]
+    js = pack(y, m)
     out = os.path.join(B.DEPLOY, "data", "rank2.js")
-    js = "window.__RANK2__=" + json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + ";\n"
-    io.open(out, "w", encoding="utf-8", newline="").write(js)
-    print(f"基準 {anchor}｜已寫入 data/rank2.js（{len(js.encode())/1024:.0f} KB）")
-    print(f"  基金 {len(funds)} 檔（派息 {len(B.ZCODES)}／非派息 {len(B.NCODES)}）")
-    for key, cov, periods in (("派息", div_cov, B.DIV_PERIODS), ("非派息", nav_cov, B.NAV_PERIODS)):
-        print(f"  {key}覆蓋：" + "　".join(f"{period_key(p)} {cov[period_key(p)]} 檔" for p in periods))
-    print(f"  走勢圖組數 {len(sparks)}｜上期名次基準 {prev_anchor}")
+    io.open(out, "w", encoding="utf-8", newline="").write(js + "\n")
+    d = json.loads(js.split("=", 1)[1].rstrip(";"))
+    print(f"{y}-{m:02d}｜基準 {d['meta']['anchor']}｜已寫入 data/rank2.js（{len(js.encode())/1024:.0f} KB）")
+    for key, label in (("div", "派息"), ("nav", "非派息")):
+        cov = d["cov"][key]
+        print(f"  {label}覆蓋：" + "　".join(f"{k} {v} 檔" for k, v in cov.items()))
 
 
 if __name__ == "__main__":

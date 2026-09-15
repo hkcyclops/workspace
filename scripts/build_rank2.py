@@ -37,34 +37,46 @@ body{margin:0;background:var(--page);color:var(--ink);
 .eyebrow{margin:0;font-size:11.5px;letter-spacing:.16em;font-weight:800;color:var(--gray)}
 h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;line-height:1.35}
 .sub{margin:8px 0 0;font-size:14px;line-height:1.8;color:var(--ink-2)}
-.langsw{position:absolute;right:0;top:0;display:inline-flex;align-items:center;background:var(--surface);
- border:1px solid var(--line-3);border-radius:0;overflow:hidden}
-.langsw-lbl{font-family:ui-monospace,Consolas,monospace;font-size:10px;font-weight:800;letter-spacing:.075em;
- color:var(--gray);padding:0 7px 0 8px}
-.langbtn{font-size:13px;font-weight:700;padding:7px 6px;min-width:30px;text-align:center;text-decoration:none;color:var(--ink-2)}
+.langsw{position:absolute;right:0;top:0;display:inline-flex;align-items:center;background:#fff;
+ border:1px solid #202124;border-radius:0;padding:2px}
+.langsw-lbl{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:8px;font-weight:800;
+ letter-spacing:.04em;color:#77797c;padding:0 5px 0 4px}
+.langbtn{font-size:12px;font-weight:800;line-height:1.25;padding:4px 5px;min-width:28px;text-align:center;
+ text-decoration:none;color:#6b6d70}
 .langbtn:hover{color:var(--red)}
-.langbtn.is-on{background:var(--ink);color:#fff}
+.langbtn.is-on{background:#202124;color:#fff}
 .backlink{margin:8px 0 0;font-size:13.5px;line-height:1.6}
 .backlink a{color:var(--red);text-decoration:none}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}
-.tab{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:999px;
- padding:7px 16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
-.tab.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--line-3);margin:22px 0 0;flex-wrap:wrap}
+.tab{appearance:none;border:0;background:transparent;cursor:pointer;font:inherit;font-weight:700;
+ color:var(--ink-2);padding:11px 18px;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab b{font-family:Georgia,serif;color:var(--gray);font-weight:700;margin-left:6px}
+.tab:hover{color:var(--red)}
+.tab.is-on{color:var(--red);border-bottom-color:var(--red)}
+/* 月份導覽（與 v1 一致） */
+.monthnav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 0}
+.mnav{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);
+ padding:7px 11px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;line-height:1.4}
+.mnav:hover{border-color:var(--red);color:var(--red)}
+.mnav.off{opacity:.42;pointer-events:none}
+.mnav-sel span{color:var(--gray);font-size:11.5px;font-weight:800;letter-spacing:.08em}
+.mnav-sel select{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:0 2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .row .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--gray);font-weight:700;white-space:nowrap}
-.chip{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:999px;
- padding:5px 13px;font:inherit;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
-.chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
-.chip.period.on{background:var(--red);border-color:var(--red)}
-.chip.vw.on{background:var(--gold);border-color:var(--gold);color:#3b2c10}
-.chip b{font-weight:700;margin-left:5px;font-size:11.5px;color:var(--gray)}
+.chip{border:1px solid #c8a85b;background:#fdf6e6;color:#49372f;border-radius:0;
+ padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.chip b{font-family:Georgia,serif;font-weight:700;margin-left:5px;color:var(--red)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
 .chip.on b{color:inherit}
+.chip.vw.on{background:var(--gold);border-color:var(--gold);color:#3b2c10}
+.chip.period.on{background:var(--red);border-color:var(--red);color:#fff}
 .card{background:var(--surface);border:1px solid var(--line);box-shadow:inset 0 2px var(--gold);margin:14px 0 0}
 .wrapx{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{border-bottom:1px solid var(--line-2);padding:10px 12px;text-align:right;white-space:nowrap;line-height:1.4}
 th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
-thead th{background:var(--head);color:var(--th-ink);font-size:13px;font-weight:700;position:sticky;top:0;z-index:2}
+thead th{background:var(--head);color:var(--th-ink);font-size:13px;font-weight:700;position:sticky;top:0;z-index:2;
+ font-family:Georgia,"Noto Serif TC",serif}
 thead th.basis{background:var(--gold);color:#3b2c10}
 tbody tr{cursor:default}
 tbody tr:hover td{background:#fdfaf3}
@@ -261,7 +273,7 @@ JS = r"""
     var box=document.getElementById('tabs'); box.innerHTML='';
     [['div','派息基金'],['nav','非派息基金']].forEach(function(x){
       var n=Object.keys(D.panels[x[0]].p[D.panels[x[0]].periods[0]]||{}).length;
-      var b=el('button','tab'+(S.panel===x[0]?' on':''),x[1]+' '+n);
+      var b=el('button','tab'+(S.panel===x[0]?' is-on':''),x[1]+' <b>'+n+'</b>');
       b.onclick=function(){ S.panel=x[0];
         if(periods().indexOf(S.basis)<0) S.basis=periods()[0];
         if(S.cat!=='all' && !hasCat(S.cat)) S.cat='all';
@@ -269,7 +281,7 @@ JS = r"""
       box.appendChild(b);
     });
     var vb=document.getElementById('views'); vb.innerHTML='';
-    [['cross','跨期比較'],['detail','明細']].forEach(function(x){
+    [['cross','基本'],['detail','明細']].forEach(function(x){
       var b=el('button','chip vw'+(S.view===x[0]?' on':''),x[1]);
       b.onclick=function(){ S.view=x[0]; render(); };
       vb.appendChild(b);
@@ -462,6 +474,7 @@ TPL = """<!doctype html>
     <h1 id="h1">基金月榜</h1>
     <p class="backlink"><a href="./06-fund-portfolio-workbench.html">← 返回 06 基金組合測算</a></p>
     <p class="sub">基準日 <b id="anchor"></b></p>
+    __MONTHNAV__
     <div class="langsw" role="group" aria-label="切換中文顯示">
       <span class="langsw-lbl">LANG</span>
       <a class="langbtn__TR_ON__" data-lang="traditional" href="__SELF__">繁</a>
@@ -485,9 +498,8 @@ TPL = """<!doctype html>
 <script>
 (function(){ var M=window.__RANK2__.meta;
   document.getElementById('anchor').textContent=M.anchor;
-  var ym=(M.months&&M.months[0]||'').split('-'), t=(ym[1]? parseInt(ym[1],10)+'月' : M.anchor.slice(0,7));
-  var h='基金月榜 - '+t; document.getElementById('h1').textContent=h;
-  document.title=h.replace('基金月榜','基金月榜')+'｜AIA TMP2';
+  var ym=(M.month||M.anchor.slice(0,7)).split('-'), t=(ym[1]? parseInt(ym[1],10)+'月' : M.anchor.slice(0,7));
+  var h='基金月榜 - '+t; document.getElementById('h1').textContent=h; document.title=h+'｜AIA TMP2';
 })();
 </script>
 <script>__JS__</script>
@@ -496,25 +508,59 @@ TPL = """<!doctype html>
 """
 
 
-def localize(html, lang):
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_rankings as B
+import build_rank2_data as P
+
+
+def fname(y, m, lang):
+    """最新月份 → fund-ranking-2(.html/-sc.html)；其餘 → fund-ranking-2-YYYY-MM..."""
+    latest = (y, m) == tuple(B.MONTHS[0])
+    base = "fund-ranking-2" if latest else f"fund-ranking-2-{y}-{m:02d}"
+    return base + (".html" if lang == "tr" else "-sc.html")
+
+
+def month_nav(y, m):
+    """月份導覽（placeholders __URL_YYYY-MM__ / __URL_LATEST__ 由 localize 依語言替換）"""
+    opts = []
+    for (yy, mm) in B.MONTHS:
+        sel = " selected" if (yy, mm) == (y, m) else ""
+        opts.append(f"<option value='__URL_{yy}-{mm:02d}__'{sel}>{yy}-{mm:02d}</option>")
+    idx = B.MONTHS.index((y, m))
+    if idx + 1 < len(B.MONTHS):
+        oy, om = B.MONTHS[idx + 1]
+        prev_html = f"<a class='mnav' href='__URL_{oy}-{om:02d}__'>&lsaquo; 前一月</a>"
+    else:
+        prev_html = "<span class='mnav off'>&lsaquo; 前一月</span>"
+    next_html = ("<span class='mnav off'>最新月份 &rsaquo;</span>" if idx == 0
+                 else "<a class='mnav' href='__URL_LATEST__'>最新月份 &rsaquo;</a>")
+    return (f"<nav class='monthnav' aria-label='月份切換'>{prev_html}"
+            f"<label class='mnav mnav-sel'><span>月份</span>"
+            f"<select aria-label='選擇月份' onchange=\"if(this.value) location.href=this.value\">"
+            f"{''.join(opts)}</select></label>{next_html}</nav>")
+
+
+def localize(y, m, lang, data):
+    html = TPL.replace("__MONTHNAV__", month_nav(y, m))
+    html = html.replace("__CSS__", CSS).replace("__JS__", JS).replace("__DATA__", data)
     other = "sc" if lang == "tr" else "tr"
-    # ① 先注入 CSS/JS/DATA（JS 內也含 __OTHER__ / __LANGVAL__ 等佔位符）
-    html = html.replace("__CSS__", CSS).replace("__JS__", JS).replace("__DATA__", DATA)
-    # ② 再做語言與網址替換，否則 JS 內的佔位符不會被換到
-    return (html
-            .replace("__URL_TR__", "fund-ranking-2.html")
-            .replace("__URL_SC__", "fund-ranking-2-sc.html")
-            .replace("__SELF__", "fund-ranking-2.html" if lang == "tr" else "fund-ranking-2-sc.html")
-            .replace("__OTHER__", "fund-ranking-2-sc.html" if lang == "tr" else "fund-ranking-2.html")
-            .replace("__LANGTAG__", "zh-HK" if lang == "tr" else "zh-Hans")
-            .replace("__LANGVAL__", lang)
-            .replace("__TR_ON__", " is-on" if lang == "tr" else "")
-            .replace("__SC_ON__", " is-on" if lang == "sc" else ""))
+    out = (html
+           .replace("__URL_LATEST__", fname(B.MONTHS[0][0], B.MONTHS[0][1], lang))
+           .replace("__SELF__", fname(y, m, lang))
+           .replace("__OTHER__", fname(y, m, other))
+           .replace("__LANGTAG__", "zh-HK" if lang == "tr" else "zh-Hans")
+           .replace("__LANGVAL__", lang)
+           .replace("__TR_ON__", " is-on" if lang == "tr" else "")
+           .replace("__SC_ON__", " is-on" if lang == "sc" else ""))
+    for (yy, mm) in B.MONTHS:
+        out = out.replace(f"__URL_{yy}-{mm:02d}__", fname(yy, mm, lang))
+    return out
 
 
 def check_no_ph(txt, name):
     import re as _re
-    left = sorted(set(_re.findall(r"__[A-Z_]+__", txt)))
+    ALLOW = {'__RANK2__'}   # 頁面自己的 JS 變數，非佔位符
+    left = sorted(set(_re.findall(r"__[A-Z_][A-Z0-9_-]*__", txt)) - ALLOW)
     if left:
         raise SystemExit(f"{name} 仍有未替換的佔位符：{left}")
 
@@ -526,16 +572,18 @@ def main():
     except Exception as e:
         cc = None
         print("opencc 不可用，只產出繁體版：", e)
-    for lang in ("tr", "sc"):
-        if lang == "sc" and cc is None:
-            continue
-        out = localize(TPL, lang)                    # ① 先做語言替換（含 JS 內的 PAGE_LANG）
-        if lang == "sc":
-            out = cc.convert(out)                    # ② 再整檔轉簡
-        check_no_ph(out, lang)
-        name = "fund-ranking-2.html" if lang == "tr" else "fund-ranking-2-sc.html"
-        io.open(os.path.join(DEPLOY, name), "w", encoding="utf-8", newline="").write(out)
-        print(f"{name}（{lang}，{len(out.encode())/1024:.0f} KB）")
+    for (y, m) in B.MONTHS:
+        data = P.pack(y, m)
+        for lang in ("tr", "sc"):
+            if lang == "sc" and cc is None:
+                continue
+            out = localize(y, m, lang, data)
+            if lang == "sc":
+                out = cc.convert(out)
+            check_no_ph(out, f"{y}-{m:02d} {lang}")
+            name = fname(y, m, lang)
+            io.open(os.path.join(DEPLOY, name), "w", encoding="utf-8", newline="").write(out)
+            print(f"{name}（{lang}，{len(out.encode())/1024:.0f} KB）")
 
 
 if __name__ == "__main__":

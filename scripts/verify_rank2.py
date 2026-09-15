@@ -35,6 +35,11 @@ with sync_playwright() as p:
             數值字體: (function(){ const e = document.querySelector('td.num'); const c = getComputedStyle(e);
                 return {f: c.fontFamily.slice(0, 13), w: c.fontWeight, size: c.fontSize}; })(),
             標題字級: getComputedStyle(document.querySelector('h1')).fontSize,
+            分頁: (function(){ const t = Array.from(document.querySelectorAll('.tab'));
+                const on = t.find(x => x.classList.contains('is-on')), off = t.find(x => !x.classList.contains('is-on'));
+                const g = e => { const c = getComputedStyle(e); return {bg: c.backgroundColor, radius: c.borderRadius, bbc: c.borderBottomColor, bbw: c.borderBottomWidth}; };
+                return {選中: g(on), 未選: g(off), 檔數字體: getComputedStyle(document.querySelector('.tab b')).fontFamily.slice(0, 7)}; })(),
+            基金名字體: getComputedStyle(document.querySelector('td.name')).fontFamily.slice(0, 12),
             頁標題: document.querySelector('h1').textContent,
             返回: (function(){ const a = document.querySelector('.backlink a'); return a ? a.getAttribute('href') : null; })(),
             LANG外框: (function(){ const c = getComputedStyle(document.querySelector('.langsw'));
@@ -68,6 +73,10 @@ with sync_playwright() as p:
     ok &= s["頁標題"].startswith("基金月榜 - ") and (s["返回"] or "").endswith("06-fund-portfolio-workbench.html")
     ok &= s["LANG外框"]["radius"] == "0px" and "1px solid" in s["LANG外框"]["border"]
     ok &= s["代號欄"] and s["代號欄"]["字體"].startswith("Georgia") and "?fund=" in (s["代號欄"]["連結"] or "")
+    print(f"   分頁：{s['分頁']}｜基金名字體 {s['基金名字體']}")
+    ok &= s["分頁"]["選中"]["bbc"] == "rgb(143, 13, 37)" and s["分頁"]["選中"]["radius"] == "0px"
+    ok &= s["分頁"]["未選"]["bg"] == "rgba(0, 0, 0, 0)" and s["分頁"]["檔數字體"] == "Georgia"
+    ok &= not s["基金名字體"].startswith("Georgia")   # 基金名回無襯線
     ok &= "06-fund-portfolio-workbench.html?fund=Z17" in (s["首列連結"] or "")
 
     # ② hover 基金名 → 資訊卡（含走勢）
@@ -185,6 +194,21 @@ with sync_playwright() as p:
     finally:
         if srv:
             srv.terminate()
+
+    # ⑪ 月份導覽（最新頁）：前一月 → 存檔頁；最新月份為 off
+    nav = pg.evaluate("() => { const n = document.querySelector('.monthnav'); if (!n) return null; return {項: Array.from(n.children).map(x => x.textContent.replace(/\\s+/g, ' ').trim()), 連結: Array.from(n.querySelectorAll('a')).map(a => a.textContent.trim() + ' -> ' + a.getAttribute('href')), 選項: Array.from(n.querySelectorAll('option')).map(o => o.value + (o.selected ? '[選]' : ''))}; }")
+    print(f"⑪ 月份導覽（最新頁）：{json.dumps(nav, ensure_ascii=False)}")
+    ok &= bool(nav) and any("前一月" in l and "2026-07" in l for l in nav["連結"])
+    ok &= any(o.endswith("[選]") and o.startswith("fund-ranking-2.html") for o in nav["選項"])
+
+    # ⑫ 存檔頁（2026-07）：標題/基準日/導覽都要指向自己的月份
+    arc = "file:///" + os.path.join(D, "fund-ranking-2-2026-07.html").replace("\\", "/")
+    pg.goto(arc, wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    arc2 = pg.evaluate("() => ({標題: document.querySelector('h1').textContent, 基準日: document.getElementById('anchor').textContent, 導覽連結: Array.from(document.querySelectorAll('.monthnav a')).map(x => x.textContent.trim() + ' -> ' + x.getAttribute('href')), 列: document.querySelectorAll('tbody tr:not(.mrow)').length})")
+    print(f"⑫ 存檔頁 2026-07：{json.dumps(arc2, ensure_ascii=False)}")
+    ok &= arc2["標題"] == "基金月榜 - 7月" and arc2["基準日"] == "2026-07-31" and arc2["列"] == 10
+    ok &= any("最新月份" in l and "fund-ranking-2.html" in l for l in arc2["導覽連結"])
 
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
