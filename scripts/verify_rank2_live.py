@@ -166,6 +166,8 @@ with sync_playwright() as p:
         名次: Array.from(document.querySelectorAll('td.rank')).slice(0,3).map(x=>x.textContent.trim()),
         首列: (function(){ const td=document.querySelector('td.name a'); return td?td.getAttribute('href'):null; })(),
         代號: (function(){ const td=document.querySelector('td.cell-code'); return td?td.textContent.trim():null; })(),
+        代號連結: (function(){ const td=document.querySelector('td.cell-code'); return td&&td.querySelector('a')?td.querySelector('a').getAttribute('href'):null; })(),
+        基金名連結: (function(){ const a=document.querySelector('td.name a'); return a?a.getAttribute('href'):null; })(),
         期間chip檔數: document.querySelectorAll('#periods .chip b').length,
         chip未選: (function(){ const c=Array.from(document.querySelectorAll('#views .chip')).find(x=>!x.classList.contains('on'));
             if(!c) return null; const s=getComputedStyle(c); return {bg:s.backgroundColor, border:s.borderColor}; })(),
@@ -188,7 +190,10 @@ with sync_playwright() as p:
         ok = False; notes.append("chips 未選不是白底（v1 .cat 樣式）")
     if not (a["基金名對齊"] == "left" and a["基金表頭對齊"] == "left"):
         ok = False; notes.append("基金名/表頭未左對齊")
+    if not (a["代號連結"] is None and "?fund=" in (a["基金名連結"] or "")):
+        ok = False; notes.append("代號仍是連結，或基金名連結缺失")
     print("     對齊：基金名=%s 表頭=%s｜chip 未選=%s" % (a["基金名對齊"], a["基金表頭對齊"], a["chip未選"]))
+    print("     代號連結=%s｜基金名連結=%s" % (a["代號連結"], a["基金名連結"]))
     if not any("前一月" in x and "2026-07" in x for x in a["導覽"]):
         ok = False; notes.append("月份導覽缺『前一月 → 2026-07』")
     record("A 桌面", a)

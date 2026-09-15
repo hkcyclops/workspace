@@ -9,7 +9,7 @@
   · 分頁 派息／非派息　· 檢視 跨期比較／明細　· 類別 chips　· 期間 chips（決定排名基準，固定 Top 10）
   · 名次含與上月同榜的 ▲▼ 變化　· 基準欄金色高亮
   · hover 基金名 → 資訊卡（幣種／類別／風險指標／走勢）；hover 期間數值 → 該期間走勢與指標
-  · 點基金名或代號 → 06 走勢圖（?fund=CODE&y=期間）
+  · 點基金名 → 06 走勢圖（?fund=CODE&y=期間）；代號僅為標籤、不可點
   · 手機（≤700px）：只留 名次／基金／基準期間 三欄＋tap 展開明細，表頭 sticky、不再橫向捲動
   · 繁簡雙版、語言跟隨 06（localStorage: calculator-hub-language）、漲跌色依語言（繁綠漲紅跌／簡紅漲綠跌）
   · URL 狀態：?tab=div|nav&cat=&basis=&view=
@@ -254,8 +254,8 @@ JS = r"""
   }
   function linkURL(code){ return './06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis); }
   function codeHTML(code){
-    return '<a href="'+linkURL(code)+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+
-           '<span class="code">'+code+'</span></a>';
+    /* 代號只是標籤，不可點（只有基金名才連到 06） */
+    return '<span class="code">'+code+'</span>';
   }
   function nameHTML(code){
     var f=D.funds[code];

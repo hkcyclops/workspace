@@ -84,7 +84,9 @@ with sync_playwright() as p:
     print(f"   標題「{s['頁標題']}」｜返回 {s['返回']}｜LANG {s['LANG外框']}｜代號欄 {s['代號欄']}")
     ok &= s["頁標題"].startswith("基金月榜 - ") and (s["返回"] or "").endswith("06-fund-portfolio-workbench.html")
     ok &= s["LANG外框"]["radius"] == "0px" and "1px solid" in s["LANG外框"]["border"]
-    ok &= s["代號欄"] and s["代號欄"]["字體"].startswith("Georgia") and "?fund=" in (s["代號欄"]["連結"] or "")
+    ok &= s["代號欄"] and s["代號欄"]["字體"].startswith("Georgia")
+    ok &= s["代號欄"]["連結"] is None                       # 代號不可點（只有基金名連 06）
+    ok &= "?fund=" in (s["首列連結"] or "")
     print(f"   分頁：{s['分頁']}｜基金名字體 {s['基金名字體']}")
     ok &= s["分頁"]["選中"]["bbc"] == "rgb(143, 13, 37)" and s["分頁"]["選中"]["radius"] == "0px"
     ok &= s["分頁"]["未選"]["bg"] == "rgba(0, 0, 0, 0)" and s["分頁"]["檔數字體"] == "Georgia"
