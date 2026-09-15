@@ -47,8 +47,10 @@ h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-
 .langbtn:hover{color:var(--red)}
 .langbtn.is-on{background:#202124;color:#fff}
 .shotctx{display:none}
+.mh-break{display:none}
+.shotbar{display:flex;justify-content:flex-end;margin:9px 3px -5px}
 .shotbtn{appearance:none;border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--gray);
- cursor:pointer;padding:0 0 1px;margin-left:10px;border-bottom:1px dotted var(--line-3);white-space:nowrap}
+ cursor:pointer;padding:0 0 1px;border-bottom:1px dotted var(--line-3);white-space:nowrap}
 .shotbtn:hover{color:var(--red);border-bottom-color:var(--red)}
 .backlink{margin:8px 0 0;font-size:13.5px;line-height:1.6}
 .backlink a{color:var(--red);text-decoration:none}
@@ -126,9 +128,11 @@ td.basis{background:#fbf6ea;font-weight:700}
    幾何前提：390px 高 ÷ (表頭+表頭列) 後每列只剩 ~23px → 基金名必須單行省略（table-layout:fixed） */
 html.shot .eyebrow,html.shot .backlink,html.shot .monthnav,html.shot .tabs,
 html.shot .row,html.shot .note,html.shot .foot,html.shot .langsw{display:none}
-html.shot .wrap{padding:6px 8px 6px}
-html.shot .masthead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;
+html.shot .wrap{position:relative;padding:6px 8px 6px}
+html.shot .masthead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;padding-right:0;
  padding-bottom:5px;margin-bottom:5px;cursor:pointer}
+html.shot .shotbar{position:absolute;right:8px;top:4px;margin:0}
+html.shot .mh-break{display:none}   /* 截圖模式維持「標題+基準日+脈絡」單行 */
 html.shot h1{font-size:18px;line-height:1.25;margin:0}
 html.shot .sub{margin:0;font-size:12px;line-height:1.4}
 html.shot .shotctx{display:inline;font-size:12px;color:var(--ink-2);font-weight:700}
@@ -148,9 +152,10 @@ html.shot td.rank .mv{font-size:10.5px}
  .wrap{padding:8px 8px 90px}
  .masthead{padding-bottom:8px;margin-bottom:8px}
  h1{font-size:19px}
- .sub,.foot{display:none}
- .langsw{position:static;margin:6px 0 0}
- .tabs .tab{font-size:12.5px;padding:6px 11px}
+  .eyebrow{font-size:10px;letter-spacing:.1em}
+  .sub{margin:6px 0 0;font-size:12.5px;line-height:1.5}
+  .foot{display:none}
+  .tabs .tab{font-size:12.5px;padding:6px 11px}
  .row{margin-top:8px;gap:5px}
  .chip{font-size:11.5px;padding:4px 9px}
  .card{margin:8px 0 0}
@@ -177,7 +182,8 @@ html.shot td.rank .mv{font-size:10.5px}
 @media (orientation:landscape) and (min-width:701px) and (max-width:1100px) and (max-height:600px){
  .wrap{padding:8px 8px 24px}
  .masthead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:1px;
-  padding-bottom:6px;margin-bottom:8px}
+  padding-right:100px;padding-bottom:6px;margin-bottom:8px}
+ .mh-break{display:block;flex-basis:100%;height:0;margin:0}   /* 眉標+標題一行，返回/基準日/月份導覽換第二行 */
  .eyebrow{font-size:10.5px;letter-spacing:.12em}
  h1{font-size:19px;line-height:1.2;margin:0}
  .backlink{margin:0;font-size:12.5px}
@@ -552,8 +558,9 @@ TPL = """<!doctype html>
   <header class="masthead">
     <p class="eyebrow">AIA · TMP2 / FUND MONTHLY RANKING</p>
     <h1 id="h1">基金月榜</h1>
+    <span class="mh-break"></span>
     <p class="backlink"><a href="./06-fund-portfolio-workbench.html">← 返回 06 基金組合測算</a></p>
-    <p class="sub">基準日 <b id="anchor"></b><span id="shotctx" class="shotctx"></span><button type="button" id="shotbtn" class="shotbtn">截圖模式</button></p>
+    <p class="sub">基準日 <b id="anchor"></b><span id="shotctx" class="shotctx"></span></p>
     __MONTHNAV__
     <div class="langsw" role="group" aria-label="切換中文顯示">
       <span class="langsw-lbl">LANG</span>
@@ -567,6 +574,7 @@ TPL = """<!doctype html>
   <div class="row"><span class="lbl">類別</span><span id="cats" style="display:flex;gap:8px;flex-wrap:wrap"></span></div>
   <div class="row"><span class="lbl">排名基準</span><span id="periods" style="display:flex;gap:8px;flex-wrap:wrap"></span></div>
 
+  <div class="shotbar"><button type="button" id="shotbtn" class="shotbtn">截圖模式</button></div>
   <div class="card" id="table"></div>
   <p class="note" id="note"></p>
 

@@ -321,6 +321,43 @@ with sync_playwright() as p:
         record("H 截圖模式 %d×%d" % (vw, vh), h)
     pg.set_viewport_size({"width": 1440, "height": 1000})
 
+    # I 版面位置：手機直屏要有基準日＋LANG 貼右上；橫屏基準日不被 LANG 遮；按鈕在表格外右上方
+    pg.set_viewport_size({"width": 390, "height": 844})
+    nav(pg, TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", pause=1300)
+    mi = pg.evaluate("""() => {
+        const R=s=>{const e=document.querySelector(s); const r=e.getBoundingClientRect(); const st=getComputedStyle(e);
+            return {x:Math.round(r.left),y:Math.round(r.top),right:Math.round(r.right),bottom:Math.round(r.bottom),disp:st.display,pos:st.position};};
+        const rg=document.createRange(); rg.selectNodeContents(document.querySelector('.eyebrow'));
+        const eb=rg.getBoundingClientRect();
+        const sb=R('.shotbtn'), card=R('.card'), thead=R('thead'), wrap=R('.wrap'), sub=R('.sub');
+        return {LANG:R('.langsw'), 基準日:sub, 眉標右緣:Math.round(eb.right),
+                基準日可見:sub.disp!=='none'&&sub.bottom>0,
+                按鈕在表頭上方:sb.bottom<=thead.y+2,
+                按鈕右對齊:Math.round(card.right-sb.right), wrap右:wrap.right};
+    }""")
+    print("   I 手機直屏：基準日可見=%s｜LANG=%s（眉標右緣 %s）｜按鈕在表頭上方=%s 距卡右緣=%s"
+          % (mi["基準日可見"], mi["LANG"], mi["眉標右緣"], mi["按鈕在表頭上方"], mi["按鈕右對齊"]))
+    if not (mi["基準日可見"] and mi["LANG"]["pos"] == "absolute" and mi["眉標右緣"] < mi["LANG"]["x"]
+            and abs(mi["LANG"]["right"] - (mi["wrap右"] - 8)) <= 6
+            and mi["按鈕在表頭上方"] and mi["按鈕右對齊"] <= 20):
+        ok = False; notes.append("手機直屏版面（基準日／LANG／按鈕）異常")
+    record("I 手機直屏版面", mi)
+
+    pg.set_viewport_size({"width": 844, "height": 390})
+    nav(pg, TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", pause=1300)
+    li = pg.evaluate("""() => {
+        const R=s=>{const e=document.querySelector(s); const r=e.getBoundingClientRect();
+            return {x:Math.round(r.left),y:Math.round(r.top),right:Math.round(r.right)};};
+        return {LANG:R('.langsw'), 基準日:R('.sub'), 標題:R('h1'), 返回:R('.backlink')};
+    }""")
+    gapx = li["LANG"]["x"] - li["基準日"]["right"]
+    print("   I 橫屏：基準日右緣=%s LANG左緣=%s 餘量=%spx｜標題top=%s 返回top=%s"
+          % (li["基準日"]["right"], li["LANG"]["x"], gapx, li["標題"]["y"], li["返回"]["y"]))
+    if not (gapx >= 20 and li["返回"]["y"] > li["標題"]["y"] + 10):
+        ok = False; notes.append("橫屏版面（基準日被遮／標題未換行）異常")
+    record("I 橫屏版面", li)
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+
     print("   JS 錯誤：%s" % (errs[:3] if errs else "無"))
     if errs:
         ok = False; notes.append("JS 錯誤：%s" % errs[:2])

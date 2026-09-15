@@ -136,7 +136,7 @@ with sync_playwright() as p:
     # ⑦ 手機直屏 390×844
     m = ctx.new_page()
     m.set_viewport_size({"width": 390, "height": 844})
-    m.goto(TR + "?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
+    m.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
     m.wait_for_timeout(1200)
     mm = m.evaluate("""() => {
         const tw = document.querySelector('.wrapx');
@@ -227,7 +227,7 @@ with sync_playwright() as p:
     for (vw, vh, tab, view, label) in [(844, 390, "nav", "cross", "iPhone 14/15"),
                                        (800, 360, "div", "detail", "小機·派息明細9欄")]:
         m.set_viewport_size({"width": vw, "height": vh})
-        m.goto(TR + f"?tab={tab}&cat=all&basis=1&view={view}", wait_until="domcontentloaded")
+        m.goto(TR + f"?tab={tab}&cat=all&basis=1&view={view}&shot=0", wait_until="domcontentloaded")
         m.wait_for_timeout(1300)
         lr = m.evaluate("""() => {
             const wrapx=document.querySelector('.wrapx'), tb=document.querySelector('table');
@@ -279,6 +279,45 @@ with sync_playwright() as p:
         ok &= sh["是shot"] and sh["列數"] == 10 and sh["餘高"] >= 20
         ok &= sh["工具列隱藏"] and sh["單行"] and sh["按鈕"] == "✕ 退出"
     m.set_viewport_size({"width": 390, "height": 844})
+
+    # ⑮ 版面細節：手機直屏要有基準日＋LANG 回右上；橫屏基準日不被 LANG 遮；截圖模式按鈕在表格外右上方
+    m.set_viewport_size({"width": 390, "height": 844})
+    m.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    m.wait_for_timeout(1200)
+    lay = m.evaluate("""() => {
+        const R=s=>{const e=document.querySelector(s); if(!e) return null; const r=e.getBoundingClientRect(); const st=getComputedStyle(e);
+            return {x:Math.round(r.left),y:Math.round(r.top),right:Math.round(r.right),bottom:Math.round(r.bottom),disp:st.display,pos:st.position};};
+        const lw=R('.langsw'), sub=R('.sub'), eb=R('.eyebrow'), wrap=R('.wrap'), sb=R('.shotbtn'), card=R('.card'), h1=R('h1'), bl=R('.backlink');
+        // 眉標是 block（矩形恆滿寬）→ 用 Range 量文字真實右緣
+        const ebTxt=(function(){ const e=document.querySelector('.eyebrow'); if(!e) return null;
+            const rg=document.createRange(); rg.selectNodeContents(e); const r=rg.getBoundingClientRect();
+            return {x:Math.round(r.left),right:Math.round(r.right)}; })();
+        return {直屏_LANG:lw, 直屏_基準日:sub, 直屏_眉標:eb, 直屏_wrap:wrap,
+                眉標文字右緣:ebTxt, 眉標與LANG重疊:(ebTxt&&lw)?ebTxt.right>lw.x:null, 直屏_基準日可見:(sub&&sub.disp!=='none'&&sub.bottom>0),
+                按鈕位置:{btn:sb, card:card}, 按鈕在表頭上方:sb?sb.bottom<=Math.round(document.querySelector('thead').getBoundingClientRect().top)+2:null,
+                按鈕右對齊:sb&&card?Math.round(card.right-sb.right):null,
+                h1右緣:h1?h1.right:null, 返回:bl};
+    }""")
+    print(f"⑮ 手機直屏：基準日可見={lay['直屏_基準日可見']}（{lay['直屏_基準日']}）")
+    print(f"   LANG={lay['直屏_LANG']}｜眉標文字右緣={lay['眉標文字右緣']}｜與 LANG 重疊={lay['眉標與LANG重疊']}")
+    print(f"   截圖模式按鈕：在表頭上方={lay['按鈕在表頭上方']} 距卡片右緣={lay['按鈕右對齊']}px｜眉標文字右緣={lay['眉標文字右緣']}")
+    ok &= lay["直屏_基準日可見"] and lay["直屏_LANG"]["pos"] == "absolute"
+    ok &= abs(lay["直屏_LANG"]["right"] - (lay["直屏_wrap"]["right"] - 8)) <= 6   # 貼齊右上（wrap 內距 8）
+    ok &= lay["眉標與LANG重疊"] is False    # 用文字實際右緣比對
+    # 橫屏：基準日要與 LANG 留 ≥20px 餘量，且標題與返回／基準日分兩行
+    m.set_viewport_size({"width": 844, "height": 390})
+    m.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    m.wait_for_timeout(1200)
+    land = m.evaluate("""() => {
+        const R=s=>{const e=document.querySelector(s); const r=e.getBoundingClientRect(); return {x:Math.round(r.left),y:Math.round(r.top),right:Math.round(r.right)};};
+        return {LANG:R('.langsw'), 基準日:R('.sub'), 標題:R('h1'), 返回:R('.backlink')};
+    }""")
+    gap = land["LANG"]["x"] - land["基準日"]["right"] if land["基準日"] else None
+    print(f"⑮ 橫屏：基準日右緣={land['基準日']['right'] if land['基準日'] else None} LANG左緣={land['LANG']['x']} 餘量={gap}px"
+          f"｜標題top={land['標題']['y']} 返回top={land['返回']['y']}")
+    ok &= gap is not None and gap >= 20                      # 不被 LANG 遮
+    ok &= land["返回"]["y"] > land["標題"]["y"] + 10          # 返回／基準日 換到標題下一行
+    ok &= lay["按鈕在表頭上方"] and lay["按鈕右對齊"] <= 20     # 按鈕在表外右上方
 
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
