@@ -952,33 +952,38 @@ def build_page(y, m, is_latest):
     return HTML, end_disp
 
 
-try:
-    from opencc import OpenCC
-    _T2S = OpenCC("t2s").convert
-except Exception as e:                                    # opencc 不可用時只產繁體版
-    print("⚠️ opencc 不可用（%s），本次只產繁體版" % e)
-    _T2S = None
+def main():
+    try:
+        from opencc import OpenCC
+        _T2S = OpenCC("t2s").convert
+    except Exception as e:                                    # opencc 不可用時只產繁體版
+        print("⚠️ opencc 不可用（%s），本次只產繁體版" % e)
+        _T2S = None
 
-for i, (y, m) in enumerate(MONTHS):
-    is_latest = (i == 0)
-    base, end_disp = build_page(y, m, is_latest)
-    variants = [("tr", base)]
-    if _T2S:
-        variants.append(("sc", _T2S(base)))
-    written = []
-    for lang, doc in variants:
-        out = localize(doc, y, m, lang)
-        fn = fname_for(y, m, lang)
-        open(os.path.join(DEPLOY, fn), "w", encoding="utf-8", newline="").write(out)
-        written.append(f"{fn}（{len(out)} bytes）")
-    print(f"{y}-{m:02d}　基準 {end_disp}：" + "、".join(written))
-    for p_ in DIV_PERIODS:
-        _, pm = rank_map(ZCODES, p_, month_end(y, m), div_perf)
-        if pm:
-            c, r = max(pm.items(), key=lambda x: x[1]["total"])
-            print(f"   派息 {plabel(p_)}：{len(pm)} 檔，冠軍 {c} {r['total']:+.1f}%")
-    for p_ in NAV_PERIODS:
-        _, pn = rank_map(NCODES, p_, month_end(y, m), nav_perf)
-        if pn:
-            c, r = max(pn.items(), key=lambda x: x[1]["total"])
-            print(f"   非派息 {plabel(p_)}：{len(pn)} 檔，冠軍 {c} {r['total']:+.1f}%")
+    for i, (y, m) in enumerate(MONTHS):
+        is_latest = (i == 0)
+        base, end_disp = build_page(y, m, is_latest)
+        variants = [("tr", base)]
+        if _T2S:
+            variants.append(("sc", _T2S(base)))
+        written = []
+        for lang, doc in variants:
+            out = localize(doc, y, m, lang)
+            fn = fname_for(y, m, lang)
+            open(os.path.join(DEPLOY, fn), "w", encoding="utf-8", newline="").write(out)
+            written.append(f"{fn}（{len(out)} bytes）")
+        print(f"{y}-{m:02d}　基準 {end_disp}：" + "、".join(written))
+        for p_ in DIV_PERIODS:
+            _, pm = rank_map(ZCODES, p_, month_end(y, m), div_perf)
+            if pm:
+                c, r = max(pm.items(), key=lambda x: x[1]["total"])
+                print(f"   派息 {plabel(p_)}：{len(pm)} 檔，冠軍 {c} {r['total']:+.1f}%")
+        for p_ in NAV_PERIODS:
+            _, pn = rank_map(NCODES, p_, month_end(y, m), nav_perf)
+            if pn:
+                c, r = max(pn.items(), key=lambda x: x[1]["total"])
+                print(f"   非派息 {plabel(p_)}：{len(pn)} 檔，冠軍 {c} {r['total']:+.1f}%")
+
+
+if __name__ == "__main__":
+    main()
