@@ -28,6 +28,15 @@ with sync_playwright() as p:
             卡顯示: (function(){ const c = document.getElementById('hcard'); return c ? c.style.display : 'none'; })(),
             卡文字: (function(){ const c = document.getElementById('hcard'); return c ? c.innerText.replace(/\\s+/g, ' ').slice(0, 90) : null; })(),
             卡走勢: document.querySelectorAll('#hcard svg').length,
+            期間chips: Array.from(document.querySelectorAll('#periods .chip')).map(x => x.textContent.trim()),
+            期間chips有檔數: document.querySelectorAll('#periods .chip b').length,
+            類別chips有檔數: document.querySelectorAll('#cats .chip b').length,
+            基準欄陰影: getComputedStyle(document.querySelector('td.basis')).boxShadow,
+            數值字體: (function(){ const e = document.querySelector('td.num'); const c = getComputedStyle(e);
+                return {f: c.fontFamily.slice(0, 13), w: c.fontWeight, size: c.fontSize}; })(),
+            標題字級: getComputedStyle(document.querySelector('h1')).fontSize,
+            眉標: (function(){ const c = getComputedStyle(document.querySelector('.eyebrow'));
+                return {size: c.fontSize, color: c.color}; })(),
             展開列: document.querySelectorAll('tbody tr.mrow').length,
             展開文字: (function(){ const r = document.querySelector('tbody tr.mrow'); return r ? r.innerText.replace(/\\s+/g, ' ').slice(0, 110) : null; })(),
         })""")
@@ -41,6 +50,13 @@ with sync_playwright() as p:
     print(f"   首列連結={s['首列連結']}")
     ok &= s["表頭"] == ["名次", "基金", "YTD", "1 年", "3 年", "5 年"] and s["列數"] == 10
     ok &= s["名次"][0].startswith("1") and s["基準表頭"] == "rgb(200, 168, 91)"
+    print(f"   字體：h1 {s['標題字級']}｜眉標 {s['眉標']}｜數值 {s['數值字體']}")
+    print(f"   chips：期間 {s['期間chips']}（檔數項 {s['期間chips有檔數']}）｜類別檔數項 {s['類別chips有檔數']}")
+    print(f"   基準欄陰影 {s['基準欄陰影']}")
+    ok &= s["期間chips有檔數"] == 0 and s["類別chips有檔數"] >= 1   # 類別仍要顯示檔數（0 檔類別會隱藏，故非固定 5 個）
+    ok &= s["基準欄陰影"] == "none"
+    ok &= s["數值字體"]["f"].startswith("Georgia") and s["數值字體"]["w"] == "700"
+    ok &= s["標題字級"] == "32px" and s["眉標"] == {"size": "11.5px", "color": "rgb(140, 125, 112)"}
     ok &= "06-fund-portfolio-workbench.html?fund=Z17" in (s["首列連結"] or "")
 
     # ② hover 基金名 → 資訊卡（含走勢）

@@ -12,24 +12,24 @@ html[data-lang="tr"]{--up:#347558;--down:#b13446}
 html[data-lang="sc"]{--up:#b13446;--down:#347558}
 *{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink);
- font:14.5px/1.5 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+ font:14.5px/1.5 "Noto Sans TC", ui-sans-serif, system-ui, "Segoe UI", sans-serif}
 .wrap{max-width:1200px;margin:0 auto;padding:30px clamp(14px,2.2vw,44px) 64px}
 .masthead{border-bottom:2px solid var(--red);padding-bottom:14px;margin-bottom:16px;position:relative}
-.eyebrow{margin:0;font-size:10px;letter-spacing:.14em;font-weight:800;color:#9b1730}
-h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:26px;font-weight:500}
-.sub{margin:8px 0 0;font-size:12.5px;line-height:1.7;color:var(--gray)}
+.eyebrow{margin:0;font-size:11.5px;letter-spacing:.16em;font-weight:800;color:var(--gray)}
+h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;line-height:1.35}
+.sub{margin:8px 0 0;font-size:14px;line-height:1.8;color:var(--ink-2)}
 .langsw{position:absolute;right:0;top:0;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--gray)}
 .langbtn{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:4px;
  padding:3px 9px;font:inherit;font-size:12px;cursor:pointer;text-decoration:none}
 .langbtn.is-on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
 .tabs{display:flex;gap:8px;flex-wrap:wrap}
 .tab{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:999px;
- padding:7px 16px;font:inherit;font-size:14px;cursor:pointer}
+ padding:7px 16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .tab.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .row .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--gray);font-weight:700;white-space:nowrap}
 .chip{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:999px;
- padding:5px 13px;font:inherit;font-size:13px;cursor:pointer}
+ padding:5px 13px;font:inherit;font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
 .chip.period.on{background:var(--red);border-color:var(--red)}
 .chip.vw.on{background:var(--gold);border-color:var(--gold);color:#3b2c10}
@@ -40,7 +40,7 @@ h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:26px;font-
 table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{border-bottom:1px solid var(--line-2);padding:10px 12px;text-align:right;white-space:nowrap;line-height:1.4}
 th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
-thead th{background:var(--head);color:var(--th-ink);font-size:12px;font-weight:700;position:sticky;top:0;z-index:2}
+thead th{background:var(--head);color:var(--th-ink);font-size:13px;font-weight:700;position:sticky;top:0;z-index:2}
 thead th.basis{background:var(--gold);color:#3b2c10}
 tbody tr{cursor:default}
 tbody tr:hover td{background:#fdfaf3}
@@ -52,13 +52,13 @@ td.rank .mv.flat{color:var(--gray)}
 td.rank .mv.new{color:#8a6a1f;background:#f7eed8;border-radius:4px;padding:1px 4px;font-size:10.5px}
 td.name{white-space:normal;min-width:230px;font-size:13.5px;line-height:1.45}
 td.name a{color:inherit;text-decoration:none}
-td.name .code{font-family:Georgia,serif;font-weight:700;margin-right:5px;color:var(--ink)}
+td.name .code{font-family:Georgia,serif;font-weight:700;font-size:14.5px;margin-right:5px;color:var(--ink)}
 td.name .tag{color:var(--gray);font-size:11.5px;margin-left:4px}
-td.num{font-variant-numeric:tabular-nums}
+td.num{font-family:Georgia,serif;font-weight:700;font-variant-numeric:tabular-nums}
 .up{color:var(--up)}.down{color:var(--down)}.na{color:var(--gray)}
-td.basis{background:#fbf6ea;font-weight:700;box-shadow:inset 2px 0 var(--gold)}
-.note{margin:10px 2px 0;font-size:12px;line-height:1.7;color:var(--gray)}
-.foot{margin-top:26px;font-size:12px;line-height:1.8;color:var(--gray)}
+td.basis{background:#fbf6ea;font-weight:700}
+.note{margin:10px 2px 0;font-size:12.5px;line-height:1.8;color:var(--gray)}
+.foot{margin-top:26px;font-size:12.5px;line-height:1.9;color:var(--gray)}
 /* hover 资讯卡 */
 #hcard{position:fixed;z-index:60;width:296px;background:var(--surface);border:1px solid var(--line);
  border-radius:10px;box-shadow:0 10px 26px rgba(52,45,40,.16);padding:12px 14px;display:none}
@@ -208,18 +208,9 @@ td.basis{background:#fbf6ea;font-weight:700;box-shadow:inset 2px 0 var(--gold)}
   function sparkCard(code, period){
     var d=D.spark[code+'|'+period];
     if(!d) return {svg:'', cap:'此期间无走势资料'};
-    var m=pd()[period] && pd()[period][code] ? pd()[period][code] : {};
-    var cap='';
-    if(S.panel==='nav'){
-      cap = '波动率 '+(m.vol!==null&&m.vol!==undefined?m.vol.toFixed(1)+'%':'N/A')+
-            '　最大回撤 '+(m.mdd!==null&&m.mdd!==undefined?m.mdd.toFixed(1)+'%':'N/A');
-    } else {
-      cap = '派息贡献 +'+(m.dv!==null&&m.dv!==undefined?m.dv.toFixed(1)+'%':'N/A')+
-            '　NAV 贡献 '+pct(m.nv);
-    }
-    var note = (d.recd ? ('高点 '+d.pkd+' → 低点 '+d.trd+' → 收复 '+d.recd)
-                       : ('高点 '+d.pkd+' → 低点 '+d.trd+'（未收复）'));
-    return {svg:sparkSVG(code+'|'+period, 268, 44)||'', cap:cap+'　·　'+note};
+    var note = d.recd ? ('高点 '+d.pkd+' → 低点 '+d.trd+' → 收复 '+d.recd)
+                      : ('高点 '+d.pkd+' → 低点 '+d.trd+'（未收复）');
+    return {svg:sparkSVG(code+'|'+period, 268, 44)||'', cap:note};
   }
 
   /* ── hover 资讯卡 ── */
@@ -241,13 +232,21 @@ td.basis{background:#fbf6ea;font-weight:700;box-shadow:inset 2px 0 var(--gold)}
         ' · '+PL[period]+' 回报 <b class="'+cls(m.t)+'">'+pct(m.t)+'</b></div>'+
       '<div class="hc-k">'+risk+'</div>'+
       '<div class="hc-sp">'+sc.svg+'</div>'+
-      '<div class="hc-cap">'+esc(sc.cap)+'</div>';
+      '<div class="hc-cap">'+sc.cap+
+        '　·　<span style="color:#b13446">深色＝回撤期</span>、<span style="color:#c9a3ab">浅色＝收复期</span></div>';
     hc.style.display='block';
-    var r=anchorEl.getBoundingClientRect(), w=hc.offsetWidth, h=hc.offsetHeight;
-    var left = r.right + 10, top = r.top - 6;
-    if(left + w > window.innerWidth - 10) left = Math.max(10, r.left - w - 10);
-    if(top + h > window.innerHeight - 10) top = Math.max(10, window.innerHeight - h - 10);
-    if(top < 10) top = 10;
+    /* 放在「该列下方」，避免盖住正在比较的那一列；空间不足则改放列上方 */
+    var cell=anchorEl.getBoundingClientRect();
+    var row=anchorEl.closest('tr').getBoundingClientRect();
+    var w=hc.offsetWidth, h=hc.offsetHeight;
+    var left=cell.left;
+    if(left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
+    if(left < 12) left = 12;
+    var top = row.bottom + 6;
+    if(top + h > window.innerHeight - 12){
+      var above = row.top - h - 6;
+      top = (above >= 12) ? above : Math.max(12, window.innerHeight - h - 12);
+    }
     hc.style.left=Math.round(left)+'px'; hc.style.top=Math.round(top)+'px';
   }
   function hideCard(){ if(HC) HC.style.display='none'; }
@@ -290,8 +289,7 @@ td.basis{background:#fbf6ea;font-weight:700;box-shadow:inset 2px 0 var(--gold)}
   function renderPeriods(){
     var box=document.getElementById('periods'); box.innerHTML='';
     periods().forEach(function(p){
-      var n=Object.keys(pd()[p]||{}).length;
-      var b=el('button','chip period'+(S.basis===p?' on':''),(PL[p]||p)+'<b>'+n+'</b>');
+      var b=el('button','chip period'+(S.basis===p?' on':''),(PL[p]||p));
       b.onclick=function(){ S.basis=p; render(); };
       box.appendChild(b);
     });
