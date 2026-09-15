@@ -222,6 +222,34 @@ with sync_playwright() as p:
     ok &= arc2["標題"] == "基金月榜 - 7月" and arc2["基準日"] == "2026-07-31" and arc2["列"] == 10
     ok &= any("最新月份" in l and "fund-ranking.html" in l for l in arc2["導覽連結"])
 
+    # ⑬ 橫屏（landscape 斷點，701–1100px 寬且 ≤600px 高）：所有欄位都要塞得下，不留橫向卷軸
+    #    最壞情況＝小機 800×360 ＋ 派息明細 9 欄；還要求 ≥100px 餘裕（吸收 iOS 較寬中文字體）
+    for (vw, vh, tab, view, label) in [(844, 390, "nav", "cross", "iPhone 14/15"),
+                                       (800, 360, "div", "detail", "小機·派息明細9欄")]:
+        m.set_viewport_size({"width": vw, "height": vh})
+        m.goto(TR + f"?tab={tab}&cat=all&basis=1&view={view}", wait_until="domcontentloaded")
+        m.wait_for_timeout(1300)
+        lr = m.evaluate("""() => {
+            const wrapx=document.querySelector('.wrapx'), tb=document.querySelector('table');
+            const ths=Array.from(document.querySelectorAll('thead th'));
+            const last=ths[ths.length-1].getBoundingClientRect(), cx=wrapx.getBoundingClientRect();
+            const s=document.createElement('style'); s.textContent='table{width:1px !important}';
+            document.head.appendChild(s); const mc=Math.round(tb.getBoundingClientRect().width); s.remove();
+            const st=getComputedStyle(document.querySelector('td.num'));
+            const thead=document.querySelector('thead'), trh=document.querySelector('tbody tr').getBoundingClientRect().height;
+            const chipRows=Array.from(document.querySelectorAll('.row')).map(e=>Math.round(e.getBoundingClientRect().top));
+            return {欄數: ths.length, 需捲: wrapx.scrollWidth>wrapx.clientWidth+1,
+                    末欄超出: Math.round(last.right-cx.right), 容器: Math.round(cx.width), minContent: mc,
+                    餘裕: Math.round(cx.width-mc), 內距: st.padding, 字級: st.fontSize,
+                    可見列數: Math.max(0, Math.floor((innerHeight - thead.getBoundingClientRect().bottom) / trh)),
+                    chip行數: new Set(chipRows).size};
+        }""")
+        print(f"⑬ 橫屏 {label} {vw}×{vh}：欄={lr['欄數']} 需捲={lr['需捲']} 末欄超出={lr['末欄超出']}"
+              f" 餘裕={lr['餘裕']}px｜內距={lr['內距']} 字級={lr['字級']}｜可見列={lr['可見列數']} chip行={lr['chip行數']}")
+        ok &= (not lr["需捲"]) and lr["末欄超出"] <= 0 and lr["餘裕"] >= 100
+        ok &= lr["內距"] == "6px 8px" and lr["字級"] == "13px"
+        ok &= lr["可見列數"] >= 3 and lr["chip行數"] <= 2   # 橫屏要真的看得到資料列、chip 不可散成三行
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")

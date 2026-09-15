@@ -278,6 +278,27 @@ with sync_playwright() as p:
         ok = False; notes.append("06 FAB 未落到新版月榜")
     record("F 06 FAB", {"fab": fab, "land": f})
 
+    # G 橫屏（landscape 斷點）：欄位要全塞得下、且看得到資料列
+    for (vw, vh, tab, view) in [(844, 390, "nav", "cross"), (800, 360, "div", "detail")]:
+        pg.set_viewport_size({"width": vw, "height": vh})
+        nav(pg, TR + f"?tab={tab}&cat=all&basis=1&view={view}", pause=1400)
+        g = pg.evaluate("""() => {
+            const wrapx=document.querySelector('.wrapx'), tb=document.querySelector('table');
+            const ths=Array.from(document.querySelectorAll('thead th'));
+            const last=ths[ths.length-1].getBoundingClientRect(), cx=wrapx.getBoundingClientRect();
+            const s=document.createElement('style'); s.textContent='table{width:1px !important}';
+            document.head.appendChild(s); const mc=Math.round(tb.getBoundingClientRect().width); s.remove();
+            const thead=document.querySelector('thead'), trh=document.querySelector('tbody tr').getBoundingClientRect().height;
+            return {欄數: ths.length, 需捲: wrapx.scrollWidth>wrapx.clientWidth+1,
+                    末欄超出: Math.round(last.right-cx.right), 餘裕: Math.round(cx.width-mc),
+                    可見列數: Math.max(0, Math.floor((innerHeight-thead.getBoundingClientRect().bottom)/trh))};
+        }""")
+        print("   G 橫屏 %d×%d：%s" % (vw, vh, g))
+        if g["需捲"] or g["末欄超出"] > 0 or g["餘裕"] < 100 or g["可見列數"] < 3:
+            ok = False; notes.append("橫屏 %d×%d 欄位或列數異常" % (vw, vh))
+        record("G 橫屏 %d×%d" % (vw, vh), g)
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+
     print("   JS 錯誤：%s" % (errs[:3] if errs else "無"))
     if errs:
         ok = False; notes.append("JS 錯誤：%s" % errs[:2])

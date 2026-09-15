@@ -148,6 +148,28 @@ td.basis{background:#fbf6ea;font-weight:700}
  tr.mrow .line{margin-top:2px}
  tr.mrow .sp-wrap{height:34px;margin-top:4px}
 }
+@media (orientation:landscape) and (min-width:701px) and (max-width:1100px) and (max-height:600px){
+ .wrap{padding:8px 8px 24px}
+ .masthead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:14px;row-gap:1px;
+  padding-bottom:6px;margin-bottom:8px}
+ .eyebrow{font-size:10.5px;letter-spacing:.12em}
+ h1{font-size:19px;line-height:1.2;margin:0}
+ .backlink{margin:0;font-size:12.5px}
+ .sub{margin:0;font-size:12.5px;line-height:1.5}
+ .monthnav{margin:0;gap:6px}
+ .mnav{padding:5px 9px;font-size:12.5px}
+ .mnav-sel span{font-size:10.5px}
+ .tabs{margin:8px 0 0}
+ .tab{padding:7px 13px}
+ .row{display:inline-flex;margin:6px 16px 0 0;gap:5px;vertical-align:middle}
+ .chip{font-size:11.5px;padding:4px 9px}
+ .card{margin:6px 0 0}
+ table{font-size:13px}
+ th,td{padding:6px 8px}
+ thead th{font-size:12px}
+ td.name{min-width:150px;font-size:12.5px;line-height:1.35}
+ .note{margin-top:8px;font-size:12px;line-height:1.6}
+}
 """
 
 JS = r"""
