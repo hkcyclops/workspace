@@ -37,10 +37,15 @@ body{margin:0;background:var(--page);color:var(--ink);
 .eyebrow{margin:0;font-size:11.5px;letter-spacing:.16em;font-weight:800;color:var(--gray)}
 h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-weight:500;line-height:1.35}
 .sub{margin:8px 0 0;font-size:14px;line-height:1.8;color:var(--ink-2)}
-.langsw{position:absolute;right:0;top:0;display:flex;gap:6px;align-items:center;font-size:11px;color:var(--gray)}
-.langbtn{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:4px;
- padding:3px 9px;font:inherit;font-size:12px;cursor:pointer;text-decoration:none}
-.langbtn.is-on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+.langsw{position:absolute;right:0;top:0;display:inline-flex;align-items:center;background:var(--surface);
+ border:1px solid var(--line-3);border-radius:0;overflow:hidden}
+.langsw-lbl{font-family:ui-monospace,Consolas,monospace;font-size:10px;font-weight:800;letter-spacing:.075em;
+ color:var(--gray);padding:0 7px 0 8px}
+.langbtn{font-size:13px;font-weight:700;padding:7px 6px;min-width:30px;text-align:center;text-decoration:none;color:var(--ink-2)}
+.langbtn:hover{color:var(--red)}
+.langbtn.is-on{background:var(--ink);color:#fff}
+.backlink{margin:8px 0 0;font-size:13.5px;line-height:1.6}
+.backlink a{color:var(--red);text-decoration:none}
 .tabs{display:flex;gap:8px;flex-wrap:wrap}
 .tab{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:999px;
  padding:7px 16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
@@ -71,6 +76,9 @@ td.rank .mv.flat{color:var(--gray)}
 td.rank .mv.new{color:#8a6a1f;background:#f7eed8;border-radius:4px;padding:1px 4px;font-size:10.5px}
 td.name{white-space:normal;min-width:230px;font-size:13.5px;line-height:1.45}
 td.name a{color:inherit;text-decoration:none}
+td.cell-code{width:56px}
+td.cell-code .code{font-family:Georgia,serif;font-weight:700;font-size:14.5px;color:var(--ink)}
+td.cell-code a{color:inherit;text-decoration:none}
 td.name .code{font-family:Georgia,serif;font-weight:700;font-size:14.5px;margin-right:5px;color:var(--ink)}
 td.name .tag{color:var(--gray);font-size:11.5px;margin-left:4px}
 td.num{font-family:Georgia,serif;font-weight:700;font-variant-numeric:tabular-nums}
@@ -110,7 +118,9 @@ td.basis{background:#fbf6ea;font-weight:700}
  .wrapx{overflow:visible}
  table{min-width:0;table-layout:auto;font-size:12.5px}
  th,td{padding:7px 6px}
- thead th:first-child,tbody tr:not(.mrow) td:first-child{width:62px}
+ thead th:first-child,tbody tr:not(.mrow) td:first-child{width:52px}
+ thead th:nth-child(2),tbody tr:not(.mrow) td:nth-child(2){width:42px}
+ td.cell-code{width:42px}
  tr.mrow td{width:auto !important}
  td.name{min-width:0;font-size:12.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
  td.name .tag{display:none}
@@ -174,11 +184,15 @@ JS = r"""
     else mv='<span class="mv flat">–</span>';
     return '<span class="rk">'+r+'</span>'+mv;
   }
+  function linkURL(code){ return './06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis); }
+  function codeHTML(code){
+    return '<a href="'+linkURL(code)+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+
+           '<span class="code">'+code+'</span></a>';
+  }
   function nameHTML(code){
     var f=D.funds[code];
-    var url='./06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis);
-    return '<a href="'+url+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+
-           '<span class="code">'+code+'</span>'+esc(f.n)+(f.h?'<span class="tag">（對沖）</span>':'')+'</a>';
+    return '<a href="'+linkURL(code)+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+
+           esc(f.n)+(f.h?'<span class="tag">（對沖）</span>':'')+'</a>';
   }
 
   /* ── 走勢圖（0–100 序列 + 回撤深/收復淺兩段）── */
@@ -290,6 +304,7 @@ JS = r"""
     var PS=periods(), pdd=pd(), list=rows();
     var table=el('table'), thead=el('thead'), tr=el('tr');
     tr.appendChild(el('th','','名次'));
+    tr.appendChild(el('th','','代號'));
     tr.appendChild(el('th','','基金'));
     if(S.view==='cross'){
       PS.forEach(function(p){ tr.appendChild(el('th',(p===S.basis?'basis':'mcol'),PL[p]||p)); });
@@ -316,6 +331,7 @@ JS = r"""
       var f=D.funds[code], r=pdd[S.basis][code], row=el('tr');
       row.setAttribute('data-code',code);
       row.appendChild(el('td','rank',rankHTML(i,code)));
+      row.appendChild(el('td','cell-code',codeHTML(code)));
       row.appendChild(el('td','name',nameHTML(code)));
       if(S.view==='cross'){
         PS.forEach(function(p){
@@ -344,22 +360,19 @@ JS = r"""
     table.appendChild(tbody);
     var tw=el('div','wrapx'); tw.appendChild(table); host.appendChild(tw);
 
-    /* hover（桌機）／tap（手機）*/
+    /* hover（桌機）／tap（手機）：代號格與基金名格都顯示資訊卡 */
     Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
       var code=row.getAttribute('data-code'); if(!code) return;
-      Array.prototype.forEach.call(row.children, function(td,idx){
-        if(idx===1) return;
+      Array.prototype.forEach.call(row.children, function(td){
         if(td.classList.contains('num')){
           var per=td.getAttribute('data-period')||S.basis;
           td.addEventListener('mouseenter', function(){ showCard(code, per, td); });
           td.addEventListener('mouseleave', hideCard);
+        } else if(td.classList.contains('name') || td.classList.contains('cell-code')){
+          td.addEventListener('mouseenter', function(){ showCard(code, S.basis, td); });
+          td.addEventListener('mouseleave', hideCard);
         }
       });
-      var nameCell=row.children[1];
-      if(nameCell){
-        nameCell.addEventListener('mouseenter', function(e){ if(e.target.tagName==='A') return; showCard(code, S.basis, nameCell); });
-        nameCell.addEventListener('mouseleave', hideCard);
-      }
       row.addEventListener('click', function(e){
         if(e.target.closest && e.target.closest('a')) return;   // 點名/代號 → 06
         var nx=row.nextElementSibling;
@@ -375,7 +388,7 @@ JS = r"""
         : '明細：只顯示 <b>'+(PL[S.basis]||S.basis)+'</b> 這一期的完整欄位。')
       + ' 該期間共 '+cov+' 檔有完整資料（本表 '+list.length+' 檔）。'
       + (D.prev ? ' 名次旁 ▲▼ 為與上月同一榜（'+D.prev.asof.slice(0,7)+'）的名次變化。' : '')
-      + ' 滑鼠移到基金名或數值可看資訊卡與走勢；點基金名在 06 開啟走勢圖。';
+      ;
   }
 
   /* 手機用的展開列（同時也是桌機點列的明細） */
@@ -439,18 +452,18 @@ TPL = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>基金月榜 2.0｜AIA TMP2</title>
+<title>基金月榜｜AIA TMP2</title>
 <style>__CSS__</style>
 </head>
 <body>
 <div class="wrap">
   <header class="masthead">
     <p class="eyebrow">AIA · TMP2 / FUND MONTHLY RANKING</p>
-    <h1>基金月榜 2.0</h1>
-    <p class="sub">基準日 <b id="anchor"></b>　·　期間 chips 決定「排名基準」並固定取前 10；跨期比較表讓你在同一列比較各期間。
-      滑鼠移到基金名或數值可看資訊卡與走勢，點基金名在 06 開啟走勢圖。</p>
-    <div class="langsw">
-      <span>LANG</span>
+    <h1 id="h1">基金月榜</h1>
+    <p class="backlink"><a href="./06-fund-portfolio-workbench.html">← 返回 06 基金組合測算</a></p>
+    <p class="sub">基準日 <b id="anchor"></b></p>
+    <div class="langsw" role="group" aria-label="切換中文顯示">
+      <span class="langsw-lbl">LANG</span>
       <a class="langbtn__TR_ON__" data-lang="traditional" href="__SELF__">繁</a>
       <a class="langbtn__SC_ON__" data-lang="simplified" href="__OTHER__">简</a>
     </div>
@@ -469,7 +482,14 @@ TPL = """<!doctype html>
     漲跌色跟隨語言：繁體版<b>綠漲紅跌</b>、簡體版<b>紅漲綠跌</b>。歷史資料不代表未來表現，非投資建議。</p>
 </div>
 <script>window.__RANK2__=__DATA__;</script>
-<script>document.getElementById('anchor').textContent=window.__RANK2__.meta.anchor;</script>
+<script>
+(function(){ var M=window.__RANK2__.meta;
+  document.getElementById('anchor').textContent=M.anchor;
+  var ym=(M.months&&M.months[0]||'').split('-'), t=(ym[1]? parseInt(ym[1],10)+'月' : M.anchor.slice(0,7));
+  var h='基金月榜 - '+t; document.getElementById('h1').textContent=h;
+  document.title=h.replace('基金月榜','基金月榜')+'｜AIA TMP2';
+})();
+</script>
 <script>__JS__</script>
 </body>
 </html>

@@ -35,6 +35,13 @@ with sync_playwright() as p:
             數值字體: (function(){ const e = document.querySelector('td.num'); const c = getComputedStyle(e);
                 return {f: c.fontFamily.slice(0, 13), w: c.fontWeight, size: c.fontSize}; })(),
             標題字級: getComputedStyle(document.querySelector('h1')).fontSize,
+            頁標題: document.querySelector('h1').textContent,
+            返回: (function(){ const a = document.querySelector('.backlink a'); return a ? a.getAttribute('href') : null; })(),
+            LANG外框: (function(){ const c = getComputedStyle(document.querySelector('.langsw'));
+                return {border: c.border, radius: c.borderRadius}; })(),
+            代號欄: (function(){ const td = document.querySelector('td.cell-code'); if (!td) return null;
+                return {txt: td.textContent.trim(), 連結: td.querySelector('a') ? td.querySelector('a').getAttribute('href') : null,
+                        字體: getComputedStyle(td.querySelector('.code') || td).fontFamily.slice(0, 13)}; })(),
             眉標: (function(){ const c = getComputedStyle(document.querySelector('.eyebrow'));
                 return {size: c.fontSize, color: c.color}; })(),
             展開列: document.querySelectorAll('tbody tr.mrow').length,
@@ -48,7 +55,7 @@ with sync_playwright() as p:
     print(f"① 桌面跨期：表頭={s['表頭']}｜列={s['列數']}｜名次={s['名次']}")
     print(f"   基準欄 bg={s['基準欄']['bg'] if s['基準欄'] else None}｜表頭={s['基準表頭']}")
     print(f"   首列連結={s['首列連結']}")
-    ok &= s["表頭"] == ["名次", "基金", "YTD", "1 年", "3 年", "5 年"] and s["列數"] == 10
+    ok &= s["表頭"] == ["名次", "代號", "基金", "YTD", "1 年", "3 年", "5 年"] and s["列數"] == 10
     ok &= s["名次"][0].startswith("1") and s["基準表頭"] == "rgb(200, 168, 91)"
     print(f"   字體：h1 {s['標題字級']}｜眉標 {s['眉標']}｜數值 {s['數值字體']}")
     print(f"   chips：期間 {s['期間chips']}（檔數項 {s['期間chips有檔數']}）｜類別檔數項 {s['類別chips有檔數']}")
@@ -57,6 +64,10 @@ with sync_playwright() as p:
     ok &= s["基準欄陰影"] == "none"
     ok &= s["數值字體"]["f"].startswith("Georgia") and s["數值字體"]["w"] == "700"
     ok &= s["標題字級"] == "32px" and s["眉標"] == {"size": "11.5px", "color": "rgb(140, 125, 112)"}
+    print(f"   標題「{s['頁標題']}」｜返回 {s['返回']}｜LANG {s['LANG外框']}｜代號欄 {s['代號欄']}")
+    ok &= s["頁標題"].startswith("基金月榜 - ") and (s["返回"] or "").endswith("06-fund-portfolio-workbench.html")
+    ok &= s["LANG外框"]["radius"] == "0px" and "1px solid" in s["LANG外框"]["border"]
+    ok &= s["代號欄"] and s["代號欄"]["字體"].startswith("Georgia") and "?fund=" in (s["代號欄"]["連結"] or "")
     ok &= "06-fund-portfolio-workbench.html?fund=Z17" in (s["首列連結"] or "")
 
     # ② hover 基金名 → 資訊卡（含走勢）
@@ -85,7 +96,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(500)
     s5 = grab()
     print(f"⑤ 明細檢視：表頭={s5['表頭']}｜列={s5['列數']}")
-    ok &= s5["表頭"][:2] == ["名次", "基金"] and s5["列數"] == 10
+    ok &= s5["表頭"][:3] == ["名次", "代號", "基金"] and s5["列數"] == 10
 
     # ⑥ 切類別＋期間＋分頁
     pg.evaluate("""() => { Array.from(document.querySelectorAll('#cats .chip')).find(x => /股票/.test(x.textContent)).click(); }""")
@@ -118,7 +129,7 @@ with sync_playwright() as p:
     mrow = m.evaluate("() => { const r = document.querySelector('tbody tr.mrow'); return r ? r.innerText.replace(/\\s+/g,' ').slice(0,80) : null; }")
     print(f"⑦ 手機直屏：可見欄={mm['可見欄']}｜橫向溢出={mm['橫向溢出']}｜表寬={mm['表格寬']}｜列高={mm['列高']}")
     print(f"   tap 展開：{mrow}")
-    ok &= mm["可見欄"] == ["名次", "基金", "1 年"] and not mm["橫向溢出"] and mm["表格寬"] <= 380
+    ok &= mm["可見欄"] == ["名次", "代號", "基金", "1 年"] and not mm["橫向溢出"] and mm["表格寬"] <= 380
     ok &= bool(mrow)
 
     # ⑧ 手機橫屏 844×390
@@ -130,7 +141,7 @@ with sync_playwright() as p:
                 橫向溢出: tw.scrollWidth > tw.clientWidth + 2};
     }""")
     print(f"⑧ 手機橫屏：可見欄數={mm2['可見欄']}｜橫向溢出={mm2['橫向溢出']}")
-    ok &= mm2["可見欄"] >= 6 and not mm2["橫向溢出"]
+    ok &= mm2["可見欄"] >= 7 and not mm2["橫向溢出"]
 
     # ⑨⑩ 簡體版與語言跟隨（須用 http，file:// 下 localStorage 被瀏覽器拒絕）
     import re
