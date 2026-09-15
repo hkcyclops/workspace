@@ -104,14 +104,23 @@ def pack(y, m):
             "r": round((B.refs.get(c, {}).get("annualizedDistributionRate") or 0), 2),
         }
 
+    # spark：先收集「各期前 N 名的聯集」（進過榜的基金），再替它們補齊「全部期間」
+    # 目的：點得到任一格（該列上的任何期間）都有走勢圖；進不了榜的基金不做（只有全部類別＝100%）
     sparks = {}
     for key, codes, by_p, periods in (("div", B.ZCODES, div_p, B.DIV_PERIODS),
                                       ("nav", B.NCODES, nav_p, B.NAV_PERIODS)):
         t = B.TOP_DIV if key == "div" else B.TOP_NAV
+        listed = set()
         for p in periods:
             k = period_key(p)
             rows = sorted(by_p[k].items(), key=lambda x: -x[1]["t"])[:t[p]]
             for c, _ in rows:
+                listed.add(c)
+        for c in sorted(listed):
+            for p in periods:
+                k = period_key(p)
+                if c not in by_p[k]:
+                    continue
                 sk = f"{c}|{k}"
                 if sk not in sparks:
                     sp = B.spark(c, p, anchor)

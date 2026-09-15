@@ -124,6 +124,12 @@ td.basis{background:#fbf6ea;font-weight:700}
 .sp-rc{fill:rgba(143,13,37,.06)}
 .sp-pt{fill:#8f0d25}
 .mrow{display:none}
+html.touch tr.mrow{display:table-row}      /* 觸控（手機/平板含橫屏）點列可展開 */
+html.touch tbody tr{cursor:pointer}
+tr.mrow td{text-align:left;white-space:normal;background:var(--surface-3);
+ border-bottom:2px solid var(--gold);font-size:12px;line-height:1.7;padding:9px 10px}
+tr.mrow .cell.on{color:var(--red);font-weight:700}
+.sp-cap{margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--gray)}
 /* 截圖模式（?shot=1 或按「截圖模式」）：隱藏工具列，讓 Top 10 在一張橫屏裡截完
    幾何前提：390px 高 ÷ (表頭+表頭列) 後每列只剩 ~23px → 基金名必須單行省略（table-layout:fixed） */
 html.shot .eyebrow,html.shot .backlink,html.shot .monthnav,html.shot .tabs,
@@ -208,6 +214,9 @@ JS = r"""
 (function(){
   var D = window.__RANK2__, PL = {'YTD':'YTD','1':'1 年','3':'3 年','5':'5 年','10':'10 年'};
   var PAGE_LANG = '__LANGVAL__', OTHER_URL = '__OTHER__', SELF_URL = '__SELF__';
+  /* 觸控判定：用手上有沒有滑鼠，不用寬度（iPad 橫屏 1024×768 也是觸控） */
+  var TOUCH = !(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  document.documentElement.classList.toggle('touch', TOUCH);
   var qs = new URLSearchParams(location.search);
   var S = {
     panel: (qs.get('tab')==='div'||qs.get('tab')==='nav') ? qs.get('tab') : 'div',
@@ -259,8 +268,10 @@ JS = r"""
   }
   function nameHTML(code){
     var f=D.funds[code];
-    return '<a href="'+linkURL(code)+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+
-           esc(f.n)+(f.h?'<span class="tag">（對沖）</span>':'')+'</a>';
+    var inner = esc(f.n)+(f.h?'<span class="tag">（對沖）</span>':'');
+    /* 觸控上名稱不包連結：點名稱＝展開明細，進 06 走展開列裡的連結（避免誤觸跳走） */
+    return TOUCH ? inner
+      : '<a href="'+linkURL(code)+'" title="在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）">'+inner+'</a>';
   }
 
   /* ── 走勢圖（0–100 序列 + 回撤深/收復淺兩段）── */
@@ -431,7 +442,7 @@ JS = r"""
     /* hover（桌機）／tap（手機）：代號格與基金名格都顯示資訊卡 */
     Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
       var code=row.getAttribute('data-code'); if(!code) return;
-      Array.prototype.forEach.call(row.children, function(td){
+      if(!TOUCH) Array.prototype.forEach.call(row.children, function(td){
         if(td.classList.contains('num')){
           var per=td.getAttribute('data-period')||S.basis;
           td.addEventListener('mouseenter', function(){ showCard(code, per, td); });
@@ -442,10 +453,20 @@ JS = r"""
         }
       });
       row.addEventListener('click', function(e){
-        if(e.target.closest && e.target.closest('a')) return;   // 點名/代號 → 06
+        if(e.target.closest && e.target.closest('a')) return;   // 桌機點基金名 → 06
+        /* 觸控：點某一期數值格 → 展開「那一期」；點名次/代號/名稱 → 展開當前排名基準期 */
+        var per=S.basis;
+        if(TOUCH){
+          var cell=e.target.closest?e.target.closest('td'):null;
+          if(cell && cell.getAttribute) per = cell.getAttribute('data-period') || per;
+        }
         var nx=row.nextElementSibling;
-        if(nx && nx.classList.contains('mrow')){ nx.remove(); return; }
-        var det=buildDetail(code); if(det) row.after(det);
+        if(nx && nx.classList.contains('mrow')){
+          var same = (nx.getAttribute('data-per')===per);
+          nx.remove();
+          if(same) return;                                     // 點同一期 → 收合
+        }
+        var det=buildDetail(code, per); if(det) row.after(det);
       });
     });
 
@@ -465,30 +486,38 @@ JS = r"""
   }
 
   /* 手機用的展開列（同時也是桌機點列的明細） */
-  function buildDetail(code){
+  function buildDetail(code, per){
+    per = per || S.basis;
     var f=D.funds[code], PS=periods(), pdd=pd();
     var det=el('tr','mrow'), td=el('td'); td.colSpan=99;
+    det.setAttribute('data-per', per); det.setAttribute('data-code', code);
     var html='<div class="g3">';
     PS.forEach(function(p){
       var o=(pdd[p]||{})[code];
-      html+='<span class="cell"><span class="k">'+(PL[p]||p)+'</span>'+pct(o?o.t:null)+'</span>';
+      html+='<span class="cell'+(p===per?' on':'')+'"><span class="k">'+(PL[p]||p)+'</span>'+pct(o?o.t:null)+'</span>';
     });
     html+='</div><div class="line"><span class="k">幣種</span>'+(CURR[f.c]||esc(f.c)||'—')+
           '　<span class="k">類別</span>'+esc(CATNAME[f.cat]||f.cat)+'</div>';
-    var m=pdd[S.basis][code];
+    var m=(pdd[per]||{})[code]||{};
     if(S.panel==='nav'){
       html+='<div class="line"><span class="k">波動率</span>'+(m.vol===null||m.vol===undefined?'N/A':m.vol.toFixed(1)+'%')+
             '　<span class="k">最大回撤</span>'+(m.mdd===null||m.mdd===undefined?'N/A':m.mdd.toFixed(1)+'%')+
-            '　<span class="k">收復時間</span>'+esc(m.rec);
+            '　<span class="k">收復時間</span>'+esc(m.rec||'N/A')+'</div>';
     } else {
       html+='<div class="line"><span class="k">年化派息率</span>'+(f.r?f.r.toFixed(2)+'%':'—')+
             '　<span class="k">派息貢獻</span>+'+(m.dv!==null&&m.dv!==undefined?m.dv.toFixed(1):'0.0')+'%'+
-            '　<span class="k">NAV 貢獻</span>'+pct(m.nv);
+            '　<span class="k">NAV 貢獻</span>'+pct(m.nv)+'</div>';
     }
-    var sv=sparkSVG(code+'|'+S.basis, 320, 34);
-    if(sv) html+='<div class="sp-wrap">'+sv+'</div>';
-    html+='<div style="margin-top:6px"><a href="./06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis)+
-          '" style="color:#8f0d25">在 06 開啟 '+code+' 走勢圖（'+PL[S.basis]+'）→</a></div>';
+    var sv=sparkSVG(code+'|'+per, 320, 34);
+    if(sv){
+      html+='<div class="sp-wrap">'+sv+'</div>'+
+            '<div class="sp-cap"><span style="color:#8f0d25">深色＝回撤期</span>、'+
+            '<span style="color:#c9a3ab">淺色＝收復期</span></div>';
+    } else {
+      html+='<div class="sp-cap">此期間無內嵌走勢圖（僅各期前 10 名基金有圖）</div>';
+    }
+    html+='<div style="margin-top:6px"><a href="./06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(per)+
+          '" style="color:#8f0d25">在 06 開啟 '+code+' 走勢圖（'+PL[per]+'）→</a></div>';
     td.innerHTML='<div class="inner">'+html+'</div>'; det.appendChild(td);
     return det;
   }

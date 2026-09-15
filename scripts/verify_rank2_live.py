@@ -326,6 +326,31 @@ with sync_playwright() as p:
         record("H 截圖模式 %d×%d" % (vw, vh), h)
     pg.set_viewport_size({"width": 1440, "height": 1000})
 
+    # J 觸控（https）：名稱不跳轉、點列＝展開、點某一期格＝展開那一期
+    tctx = b.new_context(viewport={"width": 844, "height": 390}, has_touch=True)
+    tp = tctx.new_page()
+    nav(tp, TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", pause=1400)
+    j0 = tp.evaluate("() => ({名稱有連結: !!document.querySelector('td.name a'), touch: document.documentElement.classList.contains('touch')})")
+    tp.click("tbody tr:first-child td:nth-child(6)")
+    tp.wait_for_timeout(600)
+    j1 = tp.evaluate("""() => { const mr=document.querySelector('tbody tr.mrow');
+        const st=mr?getComputedStyle(mr):null;
+        return {mrow顯示: st?st.display:null, dataPer: mr?mr.getAttribute('data-per'):null,
+                圖: mr?mr.querySelectorAll('svg').length:0,
+                有圖例: mr?mr.innerText.indexOf('回撤期')>=0:false,
+                連結: mr&&mr.querySelector('a')?mr.querySelector('a').getAttribute('href'):null,
+                文字: mr?mr.innerText.replace(/\\s+/g,' ').slice(0,120):null}; }""")
+    print("   J 觸控橫屏：%s" % j0)
+    print("     點「3 年」格 → %s" % j1)
+    if not (j0["名稱有連結"] is False and j0["touch"] and j1["dataPer"] == "3"
+            and j1["mrow顯示"] == "table-row" and j1["圖"] >= 1 and j1["有圖例"]
+            and j1["連結"] and "y=3" in j1["連結"]):
+        ok = False; notes.append("觸控行為（名稱不跳轉／點期展開／圖例／06 連結）異常")
+    record("J 觸控", {"probe": j0, "expanded": j1})
+    tctx.close()
+
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+
     # I 版面位置：手機直屏要有基準日＋LANG 貼右上；橫屏基準日不被 LANG 遮；按鈕在表格外右上方
     pg.set_viewport_size({"width": 390, "height": 844})
     nav(pg, TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", pause=1300)

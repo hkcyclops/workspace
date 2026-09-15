@@ -321,6 +321,80 @@ with sync_playwright() as p:
     ok &= land["返回"]["y"] > land["標題"]["y"] + 10          # 返回／基準日 換到標題下一行
     ok &= lay["按鈕在表頭上方"] and lay["按鈕右對齊"] <= 20     # 按鈕在表外右上方
 
+    # ⑯ 觸控（手機／平板）：名稱不跳轉、點列＝展開、點某一期格＝展開那一期；桌機行為不變
+    TPROBE = """() => {
+        const mr=document.querySelector('tbody tr.mrow');
+        const st=mr?getComputedStyle(mr):null;
+        return {名稱有連結: !!document.querySelector('td.name a'),
+                mrow顯示: st?st.display:null,
+                dataPer: mr?mr.getAttribute('data-per'):null,
+                mrow文字: mr?mr.innerText.replace(/\\s+/g,' ').slice(0,160):null,
+                mrow有圖: mr?mr.querySelectorAll('svg').length:0,
+                mrow連結: mr&&mr.querySelector('a')?mr.querySelector('a').getAttribute('href'):null};
+    }"""
+    tctx = b.new_context(viewport={"width": 390, "height": 844}, has_touch=True)
+    tp = tctx.new_page()
+    tp.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    tp.wait_for_timeout(1300)
+    t1 = tp.evaluate(TPROBE)
+    print(f"⑯ 觸控直屏：基金名有連結={t1['名稱有連結']}（應為 False）")
+    ok &= t1["名稱有連結"] is False
+    tp.click("tbody tr:first-child td.name")
+    tp.wait_for_timeout(500)
+    t2 = tp.evaluate(TPROBE)
+    print(f"   點基金名 → mrow 顯示={t2['mrow顯示']} data-per={t2['dataPer']} 圖={t2['mrow有圖']}")
+    print(f"   內容：{t2['mrow文字']}")
+    print(f"   06 連結：{t2['mrow連結']}")
+    ok &= t2["mrow顯示"] == "table-row" and t2["dataPer"] == "1"
+    ok &= "幣種" in (t2["mrow文字"] or "") and "類別" in (t2["mrow文字"] or "")
+    ok &= "回撤期" in (t2["mrow文字"] or "") and "06" in (t2["mrow文字"] or "")   # 圖例 + 06 入口
+    ok &= t2["mrow有圖"] >= 1
+    ok &= t2["mrow連結"] and "?fund=" in t2["mrow連結"] and "y=1" in t2["mrow連結"]
+    tp.click("tbody tr:first-child td.name")
+    tp.wait_for_timeout(400)
+    ok &= not tp.evaluate("() => !!document.querySelector('tbody tr.mrow')")
+    print("   再點同一列 → 已收合")
+
+    tp.set_viewport_size({"width": 844, "height": 390})
+    tp.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    tp.wait_for_timeout(1300)
+    tp.click("tbody tr:first-child td:nth-child(6)")      # 3 年
+    tp.wait_for_timeout(500)
+    l1 = tp.evaluate(TPROBE)
+    print(f"⑯ 觸控橫屏：點「3 年」格 → data-per={l1['dataPer']} 圖={l1['mrow有圖']} 連結={l1['mrow連結']}")
+    print(f"   內容：{l1['mrow文字']}")
+    ok &= l1["dataPer"] == "3" and "3 年" in (l1["mrow文字"] or "") and "y=3" in (l1["mrow連結"] or "")
+    tp.click("tbody tr:first-child td:nth-child(7)")      # 5 年
+    tp.wait_for_timeout(500)
+    l2 = tp.evaluate(TPROBE)
+    print(f"   改點「5 年」格 → data-per={l2['dataPer']}（應切成 5）")
+    ok &= l2["dataPer"] == "5"
+    tp.click("tbody tr:first-child td:nth-child(7)")
+    tp.wait_for_timeout(400)
+    ok &= not tp.evaluate("() => !!document.querySelector('tbody tr.mrow')")
+    print("   再點同一格 → 已收合")
+    tp.set_viewport_size({"width": 1024, "height": 768})   # 觸控平板橫屏（不吃 landscape 斷點）
+    tp.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    tp.wait_for_timeout(1300)
+    tp.click("tbody tr:first-child td.name")
+    tp.wait_for_timeout(500)
+    t4 = tp.evaluate(TPROBE)
+    print(f"⑯ 觸控平板 1024×768：mrow 顯示={t4['mrow顯示']}")
+    ok &= t4["mrow顯示"] == "table-row"
+    tctx.close()
+
+    # 桌機（有滑鼠）行為必須不變：名稱仍有連結、點列仍不會顯示明細、data-per 固定為排名基準
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    d1 = pg.evaluate(TPROBE)
+    pg.click("tbody tr:first-child td:nth-child(6)")
+    pg.wait_for_timeout(500)
+    d2 = pg.evaluate(TPROBE)
+    print(f"⑯ 桌機：名稱有連結={d1['名稱有連結']}｜點 3 年格後 mrow 顯示={d2['mrow顯示']} data-per={d2['dataPer']}")
+    ok &= d1["名稱有連結"] is True and d1["mrow顯示"] is None
+    ok &= d2["mrow顯示"] == "none" and d2["dataPer"] == "1"
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")
