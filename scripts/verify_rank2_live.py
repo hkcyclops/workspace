@@ -167,6 +167,10 @@ with sync_playwright() as p:
         首列: (function(){ const td=document.querySelector('td.name a'); return td?td.getAttribute('href'):null; })(),
         代號: (function(){ const td=document.querySelector('td.cell-code'); return td?td.textContent.trim():null; })(),
         期間chip檔數: document.querySelectorAll('#periods .chip b').length,
+        chip未選: (function(){ const c=Array.from(document.querySelectorAll('#views .chip')).find(x=>!x.classList.contains('on'));
+            if(!c) return null; const s=getComputedStyle(c); return {bg:s.backgroundColor, border:s.borderColor}; })(),
+        基金名對齊: (function(){ const c=document.querySelector('td.name'); return c?getComputedStyle(c).textAlign:null; })(),
+        基金表頭對齊: (function(){ const c=document.querySelector('thead th:nth-child(3)'); return c?getComputedStyle(c).textAlign:null; })(),
         基準欄底: getComputedStyle(document.querySelector('td.basis')).backgroundColor,
         標題: document.querySelector('h1').textContent,
         導覽: Array.from(document.querySelectorAll('.monthnav a')).map(x=>x.textContent.trim()+' -> '+x.getAttribute('href'))
@@ -180,6 +184,11 @@ with sync_playwright() as p:
         ok = False; notes.append("基準欄底色或期間 chips 檔數異常")
     if not ("?fund=" in (a["首列"] or "") and "06-fund-portfolio-workbench.html" in (a["首列"] or "")):
         ok = False; notes.append("首列 06 deep link 異常")
+    if not (a["chip未選"] and a["chip未選"]["bg"] == "rgb(255, 253, 248)" and a["chip未選"]["border"] == "rgb(216, 200, 179)"):
+        ok = False; notes.append("chips 未選不是白底（v1 .cat 樣式）")
+    if not (a["基金名對齊"] == "left" and a["基金表頭對齊"] == "left"):
+        ok = False; notes.append("基金名/表頭未左對齊")
+    print("     對齊：基金名=%s 表頭=%s｜chip 未選=%s" % (a["基金名對齊"], a["基金表頭對齊"], a["chip未選"]))
     if not any("前一月" in x and "2026-07" in x for x in a["導覽"]):
         ok = False; notes.append("月份導覽缺『前一月 → 2026-07』")
     record("A 桌面", a)
