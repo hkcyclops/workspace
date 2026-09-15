@@ -63,7 +63,7 @@ h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-
 .mnav-sel select{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:0 2px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .row .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--gray);font-weight:700;white-space:nowrap}
-.chip{border:1px solid #c8a85b;background:#fdf6e6;color:#49372f;border-radius:0;
+.chip{border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);border-radius:0;
  padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .chip b{font-family:Georgia,serif;font-weight:700;margin-left:5px;color:var(--red)}
 .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -74,7 +74,7 @@ h1{margin:6px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:32px;font-
 .wrapx{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{border-bottom:1px solid var(--line-2);padding:10px 12px;text-align:right;white-space:nowrap;line-height:1.4}
-th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
 thead th{background:var(--head);color:var(--th-ink);font-size:13px;font-weight:700;position:sticky;top:0;z-index:2;
  font-family:Georgia,"Noto Serif TC",serif}
 thead th.basis{background:var(--gold);color:#3b2c10}
@@ -350,7 +350,7 @@ JS = r"""
           var o=(pdd[p]||{})[code], v=o?o.t:null;
           var td=el('td','num '+cls(v)+((p===S.basis)?' basis':' mcol'),pct(v));
           if(p!==S.basis) td.setAttribute('data-period',p);
-          tr.appendChild(td); row.appendChild(td);
+          row.appendChild(td);
         });
       } else {
         var tdB=el('td','num '+cls(r.t)+' basis',pct(r.t)); row.appendChild(tdB);

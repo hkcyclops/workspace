@@ -32,6 +32,11 @@ with sync_playwright() as p:
             期間chips有檔數: document.querySelectorAll('#periods .chip b').length,
             類別chips有檔數: document.querySelectorAll('#cats .chip b').length,
             基準欄陰影: getComputedStyle(document.querySelector('td.basis')).boxShadow,
+            chip未選: (function(){ const c = Array.from(document.querySelectorAll('#views .chip')).find(x => !x.classList.contains('on'));
+                if (!c) return null; const s = getComputedStyle(c);
+                return {bg: s.backgroundColor, border: s.borderColor, radius: s.borderRadius}; })(),
+            基金名對齊: (function(){ const c = document.querySelector('td.name'); return c ? getComputedStyle(c).textAlign : null; })(),
+            基金表頭對齊: (function(){ const c = document.querySelector('thead th:nth-child(3)'); return c ? getComputedStyle(c).textAlign : null; })(),
             數值字體: (function(){ const e = document.querySelector('td.num'); const c = getComputedStyle(e);
                 return {f: c.fontFamily.slice(0, 13), w: c.fontWeight, size: c.fontSize}; })(),
             標題字級: getComputedStyle(document.querySelector('h1')).fontSize,
@@ -67,6 +72,13 @@ with sync_playwright() as p:
     print(f"   基準欄陰影 {s['基準欄陰影']}")
     ok &= s["期間chips有檔數"] == 0 and s["類別chips有檔數"] >= 1   # 類別仍要顯示檔數（0 檔類別會隱藏，故非固定 5 個）
     ok &= s["基準欄陰影"] == "none"
+    # chips 未選＝白底（同 v1 .cat：bg var(--surface) #fffdf8／border var(--line-3) #d8c8b3）
+    print(f"   chip 未選：{s['chip未選']}")
+    ok &= bool(s["chip未選"]) and s["chip未選"]["bg"] == "rgb(255, 253, 248)" \
+        and s["chip未選"]["border"] == "rgb(216, 200, 179)" and s["chip未選"]["radius"] == "0px"
+    # 基金名／表頭都靠左（先前缺這條 → 整欄貼右）
+    print(f"   對齊：基金名={s['基金名對齊']}｜基金表頭={s['基金表頭對齊']}")
+    ok &= s["基金名對齊"] == "left" and s["基金表頭對齊"] == "left"
     ok &= s["數值字體"]["f"].startswith("Georgia") and s["數值字體"]["w"] == "700"
     ok &= s["標題字級"] == "32px" and s["眉標"] == {"size": "11.5px", "color": "rgb(140, 125, 112)"}
     print(f"   標題「{s['頁標題']}」｜返回 {s['返回']}｜LANG {s['LANG外框']}｜代號欄 {s['代號欄']}")
