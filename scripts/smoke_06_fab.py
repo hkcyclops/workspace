@@ -24,13 +24,26 @@ with sync_playwright() as p:
     box = fab.bounding_box() if fab else None
     # 3) 表头无旧入口
     old_link = pg.query_selector(".workspace-switcher .dividend-ranking-link")
+    # 4) 點 FAB 要真的落到「新版」月榜（同頁開啟，FAB 沒有 target=_blank）
+    pg.click("#fund-ranking-fab")
+    pg.wait_for_load_state("domcontentloaded")
+    pg.wait_for_timeout(1800)
+    land = pg.evaluate("""() => ({
+        url: location.pathname.split('/').pop(),
+        是v2: document.documentElement.hasAttribute('data-rank2'),
+        標題: document.querySelector('h1') ? document.querySelector('h1').textContent : null,
+        檢視chips: Array.from(document.querySelectorAll('#views .chip')).map(x=>x.textContent.trim()),
+        列: document.querySelectorAll('tbody tr:not(.mrow)').length})""")
     print(f"root innerHTML: {root_len}")
     print(f"fab visible: {fab_vis}, href: {fab_href}, target: {fab_target}")
     print(f"fab box: {box}")
     print(f"旧表头入口存在: {old_link is not None}")
+    print(f"點 FAB 後: {land}")
     print(f"JS pageerror: {errors[:3] if errors else '无'}")
     ok = root_len > 1000 and fab_vis and fab_href == "./fund-ranking.html" \
-         and fab_target is None and old_link is None and not errors
+         and fab_target is None and old_link is None and not errors \
+         and land["url"] == "fund-ranking.html" and land["是v2"] \
+         and land["檢視chips"] == ["基本", "明細"] and land["列"] == 10
     print("SMOKE:", "PASS" if ok else "FAIL")
     b.close() if False else None
     os._exit(0 if ok else 1)

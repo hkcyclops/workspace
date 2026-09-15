@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-基金月榜 2.0 正式版產生器 → fund-ranking-2.html（繁）／fund-ranking-2-sc.html（簡）
+基金月榜 2.0 產生器 → fund-ranking.html（繁）／fund-ranking-sc.html（簡）／fund-ranking-YYYY-MM*.html（月份存檔）
+（2026-09-15 起**取代 v1 月榜**，沿用舊版檔名：舊分享連結與 06 FAB 都指向 fund-ranking.html）
 資料：data/rank2.js（由 build_rank2_data.py 產生；口徑與正式月榜完全相同）
 
 功能：
@@ -514,9 +515,10 @@ import build_rank2_data as P
 
 
 def fname(y, m, lang):
-    """最新月份 → fund-ranking-2(.html/-sc.html)；其餘 → fund-ranking-2-YYYY-MM..."""
+    """最新月份 → fund-ranking(.html/-sc.html)；其餘 → fund-ranking-YYYY-MM...
+    （2026-09-15 起取代 v1 月榜，故沿用舊版檔名：舊分享連結與 06 FAB 都指向 fund-ranking.html）"""
     latest = (y, m) == tuple(B.MONTHS[0])
-    base = "fund-ranking-2" if latest else f"fund-ranking-2-{y}-{m:02d}"
+    base = "fund-ranking" if latest else f"fund-ranking-{y}-{m:02d}"
     return base + (".html" if lang == "tr" else "-sc.html")
 
 

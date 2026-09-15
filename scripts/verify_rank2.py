@@ -6,8 +6,8 @@ from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = os.path.join(HERE, "_deploy-workspace")
-TR = "file:///" + os.path.join(D, "fund-ranking-2.html").replace("\\", "/")
-SC = "file:///" + os.path.join(D, "fund-ranking-2-sc.html").replace("\\", "/")
+TR = "file:///" + os.path.join(D, "fund-ranking.html").replace("\\", "/")
+SC = "file:///" + os.path.join(D, "fund-ranking-sc.html").replace("\\", "/")
 
 ok = True
 with sync_playwright() as p:
@@ -166,7 +166,7 @@ with sync_playwright() as p:
 
     # ⑨⑩ 簡體版與語言跟隨（須用 http，file:// 下 localStorage 被瀏覽器拒絕）
     import re
-    for f in ("fund-ranking-2.html", "fund-ranking-2-sc.html"):
+    for f in ("fund-ranking.html", "fund-ranking-sc.html"):
         txt = io.open(os.path.join(D, f), encoding="utf-8").read()
         left = sorted(set(re.findall(r"__[A-Z_]+__", txt)))
         print(f"⑨ {f}：殘留佔位符 {left}（應為空）")
@@ -185,24 +185,24 @@ with sync_playwright() as p:
                 time.sleep(0.25)
         B = "http://127.0.0.1:8901/"
         t = ctx.new_page()
-        t.goto(B + "fund-ranking-2.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
+        t.goto(B + "fund-ranking.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
         t.wait_for_timeout(1200)
         lang0 = t.evaluate("() => document.documentElement.dataset.lang")
         t.evaluate("() => localStorage.setItem('calculator-hub-language', 'simplified')")
-        t.goto(B + "fund-ranking-2.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
+        t.goto(B + "fund-ranking.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
         t.wait_for_timeout(1500)
         sc = t.evaluate("""() => { const up = document.querySelector('td.num.up');
             return {url: location.pathname.split('/').pop(), lang: document.documentElement.dataset.lang,
                     標題: document.querySelector('h1').textContent, 正報酬色: up ? getComputedStyle(up).color : null}; }""")
         print(f"⑩ 語言跟隨：繁版 lang={lang0} → 設 simplified 後 {sc}")
-        ok &= lang0 == "tr" and sc["url"] == "fund-ranking-2-sc.html" and sc["lang"] == "sc"
+        ok &= lang0 == "tr" and sc["url"] == "fund-ranking-sc.html" and sc["lang"] == "sc"
         ok &= sc["正報酬色"] == "rgb(177, 52, 70)"
         t.evaluate("() => localStorage.setItem('calculator-hub-language', 'traditional')")
-        t.goto(B + "fund-ranking-2.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
+        t.goto(B + "fund-ranking.html?tab=nav&cat=all&basis=1&view=cross", wait_until="domcontentloaded")
         t.wait_for_timeout(1500)
         back = t.evaluate("() => location.pathname.split('/').pop() + ' / ' + document.documentElement.dataset.lang")
         print(f"   設 traditional → {back}")
-        ok &= back.startswith("fund-ranking-2.html") and back.endswith("tr")
+        ok &= back.startswith("fund-ranking.html") and back.endswith("tr")
     finally:
         if srv:
             srv.terminate()
@@ -211,16 +211,16 @@ with sync_playwright() as p:
     nav = pg.evaluate("() => { const n = document.querySelector('.monthnav'); if (!n) return null; return {項: Array.from(n.children).map(x => x.textContent.replace(/\\s+/g, ' ').trim()), 連結: Array.from(n.querySelectorAll('a')).map(a => a.textContent.trim() + ' -> ' + a.getAttribute('href')), 選項: Array.from(n.querySelectorAll('option')).map(o => o.value + (o.selected ? '[選]' : ''))}; }")
     print(f"⑪ 月份導覽（最新頁）：{json.dumps(nav, ensure_ascii=False)}")
     ok &= bool(nav) and any("前一月" in l and "2026-07" in l for l in nav["連結"])
-    ok &= any(o.endswith("[選]") and o.startswith("fund-ranking-2.html") for o in nav["選項"])
+    ok &= any(o.endswith("[選]") and o.startswith("fund-ranking.html") for o in nav["選項"])
 
     # ⑫ 存檔頁（2026-07）：標題/基準日/導覽都要指向自己的月份
-    arc = "file:///" + os.path.join(D, "fund-ranking-2-2026-07.html").replace("\\", "/")
+    arc = "file:///" + os.path.join(D, "fund-ranking-2026-07.html").replace("\\", "/")
     pg.goto(arc, wait_until="domcontentloaded")
     pg.wait_for_timeout(1300)
     arc2 = pg.evaluate("() => ({標題: document.querySelector('h1').textContent, 基準日: document.getElementById('anchor').textContent, 導覽連結: Array.from(document.querySelectorAll('.monthnav a')).map(x => x.textContent.trim() + ' -> ' + x.getAttribute('href')), 列: document.querySelectorAll('tbody tr:not(.mrow)').length})")
     print(f"⑫ 存檔頁 2026-07：{json.dumps(arc2, ensure_ascii=False)}")
     ok &= arc2["標題"] == "基金月榜 - 7月" and arc2["基準日"] == "2026-07-31" and arc2["列"] == 10
-    ok &= any("最新月份" in l and "fund-ranking-2.html" in l for l in arc2["導覽連結"])
+    ok &= any("最新月份" in l and "fund-ranking.html" in l for l in arc2["導覽連結"])
 
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs

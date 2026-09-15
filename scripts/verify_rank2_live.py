@@ -17,8 +17,8 @@ D = os.path.join(HERE, "_deploy-workspace")
 REPO = "hkcyclops/workspace"
 BASE = "https://hkcyclops.github.io/workspace/"
 API = "https://api.github.com/repos/%s/" % REPO
-FILES = ["fund-ranking-2.html", "fund-ranking-2-sc.html",
-         "fund-ranking-2-2026-07.html", "fund-ranking-2-2026-07-sc.html", "data/rank2.js"]
+FILES = ["fund-ranking.html", "fund-ranking-sc.html",
+         "fund-ranking-2026-07.html", "fund-ranking-2026-07-sc.html", "data/rank2.js"]
 
 # 沙箱環境的對外網路走本機代理（HTTPS_PROXY）；urllib 會自動讀，Chromium 不會
 # → 不顯式設 proxy 時 chromium 連任何外部主機都 net::ERR_CONNECTION_CLOSED
@@ -131,8 +131,8 @@ else:
 
 # ── ③ 線上端到端（Playwright / https） ────────────────────────────────────
 print("③ Playwright（https 線上）：")
-TR = BASE + "fund-ranking-2.html"
-ARC = BASE + "fund-ranking-2-2026-07.html"
+TR = BASE + "fund-ranking.html"
+ARC = BASE + "fund-ranking-2026-07.html"
 REPORT = os.path.join(HERE, "_reports", "rank2_live.json")
 os.makedirs(os.path.dirname(REPORT), exist_ok=True)
 rpt = {"checks": {}, "notes": []}
@@ -240,13 +240,13 @@ with sync_playwright() as p:
         return {url:location.pathname.split('/').pop(), lang:document.documentElement.dataset.lang,
                 標題:document.querySelector('h1').textContent, 正報酬色:up?getComputedStyle(up).color:null}; }""")
     print("   D 語言跟隨：繁版 lang=%s → 設 simplified 後 %s" % (lang0, sc))
-    if not (lang0 == "tr" and sc["url"] == "fund-ranking-2-sc.html" and sc["lang"] == "sc" and sc["正報酬色"] == "rgb(177, 52, 70)"):
+    if not (lang0 == "tr" and sc["url"] == "fund-ranking-sc.html" and sc["lang"] == "sc" and sc["正報酬色"] == "rgb(177, 52, 70)"):
         ok = False; notes.append("語言跟隨/簡體配色異常")
     t.evaluate("() => localStorage.setItem('calculator-hub-language','traditional')")
     nav(t, TR + "?tab=nav&cat=all&basis=1&view=cross", pause=1800)
     back = t.evaluate("() => location.pathname.split('/').pop() + ' / ' + document.documentElement.dataset.lang")
     print("     設 traditional → %s" % back)
-    if not (back.startswith("fund-ranking-2.html") and back.endswith("tr")):
+    if not (back.startswith("fund-ranking.html") and back.endswith("tr")):
         ok = False; notes.append("切回繁體失敗")
     record("D 語言跟隨", sc)
 
