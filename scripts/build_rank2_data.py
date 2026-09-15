@@ -102,6 +102,7 @@ def pack(y, m):
             "h": 1 if f.get("hedged") else 0,
             "d": 1 if f.get("isDistributionFund") else 0,
             "r": round((B.refs.get(c, {}).get("annualizedDistributionRate") or 0), 2),
+            "m": int(f.get("rating") or 0),          # Morningstar 星級（0＝無評級）
         }
 
     # spark：先收集「各期前 N 名的聯集」（進過榜的基金），再替它們補齊「全部期間」

@@ -130,6 +130,10 @@ tr.mrow td{text-align:left;white-space:normal;background:var(--surface-3);
  border-bottom:2px solid var(--gold);font-size:12px;line-height:1.7;padding:9px 10px}
 tr.mrow .cell.on{color:var(--red);font-weight:700}
 .sp-cap{margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--gray)}
+.ms{white-space:nowrap;letter-spacing:.5px}
+.ms .f{color:var(--gold)}      /* 實心星 */
+.ms .e{color:var(--line-3)}    /* 空心星 */
+.ms .na{color:var(--gray)}
 /* 截圖模式（?shot=1 或按「截圖模式」）：隱藏工具列，讓 Top 10 在一張橫屏裡截完
    幾何前提：390px 高 ÷ (表頭+表頭列) 後每列只剩 ~23px → 基金名必須單行省略（table-layout:fixed） */
 html.shot .eyebrow,html.shot .backlink,html.shot .monthnav,html.shot .tabs,
@@ -262,6 +266,14 @@ JS = r"""
     return '<span class="rk">'+r+'</span>'+mv;
   }
   function linkURL(code){ return './06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis); }
+  /* Morningstar 星級（0＝無評級 → 顯示「—」，與 06 的規則一致） */
+  function starsHTML(code){
+    var m=(D.funds[code]||{}).m||0;
+    if(!m) return '<span class="ms" title="Morningstar 無評級"><span class="na">—</span></span>';
+    var s='';
+    for(var i=1;i<=5;i++) s+=(i<=m?'<span class="f">★</span>':'<span class="e">☆</span>');
+    return '<span class="ms" title="Morningstar '+m+' 星">'+s+'</span>';
+  }
   function codeHTML(code){
     /* 代號只是標籤，不可點（只有基金名才連到 06） */
     return '<span class="code">'+code+'</span>';
@@ -313,7 +325,7 @@ JS = r"""
     hc.innerHTML =
       '<div class="hc-t"><span class="code">'+code+'</span>'+esc(f.n)+'</div>'+
       '<div class="hc-m">'+(CURR[f.c]||esc(f.c)||'—')+' · '+esc(CATNAME[f.cat]||f.cat)+(f.h?' ·（對沖）':'')+
-        ' · '+PL[period]+' 回報 <b class="'+cls(m.t)+'">'+pct(m.t)+'</b></div>'+
+        ' · '+PL[period]+' 回報 <b class="'+cls(m.t)+'">'+pct(m.t)+'</b>　'+starsHTML(code)+'</div>'+
       '<div class="hc-k">'+risk+'</div>'+
       '<div class="hc-sp">'+sc.svg+'</div>'+
       '<div class="hc-cap">'+sc.cap+
@@ -497,7 +509,8 @@ JS = r"""
       html+='<span class="cell'+(p===per?' on':'')+'"><span class="k">'+(PL[p]||p)+'</span>'+pct(o?o.t:null)+'</span>';
     });
     html+='</div><div class="line"><span class="k">幣種</span>'+(CURR[f.c]||esc(f.c)||'—')+
-          '　<span class="k">類別</span>'+esc(CATNAME[f.cat]||f.cat)+'</div>';
+          '　<span class="k">類別</span>'+esc(CATNAME[f.cat]||f.cat)+
+          '　<span class="k">評級</span>'+starsHTML(code)+'</div>';
     var m=(pdd[per]||{})[code]||{};
     if(S.panel==='nav'){
       html+='<div class="line"><span class="k">波動率</span>'+(m.vol===null||m.vol===undefined?'N/A':m.vol.toFixed(1)+'%')+

@@ -28,6 +28,11 @@ with sync_playwright() as p:
             卡顯示: (function(){ const c = document.getElementById('hcard'); return c ? c.style.display : 'none'; })(),
             卡文字: (function(){ const c = document.getElementById('hcard'); return c ? c.innerText.replace(/\\s+/g, ' ').slice(0, 90) : null; })(),
             卡走勢: document.querySelectorAll('#hcard svg').length,
+            卡星級: (function(){ const c=document.getElementById('hcard'); if(!c||!c.querySelector('.ms')) return null;
+                const ce=c.querySelector('.hc-t .code'); const k=ce?ce.textContent.trim():null;
+                return {code:k, m:((window.__RANK2__.funds[k]||{}).m)||0,
+                        f:c.querySelectorAll('.ms .f').length, e:c.querySelectorAll('.ms .e').length,
+                        na:!!c.querySelector('.ms .na')}; })(),
             期間chips: Array.from(document.querySelectorAll('#periods .chip')).map(x => x.textContent.trim()),
             期間chips有檔數: document.querySelectorAll('#periods .chip b').length,
             類別chips有檔數: document.querySelectorAll('#cats .chip b').length,
@@ -99,6 +104,10 @@ with sync_playwright() as p:
     s2 = grab()
     print(f"② hover 基金名 → 卡顯示={s2['卡顯示']}｜走勢svg={s2['卡走勢']}｜{s2['卡文字']}")
     ok &= s2["卡顯示"] == "block" and s2["卡走勢"] >= 1
+    print(f"   星級：{s2['卡星級']}")
+    ok &= bool(s2["卡星級"]) and ((s2["卡星級"]["na"] and s2["卡星級"]["m"] == 0)
+                                 or (s2["卡星級"]["f"] == s2["卡星級"]["m"]
+                                     and s2["卡星級"]["f"] + s2["卡星級"]["e"] == 5))
 
     # ③ hover 期間數值 → 該期間資訊卡
     pg.hover("tbody tr:first-child td.num")
@@ -330,7 +339,11 @@ with sync_playwright() as p:
                 dataPer: mr?mr.getAttribute('data-per'):null,
                 mrow文字: mr?mr.innerText.replace(/\\s+/g,' ').slice(0,160):null,
                 mrow有圖: mr?mr.querySelectorAll('svg').length:0,
-                mrow連結: mr&&mr.querySelector('a')?mr.querySelector('a').getAttribute('href'):null};
+                mrow連結: mr&&mr.querySelector('a')?mr.querySelector('a').getAttribute('href'):null,
+                星級: (function(){ if(!mr) return null; const ms=mr.querySelector('.ms'); if(!ms) return null;
+                    const cd=mr.getAttribute('data-code'); return {有評級欄: mr.innerText.indexOf('評級')>=0,
+                        f:mr.querySelectorAll('.ms .f').length, e:mr.querySelectorAll('.ms .e').length,
+                        na:!!mr.querySelector('.ms .na'), m:((window.__RANK2__.funds[cd]||{}).m)||0}; })()};
     }"""
     tctx = b.new_context(viewport={"width": 390, "height": 844}, has_touch=True)
     tp = tctx.new_page()
@@ -350,6 +363,9 @@ with sync_playwright() as p:
     ok &= "回撤期" in (t2["mrow文字"] or "") and "06" in (t2["mrow文字"] or "")   # 圖例 + 06 入口
     ok &= t2["mrow有圖"] >= 1
     ok &= t2["mrow連結"] and "?fund=" in t2["mrow連結"] and "y=1" in t2["mrow連結"]
+    print(f"   展開列星級：{t2['星級']}")
+    ok &= bool(t2["星級"]) and t2["星級"]["有評級欄"] and \
+        ((t2["星級"]["na"] and t2["星級"]["m"] == 0) or (t2["星級"]["f"] == t2["星級"]["m"] and t2["星級"]["f"] + t2["星級"]["e"] == 5))
     tp.click("tbody tr:first-child td.name")
     tp.wait_for_timeout(400)
     ok &= not tp.evaluate("() => !!document.querySelector('tbody tr.mrow')")

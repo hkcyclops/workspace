@@ -209,7 +209,15 @@ with sync_playwright() as p:
         return {display:getComputedStyle(c).display, rowBottom:Math.round(row.bottom), cardTop:Math.round(b.top), svg:c.querySelectorAll('svg').length,
                 文字:c.innerText.replace(/\\s+/g,' ').slice(0,60)};
     }""")
+    h["星級"] = pg.evaluate("""() => { const c=document.getElementById('hcard'); if(!c) return null;
+        const ce=c.querySelector('.hc-t .code'); const k=ce?ce.textContent.trim():null;
+        return {code:k, m:((window.__RANK2__.funds[k]||{}).m)||0, f:c.querySelectorAll('.ms .f').length,
+                e:c.querySelectorAll('.ms .e').length, na:!!c.querySelector('.ms .na')}; }""")
     print("   B hover 卡：%s" % h)
+    st = h["星級"]
+    if not (st and ((st["na"] and st["m"] == 0) or (st["f"] == st["m"] and st["f"] + st["e"] == 5))):
+        ok = False; notes.append("hover 卡星級與資料不符")
+    print("     ★ 星級：%s" % st)
     if not h or h["display"] != "block" or h["cardTop"] < h["rowBottom"] - 8:
         ok = False; notes.append("hover 卡未顯示在該列下方")
     if h and h["svg"] < 1:
@@ -339,9 +347,17 @@ with sync_playwright() as p:
                 圖: mr?mr.querySelectorAll('svg').length:0,
                 有圖例: mr?mr.innerText.indexOf('回撤期')>=0:false,
                 連結: mr&&mr.querySelector('a')?mr.querySelector('a').getAttribute('href'):null,
-                文字: mr?mr.innerText.replace(/\\s+/g,' ').slice(0,120):null}; }""")
+                文字: mr?mr.innerText.replace(/\\s+/g,' ').slice(0,120):null,
+                星級: (function(){ if(!mr) return null; const cd=mr.getAttribute('data-code');
+                    return {有評級欄: mr.innerText.indexOf('評級')>=0, f:mr.querySelectorAll('.ms .f').length,
+                            e:mr.querySelectorAll('.ms .e').length, na:!!mr.querySelector('.ms .na'),
+                            m:((window.__RANK2__.funds[cd]||{}).m)||0}; })()}; }""")
     print("   J 觸控橫屏：%s" % j0)
     print("     點「3 年」格 → %s" % j1)
+    js = j1.get("星級")
+    print("     ★ 展開列星級：%s" % js)
+    if not (js and js["有評級欄"] and ((js["na"] and js["m"] == 0) or (js["f"] == js["m"] and js["f"] + js["e"] == 5))):
+        ok = False; notes.append("展開列星級與資料不符")
     if not (j0["名稱有連結"] is False and j0["touch"] and j1["dataPer"] == "3"
             and j1["mrow顯示"] == "table-row" and j1["圖"] >= 1 and j1["有圖例"]
             and j1["連結"] and "y=3" in j1["連結"]):
