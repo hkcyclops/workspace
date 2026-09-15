@@ -262,6 +262,22 @@ with sync_playwright() as p:
         ok = False; notes.append("存檔頁標題/基準日/導覽異常")
     record("E 存檔頁", arc)
 
+    # F 06 的浮動按鈕 → 新版月榜（同頁開啟；此為「新版取代舊版」的關鍵串接）
+    nav(pg, BASE + "06-fund-portfolio-workbench.html", pause=3000)
+    fab = pg.evaluate("() => { const a=document.getElementById('fund-ranking-fab'); return a?{href:a.getAttribute('href'),target:a.getAttribute('target')}:null; }")
+    pg.click("#fund-ranking-fab")
+    pg.wait_for_load_state("domcontentloaded")
+    pg.wait_for_timeout(1800)
+    f = pg.evaluate("""() => ({url: location.pathname.split('/').pop(),
+        是v2: document.documentElement.hasAttribute('data-rank2'),
+        檢視chips: Array.from(document.querySelectorAll('#views .chip')).map(x=>x.textContent.trim()),
+        列: document.querySelectorAll('tbody tr:not(.mrow)').length})""")
+    print("   F 06 FAB：%s → %s" % (fab, f))
+    if not (fab and fab["href"] == "./fund-ranking.html" and fab["target"] is None
+            and f["url"] == "fund-ranking.html" and f["是v2"] and f["檢視chips"] == ["基本", "明細"] and f["列"] == 10):
+        ok = False; notes.append("06 FAB 未落到新版月榜")
+    record("F 06 FAB", {"fab": fab, "land": f})
+
     print("   JS 錯誤：%s" % (errs[:3] if errs else "無"))
     if errs:
         ok = False; notes.append("JS 錯誤：%s" % errs[:2])
