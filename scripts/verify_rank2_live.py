@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""驗證「基金月榜 2.0」線上版（GitHub Pages）—— 本機 verify_rank2.py 的線上對應
+
+用法：python -u scripts/verify_rank2_live.py [--wait 180]
+
+① GitHub API 取遠端 blob，與本機 _deploy-workspace 產出**逐位元**比對
+   （本機 raw.githubusercontent.com 被擋，故走 api.github.com + Accept: raw）
+② HTTP 輪詢 Pages，確認已部署新版（Pages 重建通常 30–90 秒）
+③ Playwright 在 https 上端到端檢查：桌面／hover 卡位置／月份導覽／存檔頁／手機直屏tap展開／語言跟隨
+"""
+import os, sys, json, time, urllib.request, urllib.error
+from playwright.sync_api import sync_playwright
+
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+D = os.path.join(HERE, "_deploy-workspace")
+REPO = "hkcyclops/workspace"
+BASE = "https://hkcyclops.github.io/workspace/"
+API = "https://api.github.com/repos/%s/" % REPO
+FILES = ["fund-ranking-2.html", "fund-ranking-2-sc.html",
+         "fund-ranking-2-2026-07.html", "fund-ranking-2-2026-07-sc.html", "data/rank2.js"]
+
+# 沙箱環境的對外網路走本機代理（HTTPS_PROXY）；urllib 會自動讀，Chromium 不會
+# → 不顯式設 proxy 時 chromium 連任何外部主機都 net::ERR_CONNECTION_CLOSED
+PROXY = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
+LAUNCH_KW = {"proxy": {"server": PROXY, "bypass": "127.0.0.1,localhost"}} if PROXY else {}
+
+WAIT = 180
+if "--wait" in sys.argv:
+    WAIT = int(sys.argv[sys.argv.index("--wait") + 1])
+
+ok = True
+notes = []
+
+
+def _bye(signum, frame):
+    """此環境 Playwright 段落偶被 SIGTERM；至少把已得的結論吐出來（報告已即時落盤）"""
+    print("   （收到 SIGTERM，Playwright 段落中斷；以上為已完成項目）")
+    print("問題：%s" % ("; ".join(notes) if notes else "無"))
+    print("VERIFY LIVE:", "PASS" if ok else "FAIL")
+    os._exit(0 if ok else 1)
+
+
+try:
+    import signal
+    signal.signal(signal.SIGTERM, _bye)
+except Exception:  # noqa
+    pass
+
+
+def http(url, accept=None, timeout=40, tries=3):
+    """帶身分編碼避免 gzip 亂碼；簡單重試"""
+    last = None
+    for _ in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "rank2-verify", "Accept-Encoding": "identity", "Cache-Control": "no-cache"})
+            if accept:
+                req.add_header("Accept", accept)
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.status, r.read()
+        except urllib.error.HTTPError as e:
+            last = "HTTPError %s" % e.code
+        except Exception as e:  # noqa
+            last = "%s: %s" % (type(e).__name__, e)
+        time.sleep(2)
+    raise RuntimeError("%s -> %s" % (url, last))
+
+
+def local(name):
+    return open(os.path.join(D, name.replace("/", os.sep)), "rb").read()
+
+
+def nav(page, url, wait="domcontentloaded", pause=1200, tries=3):
+    """線上 goto 偶有 net::ERR_CONNECTION_CLOSED，重試"""
+    for i in range(tries):
+        try:
+            page.goto(url, wait_until=wait)
+            page.wait_for_timeout(pause)
+            return
+        except Exception as e:  # noqa
+            if i == tries - 1:
+                raise
+            print("   (goto 重試 %d/%d：%s)" % (i + 1, tries, type(e).__name__))
+            time.sleep(3)
+
+
+# ── ① 遠端 blob vs 本機產出 ───────────────────────────────────────────────
+print("① GitHub API：確認遠端檔案與本機產出一致")
+try:
+    _, body = http(API + "commits/main")
+    sha = json.loads(body)["sha"]
+    print("   遠端 main = %s（%s）" % (sha[:7], json.loads(body)["commit"]["committer"]["date"]))
+    for f in FILES:
+        st, blob = http(API + "contents/%s?ref=%s" % (f, sha), accept="application/vnd.github.raw")
+        mine = local(f)
+        same = blob == mine
+        print("   %-34s remote=%7d local=%7d %s" % (f, len(blob), len(mine), "OK" if same else "DIFF!"))
+        if not same:
+            ok = False
+            notes.append("遠端 %s 與本機不同（可能有人又推了新提交）" % f)
+except Exception as e:  # noqa
+    print("   ✗ API 檢查失敗：%s" % e)
+    ok = False
+    sha = None
+
+# ── ② Pages 部署狀態 ─────────────────────────────────────────────────────
+print("② Pages：等待線上部署新版（最多 %d 秒）" % WAIT)
+t0 = time.time()
+pending = list(FILES)
+while pending and time.time() - t0 < WAIT:
+    remain = []
+    for f in pending:
+        try:
+            st, body = http(BASE + f + "?cb=%d" % int(time.time()), tries=1)
+            if st == 200 and (f.endswith(".js") or body == local(f)):
+                print("   %-34s 200（%6d bytes）in %.0fs" % (f, len(body), time.time() - t0))
+            else:
+                remain.append(f)
+        except Exception:
+            remain.append(f)
+    pending = remain
+    if pending:
+        time.sleep(8)
+if pending:
+    print("   ✗ 逾時未部署：%s" % ", ".join(pending))
+    notes.append("Pages 逾時：%s（可能仍在重建，或 CDN 快取未過）" % ", ".join(pending))
+    ok = False
+else:
+    print("   全部部署完成 ✓")
+
+# ── ③ 線上端到端（Playwright / https） ────────────────────────────────────
+print("③ Playwright（https 線上）：")
+TR = BASE + "fund-ranking-2.html"
+ARC = BASE + "fund-ranking-2-2026-07.html"
+REPORT = os.path.join(HERE, "_reports", "rank2_live.json")
+os.makedirs(os.path.dirname(REPORT), exist_ok=True)
+rpt = {"checks": {}, "notes": []}
+
+
+def record(name, detail):
+    """每步立刻落盤 —— 此環境多次 goto 有機會被 SIGTERM，避免結論遺失"""
+    rpt["checks"][name] = detail
+    rpt["notes"] = notes
+    rpt["ok"] = ok
+    with open(REPORT, "w", encoding="utf-8") as fh:
+        json.dump(rpt, fh, ensure_ascii=False, indent=1)
+
+
+# 單一 context／單一 page：此環境「多頁多 goto」容易觸發 SIGTERM
+with sync_playwright() as p:
+    b = p.chromium.launch(**LAUNCH_KW)
+    if PROXY:
+        print("   （chromium 經代理 %s）" % PROXY)
+    ctx = b.new_context(viewport={"width": 1440, "height": 1000})
+    pg = ctx.new_page()
+    errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    m = pg
+
+    # A 桌面（預設＝派息跨期）
+    nav(pg, TR, pause=1500)
+    a = pg.evaluate("""() => ({
+        表頭: Array.from(document.querySelectorAll('thead th')).map(x=>x.textContent.trim()),
+        列: document.querySelectorAll('tbody tr:not(.mrow)').length,
+        名次: Array.from(document.querySelectorAll('td.rank')).slice(0,3).map(x=>x.textContent.trim()),
+        首列: (function(){ const td=document.querySelector('td.name a'); return td?td.getAttribute('href'):null; })(),
+        代號: (function(){ const td=document.querySelector('td.cell-code'); return td?td.textContent.trim():null; })(),
+        期間chip檔數: document.querySelectorAll('#periods .chip b').length,
+        基準欄底: getComputedStyle(document.querySelector('td.basis')).backgroundColor,
+        標題: document.querySelector('h1').textContent,
+        導覽: Array.from(document.querySelectorAll('.monthnav a')).map(x=>x.textContent.trim()+' -> '+x.getAttribute('href'))
+    })""")
+    print("   A 桌面：表頭=%s｜列=%d｜名次=%s" % (a["表頭"], a["列"], a["名次"]))
+    print("     標題「%s」｜首列=%s｜期間chips檔數=%d｜基準欄=%s" % (a["標題"], a["首列"], a["期間chip檔數"], a["基準欄底"]))
+    print("     月份導覽=%s" % a["導覽"])
+    if not (a["表頭"][:3] == ["名次", "代號", "基金"] and a["列"] == 10):
+        ok = False; notes.append("桌面表頭/列數異常")
+    if not (a["基準欄底"] == "rgb(251, 246, 234)" and a["期間chip檔數"] == 0):
+        ok = False; notes.append("基準欄底色或期間 chips 檔數異常")
+    if not ("?fund=" in (a["首列"] or "") and "06-fund-portfolio-workbench.html" in (a["首列"] or "")):
+        ok = False; notes.append("首列 06 deep link 異常")
+    if not any("前一月" in x and "2026-07" in x for x in a["導覽"]):
+        ok = False; notes.append("月份導覽缺『前一月 → 2026-07』")
+    record("A 桌面", a)
+
+    # B hover 卡要在該列下方（不遮當列）
+    pg.hover("tbody tr:first-child td.name")
+    pg.wait_for_timeout(500)
+    h = pg.evaluate("""() => {
+        const row=document.querySelector('tbody tr:first-child td.name').getBoundingClientRect();
+        const c=document.getElementById('hcard');
+        if(!c) return null;
+        const b=c.getBoundingClientRect();
+        return {display:getComputedStyle(c).display, rowBottom:Math.round(row.bottom), cardTop:Math.round(b.top), svg:c.querySelectorAll('svg').length,
+                文字:c.innerText.replace(/\\s+/g,' ').slice(0,60)};
+    }""")
+    print("   B hover 卡：%s" % h)
+    if not h or h["display"] != "block" or h["cardTop"] < h["rowBottom"] - 8:
+        ok = False; notes.append("hover 卡未顯示在該列下方")
+    if h and h["svg"] < 1:
+        ok = False; notes.append("hover 卡缺走勢圖")
+    record("B hover卡", h)
+
+    # C 手機直屏 390（同一頁改視窗）
+    m.set_viewport_size({"width": 390, "height": 844})
+    nav(m, TR + "?tab=nav&cat=all&basis=1&view=cross", pause=1500)
+    mv = m.evaluate("""() => {
+        const tw=document.querySelector('.wrapx');
+        return {可見欄: Array.from(document.querySelectorAll('thead th')).filter(x=>x.offsetParent!==null).map(x=>x.textContent.trim()),
+                溢出: tw.scrollWidth > tw.clientWidth+2,
+                表寬: Math.round(document.querySelector('table').getBoundingClientRect().width)};
+    }""")
+    m.click("tbody tr:first-child td.rank")
+    m.wait_for_timeout(500)
+    mx = m.evaluate("() => { const r=document.querySelector('tbody tr.mrow'); return r?r.innerText.replace(/\\s+/g,' ').slice(0,70):null; }")
+    print("   C 手機直屏：可見欄=%s｜溢出=%s｜表寬=%s" % (mv["可見欄"], mv["溢出"], mv["表寬"]))
+    print("     tap 展開：%s" % mx)
+    if not (mv["可見欄"] == ["名次", "代號", "基金", "1 年"] and not mv["溢出"] and mv["表寬"] <= 380 and mx):
+        ok = False; notes.append("手機直屏 4 欄/tap 展開異常")
+    record("C 手機直屏", mv)
+
+    # D 語言跟隨（https 下 localStorage 才可用）
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    t = pg
+    nav(t, TR + "?tab=nav&cat=all&basis=1&view=cross", pause=1500)
+    lang0 = t.evaluate("() => document.documentElement.dataset.lang")
+    t.evaluate("() => localStorage.setItem('calculator-hub-language','simplified')")
+    nav(t, TR + "?tab=nav&cat=all&basis=1&view=cross", pause=2000)
+    sc = t.evaluate("""() => { const up=document.querySelector('td.num.up');
+        return {url:location.pathname.split('/').pop(), lang:document.documentElement.dataset.lang,
+                標題:document.querySelector('h1').textContent, 正報酬色:up?getComputedStyle(up).color:null}; }""")
+    print("   D 語言跟隨：繁版 lang=%s → 設 simplified 後 %s" % (lang0, sc))
+    if not (lang0 == "tr" and sc["url"] == "fund-ranking-2-sc.html" and sc["lang"] == "sc" and sc["正報酬色"] == "rgb(177, 52, 70)"):
+        ok = False; notes.append("語言跟隨/簡體配色異常")
+    t.evaluate("() => localStorage.setItem('calculator-hub-language','traditional')")
+    nav(t, TR + "?tab=nav&cat=all&basis=1&view=cross", pause=1800)
+    back = t.evaluate("() => location.pathname.split('/').pop() + ' / ' + document.documentElement.dataset.lang")
+    print("     設 traditional → %s" % back)
+    if not (back.startswith("fund-ranking-2.html") and back.endswith("tr")):
+        ok = False; notes.append("切回繁體失敗")
+    record("D 語言跟隨", sc)
+
+    # E 存檔頁（2026-07）
+    nav(pg, ARC, pause=1500)
+    arc = pg.evaluate("""() => ({標題:document.querySelector('h1').textContent,
+        基準日:document.getElementById('anchor').textContent,
+        導覽:Array.from(document.querySelectorAll('.monthnav a')).map(x=>x.textContent.trim()+' -> '+x.getAttribute('href')),
+        列:document.querySelectorAll('tbody tr:not(.mrow)').length})""")
+    print("   E 存檔頁：%s" % json.dumps(arc, ensure_ascii=False))
+    if not (arc["標題"] == "基金月榜 - 7月" and arc["基準日"] == "2026-07-31" and arc["列"] == 10
+            and any("最新月份" in x for x in arc["導覽"])):
+        ok = False; notes.append("存檔頁標題/基準日/導覽異常")
+    record("E 存檔頁", arc)
+
+    print("   JS 錯誤：%s" % (errs[:3] if errs else "無"))
+    if errs:
+        ok = False; notes.append("JS 錯誤：%s" % errs[:2])
+    record("JS 錯誤", errs[:3] if errs else "無")
+
+    # 切勿 b.close()／讓 with 區塊自然結束 —— 此環境 Playwright 收尾會無限掛住
+    # （verify_rank2.py 同樣用 os._exit 收尾）；瀏覽器由 OS 回收
+    if notes:
+        print("問題：")
+        for n in notes:
+            print("  - " + n)
+    print("VERIFY LIVE:", "PASS" if ok else "FAIL")
+    os._exit(0 if ok else 1)
