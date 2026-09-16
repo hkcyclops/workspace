@@ -86,7 +86,11 @@ thead th{background:var(--head);color:var(--th-ink);font-size:13px;font-weight:7
  font-family:Georgia,"Noto Serif TC",serif}
 thead th.basis{background:var(--gold);color:#3b2c10}
 tbody tr{cursor:default}
-tbody tr:hover td{background:#fdfaf3}
+/* 只有真的掛了 hover 的格（JS 加 .hv）才有提示：游標 help ＋ 單格高亮（桌機限定，.hv 只在 !TOUCH 時加） */
+td.hv{cursor:help}
+td.hv:hover{background:#fdfaf3;box-shadow:inset 0 0 0 1px rgba(200,168,91,.7)}
+/* 觸控維持原狀：tap 時整列高亮（用戶決定不做 ②b，故保留這個模擬 hover 的殘留） */
+html.touch tbody tr:hover td{background:#fdfaf3}
 td.rank{white-space:nowrap}
 td.rank .rk{font-family:Georgia,serif;font-weight:700}
 td.rank .mv{font-size:11.5px;margin-left:5px}
@@ -460,6 +464,7 @@ JS = r"""
       if(!TOUCH) Array.prototype.forEach.call(row.children, function(td){
         if(!td.classList.contains('num')) return;
         if(S.view!=='cross' && !td.classList.contains('basis')) return;
+        td.classList.add('hv');                 // 標記「這格可 hover」→ CSS 給 cursor:help 與單格高亮
         var per=td.getAttribute('data-period')||S.basis;
         td.addEventListener('mouseenter', function(){ showCard(code, per, td); });
         td.addEventListener('mouseleave', hideCard);

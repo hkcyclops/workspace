@@ -431,6 +431,47 @@ with sync_playwright() as p:
     ok &= d1["名稱有連結"] is True and d1["mrow顯示"] is None
     ok &= d2["mrow顯示"] == "none" and d2["dataPer"] == "1"
 
+    # ⑰ hover 提示（① 游標 help ＋ ② 單格高亮，皆桌機限定；觸控維持原狀）
+    hv = pg.evaluate("""() => {
+        const row=document.querySelector('tbody tr:not(.mrow)');
+        const hvs=Array.from(row.children).filter(td=>td.classList.contains('hv'));
+        return {hv格數: hvs.length,
+                欄數: row.children.length,
+                cursor: hvs.length?getComputedStyle(hvs[0]).cursor:null,
+                非hv游標: getComputedStyle(row.children[2]).cursor};
+    }""")
+    pg.hover("tbody tr:first-child td:nth-child(6)"); pg.wait_for_timeout(400)
+    hl = pg.evaluate("""() => {
+        const td=document.querySelector('tbody tr td:nth-child(6)');
+        const st=getComputedStyle(td), row=td.parentElement;
+        const rowBg=Array.from(row.children).map(x=>getComputedStyle(x).backgroundColor);
+        return {格底: st.backgroundColor, 格框: st.boxShadow, 整列同色: new Set(rowBg).size===1};
+    }""")
+    print(f"⑰ 桌機 hover 提示：.hv 格={hv['hv格數']}/{hv['欄數']} 游標={hv['cursor']}（非 hv 格={hv['非hv游標']}）")
+    print(f"   懸停該格 → 底={hl['格底']} 框={hl['格框']} 整列同色={hl['整列同色']}（應為單格亮）")
+    ok &= hv["hv格數"] == 5 and hv["cursor"] == "help" and hv["非hv游標"] == "default"
+    ok &= hl["格底"] == "rgb(253, 250, 243)" and hl["格框"] != "none" and hl["整列同色"] is False
+    # 明細檢視：只有年期欄是 .hv
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=detail&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1200)
+    d = pg.evaluate("""() => { const row=document.querySelector('tbody tr:not(.mrow)');
+        return {hv格數: Array.from(row.children).filter(td=>td.classList.contains('hv')).length,
+                是basis: Array.from(row.children).filter(td=>td.classList.contains('hv')).map(td=>td.classList.contains('basis'))}; }""")
+    print(f"⑰ 明細檢視：.hv 格={d['hv格數']}（都是 basis 欄={d['hv是basis'] if False else d['是basis']}）")
+    ok &= d["hv格數"] == 1 and d["是basis"] == [True]
+    # 觸控：不加 .hv，且整列高亮維持原狀（用戶決定不做 ②b）
+    tc = b.new_context(viewport={"width": 844, "height": 390}, has_touch=True)
+    tpp = tc.new_page()
+    tpp.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    tpp.wait_for_timeout(1200)
+    t0 = tpp.evaluate("() => document.querySelectorAll('td.hv').length")
+    tpp.tap("tbody tr:first-child td:nth-child(6)"); tpp.wait_for_timeout(500)
+    t1 = tpp.evaluate("""() => { const tr=document.querySelector('tbody tr:not(.mrow)');
+        return {擊後hover狀態: tr.matches(':hover'), 整列底色: Array.from(tr.children).map(x=>getComputedStyle(x).backgroundColor)}; }""")
+    print(f"⑰ 觸控：.hv 格={t0}（應為 0）｜tap 後 hover 狀態={t1['擊後hover狀態']} 整列仍高亮={len(set(t1['整列底色']))==1}")
+    ok &= t0 == 0 and t1["擊後hover狀態"] is True
+    tc.close()
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")
