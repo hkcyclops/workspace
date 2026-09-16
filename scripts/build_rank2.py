@@ -94,14 +94,6 @@ td.hv:hover{background:#fdfaf3;box-shadow:inset 0 0 0 1px rgba(200,168,91,.7)}
 .hicon{display:none;width:15px;height:9px;margin-left:5px;vertical-align:-1px;opacity:.55}
 @media (hover:hover) and (pointer:fine){ .hicon{display:inline-block} }
 html.shot .hicon{display:none}
-/* 臨時：圖示對照列（?iconcompare=1，定案後連同 ICONS 多餘項一起移除） */
-.iconcmp{display:flex;align-items:center;gap:6px;margin:9px 3px 0;flex-wrap:wrap}
-.iconcmp .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--gray);font-weight:700}
-.iconcmp button{appearance:none;border:1px solid var(--line-3);background:var(--surface);color:var(--ink-2);
- font:inherit;font-size:11.5px;font-weight:700;padding:3px 7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.iconcmp button:hover{border-color:var(--red);color:var(--red)}
-.iconcmp button.on{border-color:var(--red);color:var(--red);background:#fdf6e6}
-.iconcmp .hicon{display:inline-block}   /* 對照列裡一律畫出來，不受 hover 媒體查詢限制 */
 /* 觸控維持原狀：tap 時整列高亮（用戶決定不做 ②b，故保留這個模擬 hover 的殘留） */
 html.touch tbody tr:hover td{background:#fdfaf3}
 td.rank{white-space:nowrap}
@@ -244,9 +236,7 @@ JS = r"""
     cat:   qs.get('cat') || 'all',
     basis: qs.get('basis') || 'YTD',
     view:  qs.get('view') || 'cross',
-    shot:  qs.get('shot') === '1',
-    icon:  (qs.get('icon')||'').toUpperCase(),
-    cmp:   qs.get('iconcompare') === '1'
+    shot:  qs.get('shot') === '1'
   };
   var CURR = {'USD':'美元','HKD':'港元','RMB':'人民幣','CNY':'人民幣','AUD':'澳元','EUR':'歐元','GBP':'英鎊','JPY':'日圓','SGD':'新加坡元','NZD':'紐元','CAD':'加元','TWD':'新台幣'};
   var CATNAME = {}; D.cats.forEach(function(x){ CATNAME[x[0]] = x[1]; });
@@ -284,21 +274,12 @@ JS = r"""
     else mv='<span class="mv flat">–</span>';
     return '<span class="rk">'+r+'</span>'+mv;
   }
-  /* ③B 表頭圖示：候選 A–E。?icon=X 指定；?iconcompare=1 顯示臨時對照列（定案後移除對照機制） */
-  function svgI(inner){ return '<svg class="hicon" viewBox="0 0 16 9" aria-hidden="true">'+inner+'</svg>'; }
-  var ICONS = {
-    A: svgI('<polyline points="1,7.5 5,4 9,6 15,1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'),
-    B: svgI('<path d="M1.5 1 V8.5 H15" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>'+
-            '<polyline points="3,7 7,4.5 11,5.5 15,2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'),
-    C: svgI('<rect x="1.5" y="6" width="3" height="4" fill="currentColor" opacity=".55"/>'+
-            '<rect x="6.5" y="3.5" width="3" height="6.5" fill="currentColor" opacity=".55"/>'+
-            '<rect x="11.5" y="1" width="3" height="9" fill="currentColor"/>'),
-    D: svgI('<rect x="0.6" y="0.6" width="14.8" height="7.8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>'+
-            '<polyline points="2.5,7 6,4 10,5.5 14,2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'),
-    E: svgI('<path d="M2 8 L13 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'+
-            '<path d="M13 2 L8.2 2.9 L9.1 7.7 Z" fill="currentColor"/>')
-  };
-  function hIcon(){ return ICONS[S.icon] || ICONS.A; }
+  /* ③B 表頭圖示：折線＋座標軸（2026-09-16 用戶自 5 候選中選定 B）
+     currentColor → 在金色基準表頭上自動轉深色；座標軸用 .6 opacity 才不會與表格淺灰線打架 */
+  var HICON = '<svg class="hicon" viewBox="0 0 16 9" aria-hidden="true">'+
+    '<path d="M1.5 1 V8.5 H15" fill="none" stroke="currentColor" stroke-width="1" opacity=".6"/>'+
+    '<polyline points="3,7 7,4.5 11,5.5 15,2" fill="none" stroke="currentColor" stroke-width="1.4"'+
+    ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function linkURL(code){ return './06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis); }
   /* Morningstar 星級（0＝無評級 → 顯示「—」，與 06 的規則一致） */
   function starsHTML(code){
@@ -432,9 +413,9 @@ JS = r"""
     tr.appendChild(el('th','','代號'));
     tr.appendChild(el('th','','基金'));
     if(S.view==='cross'){
-      PS.forEach(function(p){ tr.appendChild(el('th',(p===S.basis?'basis':'mcol'),(PL[p]||p)+hIcon())); });
+      PS.forEach(function(p){ tr.appendChild(el('th',(p===S.basis?'basis':'mcol'),(PL[p]||p)+HICON)); });
     } else {
-      tr.appendChild(el('th','basis',(PL[S.basis]||S.basis)+hIcon()));
+      tr.appendChild(el('th','basis',(PL[S.basis]||S.basis)+HICON));
       if(S.panel==='nav'){
         if(S.basis!=='YTD') tr.appendChild(el('th','num mcol','年化回報'));
         tr.appendChild(el('th','num mcol','波動率'));
@@ -574,24 +555,9 @@ JS = r"""
     var q=new URLSearchParams();
     q.set('tab',S.panel); q.set('cat',S.cat); q.set('basis',S.basis); q.set('view',S.view);
     if(S.shot) q.set('shot','1');
-    if(S.icon) q.set('icon', S.icon);
-    if(S.cmp) q.set('iconcompare','1');
     if(history.replaceState) history.replaceState(null,'',location.pathname+'?'+q.toString());
   }
-  function renderIconCmp(){
-    var box=document.getElementById('iconcmp'); if(!box) return;
-    if(!S.cmp){ box.style.display='none'; box.innerHTML=''; return; }
-    box.style.display='flex'; box.innerHTML='';
-    box.appendChild(el('span','lbl','圖示對照'));
-    ['A','B','C','D','E'].forEach(function(k){
-      var cur=(S.icon||'A')===k;
-      var b=el('button', cur?'on':'', k+' '+ICONS[k]);
-      b.title='套用 '+k+' 圖示';
-      b.onclick=function(){ S.icon=k; renderTable(); renderIconCmp(); syncURL(); };
-      box.appendChild(b);
-    });
-  }
-  function render(){ hideCard(); document.body.style.cursor=''; renderTabs(); renderCats(); renderPeriods(); renderTable(); renderIconCmp(); syncURL(); }
+  function render(){ hideCard(); document.body.style.cursor=''; renderTabs(); renderCats(); renderPeriods(); renderTable(); syncURL(); }
   render();
   window.addEventListener('scroll', hideCard, true);
 
@@ -666,7 +632,6 @@ TPL = """<!doctype html>
   <div class="row"><span class="lbl">類別</span><span id="cats" style="display:flex;gap:8px;flex-wrap:wrap"></span></div>
   <div class="row"><span class="lbl">排名基準</span><span id="periods" style="display:flex;gap:8px;flex-wrap:wrap"></span></div>
 
-  <div class="iconcmp" id="iconcmp" style="display:none"></div>
   <div class="shotbar"><button type="button" id="shotbtn" class="shotbtn">截圖模式</button></div>
   <div class="card" id="table"></div>
   <p class="note" id="note"></p>

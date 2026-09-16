@@ -482,10 +482,15 @@ with sync_playwright() as p:
                 有圖示: ths.filter(t=>t.querySelector('.hicon')).length,
                 前3欄有圖示: ths.slice(0,3).some(t=>t.querySelector('.hicon')),
                 顯示: ths[ths.length-1].querySelector('.hicon')?getComputedStyle(ths[ths.length-1].querySelector('.hicon')).display:null,
-                基準欄圖示色: (function(){ const t=document.querySelector('thead th.basis .hicon'); return t?getComputedStyle(t).color:null; })()};
+                基準欄圖示色: (function(){ const t=document.querySelector('thead th.basis .hicon'); return t?getComputedStyle(t).color:null; })(),
+                簽名: (function(){ const n=ths[ths.length-1].querySelector('.hicon'); if(!n) return null;
+                    return {rect:n.querySelectorAll('rect').length, poly:n.querySelectorAll('polyline').length,
+                            path:n.querySelectorAll('path').length}; })()};
     }""")
     print(f"⑱ 跨期表頭圖示：{ic['有圖示']}/{ic['欄數']-3} 期間欄｜前3欄有圖示={ic['前3欄有圖示']}｜顯示={ic['顯示']}")
     ok &= ic["有圖示"] == ic["欄數"] - 3 and ic["前3欄有圖示"] is False and ic["顯示"] == "inline-block"
+    print(f"   簽名（B＝折線＋座標軸）={ic['簽名']}｜基準欄色={ic['基準欄圖示色']}")
+    ok &= ic["簽名"] == {"rect": 0, "poly": 1, "path": 1}      # 2026-09-16 定案 B，防止被靜默改掉"
     pg.goto(TR + "?tab=nav&cat=all&basis=1&view=detail&shot=0", wait_until="domcontentloaded")
     pg.wait_for_timeout(1300)
     idt = pg.evaluate("""() => { const ths=Array.from(document.querySelectorAll('thead th'));
