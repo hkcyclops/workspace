@@ -234,6 +234,15 @@ with sync_playwright() as p:
     if not (hint["hv數"] == hint["欄數"] - 3 and hint["游標"] == "help" and hint["非hv游標"] == "default"):
         ok = False; notes.append("hover 提示（.hv/游標 help）異常")
     record("B-2 hover提示", hint)
+    ic = pg.evaluate("""() => { const ths=Array.from(document.querySelectorAll('thead th'));
+        const ic0=document.querySelector('thead th:last-child .hicon');
+        return {欄數: ths.length, 有圖示: ths.filter(t=>t.querySelector('.hicon')).length,
+                前3欄有圖示: ths.slice(0,3).some(t=>t.querySelector('.hicon')),
+                顯示: ic0?getComputedStyle(ic0).display:null}; }""")
+    print("     ③B 表頭圖示：%s/%s 期間欄（前3欄=%s）顯示=%s" % (ic["有圖示"], ic["欄數"]-3, ic["前3欄有圖示"], ic["顯示"]))
+    if not (ic["有圖示"] == ic["欄數"] - 3 and ic["前3欄有圖示"] is False and ic["顯示"] == "inline-block"):
+        ok = False; notes.append("表頭折線圖示異常")
+    record("B-3 表頭圖示", ic)
     if not h or h["display"] != "block" or h["cardTop"] < h["rowBottom"] - 8:
         ok = False; notes.append("hover 卡未顯示在該列下方")
     if h and h["svg"] < 1:

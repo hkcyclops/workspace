@@ -472,6 +472,42 @@ with sync_playwright() as p:
     ok &= t0 == 0 and t1["擊後hover狀態"] is True
     tc.close()
 
+    # ⑱ ③B 表頭小折線圖示：只出現在「可 hover 的期間欄」，且只在有滑鼠的裝置顯示
+    pg.set_viewport_size({"width": 1440, "height": 1000})
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    ic = pg.evaluate("""() => {
+        const ths=Array.from(document.querySelectorAll('thead th'));
+        return {欄數: ths.length,
+                有圖示: ths.filter(t=>t.querySelector('.hicon')).length,
+                前3欄有圖示: ths.slice(0,3).some(t=>t.querySelector('.hicon')),
+                顯示: ths[ths.length-1].querySelector('.hicon')?getComputedStyle(ths[ths.length-1].querySelector('.hicon')).display:null,
+                基準欄圖示色: (function(){ const t=document.querySelector('thead th.basis .hicon'); return t?getComputedStyle(t).color:null; })()};
+    }""")
+    print(f"⑱ 跨期表頭圖示：{ic['有圖示']}/{ic['欄數']-3} 期間欄｜前3欄有圖示={ic['前3欄有圖示']}｜顯示={ic['顯示']}")
+    ok &= ic["有圖示"] == ic["欄數"] - 3 and ic["前3欄有圖示"] is False and ic["顯示"] == "inline-block"
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=detail&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    idt = pg.evaluate("""() => { const ths=Array.from(document.querySelectorAll('thead th'));
+        return {有圖示: ths.filter(t=>t.querySelector('.hicon')).length,
+                在基準欄: !!document.querySelector('thead th.basis .hicon')}; }""")
+    print(f"⑱ 明細表頭圖示：{idt['有圖示']} 個（在基準欄={idt['在基準欄']}）")
+    ok &= idt["有圖示"] == 1 and idt["在基準欄"] is True
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=1", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    ishot = pg.evaluate("() => { const i=document.querySelector('.hicon'); return i?getComputedStyle(i).display:null; }")
+    print(f"⑱ 截圖模式：圖示顯示={ishot}（應為 none，保持截圖乾淨）")
+    ok &= ishot == "none"
+    tcx = b.new_context(viewport={"width": 844, "height": 390}, has_touch=True)
+    tpc = tcx.new_page()
+    tpc.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    tpc.wait_for_timeout(1300)
+    itc = tpc.evaluate("""() => { const i=document.querySelector('.hicon');
+        return {存在: !!i, 顯示: i?getComputedStyle(i).display:null, 可見數: Array.from(document.querySelectorAll('.hicon')).filter(x=>getComputedStyle(x).display!=='none').length}; }""")
+    print(f"⑱ 觸控：圖示 DOM 存在={itc['存在']} 顯示={itc['顯示']} 可見數={itc['可見數']}（應為 0，觸控無 hover）")
+    ok &= itc["可見數"] == 0
+    tcx.close()
+
     print("JS 錯誤:", errs[:3] if errs else "無")
     ok &= not errs
     print("VERIFY:", "PASS" if ok else "FAIL")

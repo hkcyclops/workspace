@@ -89,6 +89,11 @@ tbody tr{cursor:default}
 /* 只有真的掛了 hover 的格（JS 加 .hv）才有提示：游標 help ＋ 單格高亮（桌機限定，.hv 只在 !TOUCH 時加） */
 td.hv{cursor:help}
 td.hv:hover{background:#fdfaf3;box-shadow:inset 0 0 0 1px rgba(200,168,91,.7)}
+/* ③B 表頭小折線：提示「這欄可 hover 看走勢」。預設隱藏，只在有滑鼠的裝置顯示；
+   顏色用 currentColor → 在金色基準表頭上自動變深色；截圖模式隱藏（保持乾淨） */
+.hicon{display:none;width:15px;height:9px;margin-left:5px;vertical-align:-1px;opacity:.55}
+@media (hover:hover) and (pointer:fine){ .hicon{display:inline-block} }
+html.shot .hicon{display:none}
 /* 觸控維持原狀：tap 時整列高亮（用戶決定不做 ②b，故保留這個模擬 hover 的殘留） */
 html.touch tbody tr:hover td{background:#fdfaf3}
 td.rank{white-space:nowrap}
@@ -269,6 +274,10 @@ JS = r"""
     else mv='<span class="mv flat">–</span>';
     return '<span class="rk">'+r+'</span>'+mv;
   }
+  /* ③B 表頭小折線圖示（currentColor → 在金色基準表頭上自動轉深色） */
+  var HICON = '<svg class="hicon" viewBox="0 0 16 9" aria-hidden="true">'+
+    '<polyline points="1,7.5 5,4 9,6 15,1.5" fill="none" stroke="currentColor" stroke-width="1.5"'+
+    ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function linkURL(code){ return './06-fund-portfolio-workbench.html?fund='+code+'&y='+tag06(S.basis); }
   /* Morningstar 星級（0＝無評級 → 顯示「—」，與 06 的規則一致） */
   function starsHTML(code){
@@ -402,9 +411,9 @@ JS = r"""
     tr.appendChild(el('th','','代號'));
     tr.appendChild(el('th','','基金'));
     if(S.view==='cross'){
-      PS.forEach(function(p){ tr.appendChild(el('th',(p===S.basis?'basis':'mcol'),PL[p]||p)); });
+      PS.forEach(function(p){ tr.appendChild(el('th',(p===S.basis?'basis':'mcol'),(PL[p]||p)+HICON)); });
     } else {
-      tr.appendChild(el('th','basis',PL[S.basis]||S.basis));
+      tr.appendChild(el('th','basis',(PL[S.basis]||S.basis)+HICON));
       if(S.panel==='nav'){
         if(S.basis!=='YTD') tr.appendChild(el('th','num mcol','年化回報'));
         tr.appendChild(el('th','num mcol','波動率'));
