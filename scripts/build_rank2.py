@@ -454,15 +454,15 @@ JS = r"""
     /* hover（桌機）／tap（手機）：代號格與基金名格都顯示資訊卡 */
     Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
       var code=row.getAttribute('data-code'); if(!code) return;
+      /* hover 只掛「期間欄」——
+         跨期：每一期都可 hover；明細：只留「年期」那一欄（其餘指標欄都是同一張基準期卡，重複）
+         代號／基金名不掛（它們給的也是基準期卡，與基準欄重複） */
       if(!TOUCH) Array.prototype.forEach.call(row.children, function(td){
-        if(td.classList.contains('num')){
-          var per=td.getAttribute('data-period')||S.basis;
-          td.addEventListener('mouseenter', function(){ showCard(code, per, td); });
-          td.addEventListener('mouseleave', hideCard);
-        } else if(td.classList.contains('name') || td.classList.contains('cell-code')){
-          td.addEventListener('mouseenter', function(){ showCard(code, S.basis, td); });
-          td.addEventListener('mouseleave', hideCard);
-        }
+        if(!td.classList.contains('num')) return;
+        if(S.view!=='cross' && !td.classList.contains('basis')) return;
+        var per=td.getAttribute('data-period')||S.basis;
+        td.addEventListener('mouseenter', function(){ showCard(code, per, td); });
+        td.addEventListener('mouseleave', hideCard);
       });
       row.addEventListener('click', function(e){
         if(e.target.closest && e.target.closest('a')) return;   // 桌機點基金名 → 06

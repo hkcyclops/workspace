@@ -199,7 +199,7 @@ with sync_playwright() as p:
     record("A 桌面", a)
 
     # B hover 卡要在該列下方（不遮當列）
-    pg.hover("tbody tr:first-child td.name")
+    pg.hover("tbody tr:first-child td:nth-child(6)")   # 3 年（名稱/代號已不掛 hover）
     pg.wait_for_timeout(500)
     h = pg.evaluate("""() => {
         const row=document.querySelector('tbody tr:first-child td.name').getBoundingClientRect();
@@ -218,6 +218,13 @@ with sync_playwright() as p:
     if not (st and ((st["na"] and st["m"] == 0) or (st["f"] == st["m"] and st["f"] + st["e"] == 5))):
         ok = False; notes.append("hover 卡星級與資料不符")
     print("     ★ 星級：%s" % st)
+    for sel, nm in (("tbody tr:first-child td.name", "基金名"), ("tbody tr:first-child td.cell-code", "代號")):
+        pg.hover(sel); pg.wait_for_timeout(350)
+        shown = pg.evaluate("() => { const c=document.getElementById('hcard'); return !!c && getComputedStyle(c).display !== 'none'; }")
+        print("     hover %s → 卡顯示=%s（應為 False）" % (nm, shown))
+        if shown is not False:
+            ok = False; notes.append("hover %s 仍出卡（應與基準欄重複而取消）" % nm)
+    pg.hover("tbody tr:first-child td:nth-child(6)"); pg.wait_for_timeout(350)
     if not h or h["display"] != "block" or h["cardTop"] < h["rowBottom"] - 8:
         ok = False; notes.append("hover 卡未顯示在該列下方")
     if h and h["svg"] < 1:

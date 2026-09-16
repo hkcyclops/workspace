@@ -98,11 +98,19 @@ with sync_playwright() as p:
     ok &= not s["基金名字體"].startswith("Georgia")   # 基金名回無襯線
     ok &= "06-fund-portfolio-workbench.html?fund=Z17" in (s["首列連結"] or "")
 
-    # ② hover 基金名 → 資訊卡（含走勢）
-    pg.hover("tbody tr:first-child td.name")
-    pg.wait_for_timeout(400)
+    # ② hover 某一期數值格 → 該期資訊卡（含走勢、星級）
+    pg.hover("tbody tr:first-child td:nth-child(6)")   # 3 年
+    pg.wait_for_timeout(600)
     s2 = grab()
-    print(f"② hover 基金名 → 卡顯示={s2['卡顯示']}｜走勢svg={s2['卡走勢']}｜{s2['卡文字']}")
+    print(f"② hover「3 年」格 → 卡顯示={s2['卡顯示']}｜走勢svg={s2['卡走勢']}｜{s2['卡文字']}")
+    ok &= "3 年" in (s2["卡文字"] or "") and "回報" in (s2["卡文字"] or "")
+    # ②‑2 代號／基金名已不掛 hover（與基準欄重複）→ 不該出卡
+    for sel, nm in (("tbody tr:first-child td.name", "基金名"), ("tbody tr:first-child td.cell-code", "代號")):
+        pg.hover(sel); pg.wait_for_timeout(400)
+        shown = pg.evaluate("() => { const c=document.getElementById('hcard'); return !!c && getComputedStyle(c).display !== 'none'; }")
+        print(f"    hover {nm} → 卡顯示={shown}（應為 False）")
+        ok &= shown is False
+    pg.hover("tbody tr:first-child td:nth-child(6)"); pg.wait_for_timeout(400)
     ok &= s2["卡顯示"] == "block" and s2["卡走勢"] >= 1
     print(f"   星級：{s2['卡星級']}")
     ok &= bool(s2["卡星級"]) and ((s2["卡星級"]["na"] and s2["卡星級"]["m"] == 0)
@@ -115,6 +123,18 @@ with sync_playwright() as p:
     s3 = grab()
     print(f"③ hover 數值 → 卡顯示={s3['卡顯示']}｜走勢svg={s3['卡走勢']}｜{s3['卡文字']}")
     ok &= s3["卡顯示"] == "block" and s3["卡走勢"] >= 1
+
+    # ③‑2 明細檢視：只有「年期」欄可 hover，其餘指標欄不掛（避免同一張卡重複）
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=detail&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1300)
+    for sel, nm, want in (("tbody tr:first-child td.basis", "年期欄", True),
+                          ("tbody tr:first-child td:nth-child(6)", "波動率欄", False)):
+        pg.hover(sel); pg.wait_for_timeout(400)
+        shown = pg.evaluate("() => { const c=document.getElementById('hcard'); return !!c && getComputedStyle(c).display !== 'none'; }")
+        print(f"③‑2 明細 hover {nm} → 卡顯示={shown}（應為 {want}）")
+        ok &= shown is want
+    pg.goto(TR + "?tab=nav&cat=all&basis=1&view=cross&shot=0", wait_until="domcontentloaded")
+    pg.wait_for_timeout(1200)
 
     # ④ 點列 → 展開明細（含其他期間與 06 連結）
     pg.click("tbody tr:first-child td.rank")
