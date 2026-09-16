@@ -449,7 +449,7 @@ with sync_playwright() as p:
     }""")
     print(f"⑰ 桌機 hover 提示：.hv 格={hv['hv格數']}/{hv['欄數']} 游標={hv['cursor']}（非 hv 格={hv['非hv游標']}）")
     print(f"   懸停該格 → 底={hl['格底']} 框={hl['格框']} 整列同色={hl['整列同色']}（應為單格亮）")
-    ok &= hv["hv格數"] == 5 and hv["cursor"] == "help" and hv["非hv游標"] == "default"
+    ok &= hv["hv格數"] == hv["欄數"] - 3 and hv["cursor"] == "help" and hv["非hv游標"] == "default"
     ok &= hl["格底"] == "rgb(253, 250, 243)" and hl["格框"] != "none" and hl["整列同色"] is False
     # 明細檢視：只有年期欄是 .hv
     pg.goto(TR + "?tab=nav&cat=all&basis=1&view=detail&shot=0", wait_until="domcontentloaded")

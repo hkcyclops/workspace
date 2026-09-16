@@ -227,10 +227,11 @@ with sync_playwright() as p:
     pg.hover("tbody tr:first-child td:nth-child(6)"); pg.wait_for_timeout(350)
     hint = pg.evaluate("""() => { const row=document.querySelector('tbody tr:not(.mrow)');
         const hvs=Array.from(row.children).filter(td=>td.classList.contains('hv'));
-        return {hv數: hvs.length, 游標: hvs.length?getComputedStyle(hvs[0]).cursor:null,
+        return {hv數: hvs.length, 欄數: row.children.length,
+                游標: hvs.length?getComputedStyle(hvs[0]).cursor:null,
                 非hv游標: getComputedStyle(row.children[2]).cursor}; }""")
-    print("     ① 游標提示：.hv 格=%s 游標=%s（非 hv=%s）" % (hint["hv數"], hint["游標"], hint["非hv游標"]))
-    if not (hint["hv數"] == 5 and hint["游標"] == "help" and hint["非hv游標"] == "default"):
+    print("     ① 游標提示：.hv 格=%s（期間欄應為 %s）游標=%s（非 hv=%s）" % (hint["hv數"], hint["欄數"]-3, hint["游標"], hint["非hv游標"]))
+    if not (hint["hv數"] == hint["欄數"] - 3 and hint["游標"] == "help" and hint["非hv游標"] == "default"):
         ok = False; notes.append("hover 提示（.hv/游標 help）異常")
     record("B-2 hover提示", hint)
     if not h or h["display"] != "block" or h["cardTop"] < h["rowBottom"] - 8:
