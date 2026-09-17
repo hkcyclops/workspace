@@ -1529,6 +1529,14 @@ document.body.appendChild(__wrap);
     while ((!fd('catalog') || !((fd('catalog')||{}).funds||[]).length) && (Date.now()-_t0) < 30000){
       await new Promise(function(r){ setTimeout(r, 300); });
     }
+    /* ⚠️ 一定要再等 smart-metrics（8 MB）：只等 catalog 的話，線上慢網路會先渲染出
+       一整表「—」（每個回報期都是 null → td 全 cls('na')，沒有 .up/.down），
+       而且之後不會自動重繪。本機資料瞬間載完所以看不出來（2026-09-18 線上實測）。 */
+    step('等待 06 載入歷史指標（約 8 MB）…');
+    var _t1 = Date.now();
+    while ((!fd('smart-metrics') || !Object.keys(fd('smart-metrics')||{}).length) && (Date.now()-_t1) < 60000){
+      await new Promise(function(r){ setTimeout(r, 300); });
+    }
     step('讀取 06 已載入的資料…');
     D.cat = fd('catalog')||{}; D.dref = fd('distribution-references')||{};
     D.man = fd('manifest')||{}; D.sm = fd('smart-metrics')||{};
