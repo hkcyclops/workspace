@@ -1367,6 +1367,23 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .panel{padding:12px 12px 14px;contain:layout style}
 #sp-wrap /* ② 條件列表加一體框：表示「呢一塊係一個整體」 */
 #sp-body{border:1px solid #eadfce;border-radius:10px;padding:10px 12px 12px;background:#fffdf8}
+#sp-wrap /* v17：數值條件的標題＋「?」＋數據行＋高/中/低＋三段桿＋自訂 */
+.pane{min-width:320px}
+#sp-wrap .ptitlewrap{margin-bottom:6px}
+#sp-wrap .ptitle{display:flex;align-items:baseline;gap:6px}
+#sp-wrap .qbtn{appearance:none;width:16px;height:16px;flex:0 0 auto;border:1px solid var(--line-2);background:0 0;color:var(--gray);font:inherit;font-size:10px;font-weight:800;line-height:1;padding:0;border-radius:50%;cursor:pointer}
+#sp-wrap .qbtn.on{background:var(--lit-bg);color:var(--lit-ink);border-color:#b78e42}
+#sp-wrap .qtext{margin-top:6px;font-size:10.5px;line-height:1.55;color:var(--ink-2);background:#fffdf8;border-left:2px solid var(--gold);padding:6px 8px;border-radius:0 6px 6px 0}
+#sp-wrap .dline{font-size:10px;color:var(--gray);margin:0 0 7px}
+#sp-wrap .segbar{display:flex;flex:1;gap:3px;min-width:0}
+#sp-wrap .seg{flex:1;min-width:0;appearance:none;border:1px solid var(--line-2);background:#fffdf8;color:var(--gray);font:inherit;font-size:10.5px;padding:4px 2px;cursor:pointer;text-align:center;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sp-wrap .seg.on{background:var(--lit-bg);color:var(--lit-ink);border-color:#b78e42;font-weight:700}
+#sp-wrap .cust{margin-top:7px}
+#sp-wrap .custbtn{font-size:11px}
+#sp-wrap .custbody{margin-top:6px;padding-top:7px;border-top:1px dashed var(--line)}
+#sp-wrap .more{margin-top:6px}
+#sp-wrap .retrow,#sp-wrap .navrow{flex-wrap:wrap;gap:5px}
+#sp-wrap .retrow .chip,#sp-wrap .navrow .chip{font-size:11px}
 #sp-wrap .panel[hidden]{display:none}
 #sp-wrap /* ① 面板收合時，底部那一排（查看結果／收藏／我的收藏／加入組合／提示）也一起收 */
 .panel[hidden]~.foot{display:none}
@@ -1713,7 +1730,7 @@ document.body.appendChild(__wrap);
       box.appendChild(lab); box.appendChild(cc); gs.appendChild(box);
     });
     gs.appendChild(popRow('期間回報', periodLabel('ret','%'), 'ret'));
-    gs.appendChild(popRow('NAV 位置', periodLabel('navP',''), 'navP'));
+    gs.appendChild(popRow('價格分位', periodLabel('navP',''), 'navP'));
     gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
     gs.appendChild(popRow('平台歷史', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
@@ -1764,35 +1781,139 @@ document.body.appendChild(__wrap);
   /* ---------- 浮層 ---------- */
   var panes = {
     navP: function(p){
-      p.appendChild(el('h4','','快捷（一次設全部期間）'));
-      var r = el('div','row');
-      [['high','高（分位 ≥70）',70,100],['mid','中（30–70）',30,70],['low','低（<30）',0,30]].forEach(function(t){
-        var b = el('button','chip', t[1]);
-        b.onclick = function(ev){
-          ev.stopPropagation();
-          PERIODS.forEach(function(per){ S.navP[per] = { min: t[2], max: t[3] }; });
-          openPane('navP', null); render(); run();
-        };
-        r.appendChild(b);
+      p.appendChild(paneTitle('價格分位（0–100）','navP'));
+      var NAVP = ['YTD','3M','1Y'];        /* D：只留 3 期（長年期分位右偏、冇鑑別力） */
+      NAVP.forEach(function(per){
+        var r = el('div','row navrow');
+        r.appendChild(el('span','plab', PLAB[per]));
+        var bar = el('div','segbar');
+        [['低','30 以下',0,30],['中','30–70',30,70],['高','70 以上',70,100]].forEach(function(t){
+          var seg = el('button','seg', t[0] + ' · ' + t[1]);
+          var o = S.navP[per] || {};
+          if (o.min === t[2] && o.max === t[3]) seg.classList.add('on');
+          seg.onclick = function(ev){
+            ev.stopPropagation();
+            var cur = JSON.parse(JSON.stringify(S.navP));
+            var on = (o.min === t[2] && o.max === t[3]);
+            if (on) delete cur[per]; else cur[per] = { min: t[2], max: t[3] };
+            S.navP = cur; render(); renderSums(); run(); openPane('navP', null);
+          };
+          bar.appendChild(seg);
+        });
+        r.appendChild(bar);
+        p.appendChild(r);
       });
-      p.appendChild(r);
-      p.appendChild(el('h4','','每期 NAV 分位（0–100）'));
-      periodRows(p, 'navP', '', '1');   /* 分位是整數 0–100 */
+      p.appendChild(customToggle('自訂分位', function(body){
+        NAVP.forEach(function(per){
+          var r = el('div','row pRow');
+          r.appendChild(el('span','plab', PLAB[per]));
+          [['min','≥'],['max','≤']].forEach(function(t){
+            var o = S.navP[per] || {};
+            var i = el('input'); i.type = 'number'; i.step = '1';
+            if (o[t[0]] != null) i.value = o[t[0]];
+            i.oninput = function(){
+              var cur = JSON.parse(JSON.stringify(S.navP));
+              var c = cur[per] || {};
+              c[t[0]] = (i.value === '' ? null : +i.value);
+              if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
+              S.navP = cur; renderSums(); run();
+            };
+            r.appendChild(el('span','sig', t[1]));
+            r.appendChild(i);
+          });
+          body.appendChild(r);
+        });
+      }));
       p.appendChild(acts('navP'));
     },
     ret: function(p){
-      p.appendChild(el('h4','','每期回報（%）——同期兩值＝區間；期與期之間「且」'));
-      periodRows(p, 'ret', '%');
+      p.appendChild(paneTitle('期間回報（%）','ret'));
+      p.appendChild(dataLine('1 年中位約 ' + medOf('1Y') + '%，範圍 ' + rangeOf('1Y')));
+      var MAIN = ['YTD','1Y','3Y'], REST = ['3M','5Y'];   /* A：常用 3 期先顯示，其餘收喺「更多」 */
+      function row(per){
+        var r = el('div','row pRow retrow');
+        r.appendChild(el('span','plab', PLAB[per]));
+        var med = medOf(per);
+        /* 例子預選 chip（門檻直接寫喺文字上）＋ 保留數值輸入 */
+        [['正回報 ≥0', 0, null],
+         [med > 0 ? ('升逾 ' + med + '%') : ('升逾 0%'), Math.max(med, 1), null],
+         ['負回報 <0', null, 0]].forEach(function(t){
+          var b = el('button','chip', t[0]);
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            var cur = JSON.parse(JSON.stringify(S.ret));
+            cur[per] = { min: t[1], max: t[2] };
+            if (cur[per].min == null && cur[per].max == null) delete cur[per];
+            S.ret = cur; render(); renderSums(); run(); openPane('ret', null);
+          };
+          r.appendChild(b);
+        });
+        [['min','≥'],['max','≤']].forEach(function(t){
+          var o = S.ret[per] || {};
+          var i = el('input'); i.type = 'number'; i.step = '1';
+          if (o[t[0]] != null) i.value = o[t[0]];
+          i.oninput = function(){
+            var cur = JSON.parse(JSON.stringify(S.ret));
+            var c = cur[per] || {};
+            c[t[0]] = (i.value === '' ? null : +i.value);
+            if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
+            S.ret = cur; renderSums(); run();
+          };
+          r.appendChild(el('span','sig', t[1]));
+          r.appendChild(i);
+        });
+        r.appendChild(el('span','u','%'));
+        return r;
+      }
+      var more = el('div','more'); more.hidden = true;
+      REST.forEach(function(per){ more.appendChild(row(per)); });
+      var mb = el('button','chip custbtn','更多年期 ›');
+      mb.onclick = function(ev){ ev.stopPropagation(); more.hidden = !more.hidden; mb.classList.toggle('on', !more.hidden); };
+      MAIN.forEach(function(per){ p.appendChild(row(per)); });
+      p.appendChild(mb); p.appendChild(more);
       p.appendChild(acts('ret'));
     },
     yield: function(p){
-      p.appendChild(el('h4','','年化派息率（%，兩值＝區間）'));
-      p.appendChild(numRow('yieldMin','yieldMax'));
+      p.appendChild(paneTitle('年化派息率（%）——只適用於派息基金（Z 開頭）','yield'));
+      p.appendChild(dataLine('38 隻派息基金：1.6% 至 9.5%，中位 6.7%'));
+      var r = el('div','row');
+      [['低 · 3% 以下',0,3],['中 · 3 至 7%',3,7],['高 · 7% 以上',7,999]].forEach(function(t){
+        var b = el('button','chip', t[0]);
+        b.onclick = function(ev){ ev.stopPropagation(); S.yieldMin=t[1]; S.yieldMax=t[2]; render(); renderSums(); run(); openPane('yield', null); };
+        r.appendChild(b);
+      });
+      p.appendChild(r);
+      p.appendChild(customToggle('自訂', function(body){
+        body.appendChild(numRow('yieldMin','yieldMax'));
+      }));
       p.appendChild(acts('yield'));
     },
     vol: function(p){
-      p.appendChild(el('h4','','每期年化波動率（%）——只對非派息基金有效（派息基金＝Z 開頭不給值）'));
-      periodRows(p, 'vol', '%');
+      p.appendChild(paneTitle('波動率（%）','vol'));
+      p.appendChild(dataLine('一半基金喺 18% 以下；全部約 0% 至 51%'));
+      p.appendChild(levelRow('vol', [['低 · 10% 以下',0,10],['中 · 10 至 25%',10,25],['高 · 25% 以上',25,999]], ['1Y','3Y','5Y']));
+      p.appendChild(customToggle('自訂每期', function(body){
+        ['1Y','3Y','5Y'].forEach(function(per){
+          var r = el('div','row pRow');
+          r.appendChild(el('span','plab', PLAB[per]));
+          [['min','≥'],['max','≤']].forEach(function(t){
+            var o = S.vol[per] || {};
+            var i = el('input'); i.type = 'number'; i.step = '1';
+            if (o[t[0]] != null) i.value = o[t[0]];
+            i.oninput = function(){
+              var cur = JSON.parse(JSON.stringify(S.vol));
+              var c = cur[per] || {};
+              c[t[0]] = (i.value === '' ? null : +i.value);
+              if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
+              S.vol = cur; renderSums(); run();
+            };
+            r.appendChild(el('span','sig', t[1]));
+            r.appendChild(i);
+          });
+          r.appendChild(el('span','u','%'));
+          body.appendChild(r);
+        });
+      }));
       p.appendChild(acts('vol'));
     },
     years: function(p){
@@ -1824,6 +1945,75 @@ document.body.appendChild(__wrap);
       p.appendChild(acts('house'));
     }
   };
+  /* 由已載入的 smart-metrics 算真實分佈（門檻取整、唔寫死；資料更新會跟住變） */
+  var STATS = null;
+  function buildStats(){
+    if (STATS) return STATS;
+    var o = {ret:{}, navP:{}};
+    PERIODS.forEach(function(per){
+      var vs = [];
+      (D.byCode ? Object.keys(D.byCode) : []).forEach(function(c){
+        var m = mOf(c, per);
+        if (m && m.returnPercent != null) vs.push(m.returnPercent);
+      });
+      vs.sort(function(a,b){ return a-b; });
+      o.ret[per] = { n:vs.length, med: vs.length ? Math.round(vs[Math.floor(vs.length/2)]) : 0,
+                     lo: vs.length ? Math.round(vs[0]) : 0, hi: vs.length ? Math.round(vs[vs.length-1]) : 0 };
+    });
+    STATS = o; return o;
+  }
+  function medOf(per){ buildStats(); return (STATS.ret[per]||{}).med || 0; }
+  function rangeOf(per){ buildStats(); var r=STATS.ret[per]||{}; return r.lo + '% 至 ' + r.hi + '%'; }
+
+  /* 「?」說明：書面語、用「元」唔用「蚊」 */
+  var HINTS = {
+    ret: '各段時間的回報，正數為升、負數為跌。例如 −5% 即每 100 元虧損 5 元；期與期之間為「且」。',
+    navP: '用來判斷現價相對本身歷史是偏便宜還是偏貴。分位低（30 以下）＝接近該時段的低位，即相對便宜；分位高（70 以上）＝接近高位，即相對貴。0 為期內最低、100 為期內最高；例如分位 20，表示現價只高於該時段內約兩成時間的價位。',
+    vol: '一年內價格的升跌幅度；數值愈大代表上落愈大。例如 20% 即每 100 元一年內約升跌 20 元。只適用於非派息基金（派息基金為 Z 開頭）。',
+    yield: '按最近派息推算的一年派息率，只適用於派息基金（Z 開頭）。例如 6% 即每 100 元一年派息 6 元。'
+  };
+  function paneTitle(text, key){
+    var wrap = el('div','ptitlewrap'), row = el('div','ptitle');
+    row.appendChild(el('h4','',text));
+    var t = null, b = null;
+    if (HINTS[key]){
+      b = el('button','qbtn','?');
+      t = el('div','qtext', HINTS[key]); t.hidden = true;
+      b.onclick = function(ev){ ev.stopPropagation(); t.hidden = !t.hidden; b.classList.toggle('on', !t.hidden); };
+      row.appendChild(b);
+    }
+    wrap.appendChild(row);
+    if (t) wrap.appendChild(t);
+    return wrap;
+  }
+  function dataLine(text){ return el('div','dline', text); }
+  /* 一次套用全部期間的高／中／低（門檻寫喺 chip 文字上，取整唔用四分位） */
+  function levelRow(key, bands, periods){
+    var r = el('div','row');
+    bands.forEach(function(t){
+      var b = el('button','chip', t[0]);
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var cur = JSON.parse(JSON.stringify(S[key]));
+        (periods || PERIODS).forEach(function(per){ cur[per] = { min: t[1], max: t[2] }; });
+        S[key] = cur;
+        render(); renderSums(); run();
+        openPane(key, null);
+      };
+      r.appendChild(b);
+    });
+    return r;
+  }
+  function customToggle(labelText, buildFn){
+    var wrap = el('div','cust');
+    var b = el('button','chip custbtn', labelText + ' ›');
+    var body = el('div','custbody'); body.hidden = true;
+    b.onclick = function(ev){ ev.stopPropagation(); body.hidden = !body.hidden; b.classList.toggle('on', !body.hidden); };
+    buildFn(body);
+    wrap.appendChild(b); wrap.appendChild(body);
+    return wrap;
+  }
+
   function periodRows(pane, key, unit, step){
     PERIODS.forEach(function(per){
       var r = el('div','row pRow');
@@ -1925,7 +2115,7 @@ document.body.appendChild(__wrap);
     /* 數值／其他類條件進摘要（按大類別，列出各期；點 ✕ 清掉該類） */
     var extra = [
       ['期間回報', hasPeriod('ret') ? periodLabel('ret','%') : null, function(){ S.ret={}; }],
-      ['NAV 位置', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
+      ['價格分位', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
       ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
       ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
         function(){ S.yieldMin=S.yieldMax=null; }],
@@ -1952,7 +2142,7 @@ document.body.appendChild(__wrap);
     var r0 = f.rating||0;
     inner.push('<div class="dl"><b class="fname">'+f.code+'　'+(f.name||'')+'</b>'+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
     inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
-    inner.push('<div class="dl"><span class="k">NAV 分位</span>'+r2+'</div>');
+    inner.push('<div class="dl"><span class="k">價格分位</span>'+r2+'</div>');
     inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
     inner.push('<div class="dl"><span class="k">類型</span><b>'+f._type+'</b>　<span class="k">地區</span><b>'+f._region+'</b>'
       +'　<span class="k">幣種</span><b>'+(f.currencyCode||'—')+'</b>　<span class="k">風險</span><b>'+(f.risk||'—')+'</b>'
