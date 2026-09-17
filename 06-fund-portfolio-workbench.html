@@ -1326,4 +1326,764 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   }
   window.addEventListener('load', function(){ setTimeout(schedule, 800); });
 })();
-</script></body></html>
+</script><style id="SP_PICKER_CSS_V1">
+#sp-wrap{
+  --bg:#faf8f4; --card:#fffdf8; --ink:#2c2722; --ink-2:#453c34; --gray:#8d7c65; --line:#eadfce;
+  --line-2:#ddcfba; --red:#8f0d25; --gold:#c8a85b; --lit-bg:#fdf3e3; --lit-ink:#8d641d;
+  --up:#b13446; --down:#2f7a5a;
+}
+#sp-wrap *{box-sizing:border-box}
+#sp-wrap a{color:var(--red)}
+#sp-wrap .wrap{max-width:1080px;margin:0 auto;padding:18px 14px 90px}
+#sp-wrap .masthead{border-bottom:2px solid var(--red);padding-bottom:10px;margin-bottom:12px}
+#sp-wrap .eyebrow{margin:0;font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--gray)}
+#sp-wrap h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-weight:500}
+#sp-wrap .sub{margin:6px 0 0;font-size:12.5px;color:var(--ink-2)}
+#sp-wrap .sub b{color:var(--ink)}
+#sp-wrap .stage{background:var(--card);border:1px solid var(--line);box-shadow:inset 0 2px var(--gold)}
+#sp-wrap .bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+#sp-wrap .toggle{appearance:none;border:0;background:0 0;font:inherit;font-weight:800;cursor:pointer;color:var(--ink);
+  display:inline-flex;align-items:center;gap:7px;padding:2px 0}
+#sp-wrap .toggle .caret{color:var(--red);font-size:11px}
+#sp-wrap .toggle small{color:var(--gray);font-weight:600;font-size:10.5px}
+#sp-wrap .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
+#sp-wrap .sum{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--lit-ink);
+  background:var(--lit-bg);padding:3px 7px;cursor:pointer;border:0}
+#sp-wrap .sum .x{color:var(--red);font-weight:800}
+#sp-wrap .hit{font-size:12px;font-weight:800;color:var(--red);white-space:nowrap}
+#sp-wrap .reset{appearance:none;background:0 0;border:1px solid var(--line-2);color:var(--gray);font:inherit;font-size:11.5px;
+  padding:3px 8px;cursor:pointer}
+#sp-wrap .panel{padding:12px 12px 14px;contain:layout style}
+#sp-wrap .panel[hidden]{display:none}
+#sp-wrap .presets{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+#sp-wrap .presets .lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--gray);margin-right:2px}
+#sp-wrap .groups{display:grid;grid-template-columns:1fr 1fr;gap:2px 22px;margin-top:8px}
+#sp-wrap .g{display:flex;align-items:flex-start;gap:10px;padding:5px 0;border-bottom:1px dotted var(--line)}
+#sp-wrap .g>.gl{flex:0 0 74px;font-size:11.5px;font-weight:800;color:var(--ink-2);padding-top:3px}
+#sp-wrap .g>.gc{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+#sp-wrap .chip{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:var(--gray);
+  cursor:pointer;padding:2px 1px;line-height:1.35}
+#sp-wrap .chip:hover{color:var(--red)}
+#sp-wrap .chip.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
+#sp-wrap .chip.na{color:var(--line-2);cursor:default}
+#sp-wrap .pop{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer;
+  padding:2px 1px;display:inline-flex;align-items:center;gap:4px}
+#sp-wrap .pop:hover{color:var(--red)}
+#sp-wrap .pop .v{font-family:ui-monospace,Consolas,monospace;font-weight:700}
+#sp-wrap .pop.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
+#sp-wrap .pop .caret{font-size:9px;color:var(--gray)}
+#sp-wrap .pane{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-2);box-shadow:0 10px 28px rgba(30,20,10,.16);
+  padding:10px;min-width:200px}
+#sp-wrap .pane[hidden]{display:none}
+#sp-wrap .pane h4{margin:0 0 6px;font-size:11px;color:var(--gray);letter-spacing:.06em}
+#sp-wrap .pane label{display:flex;align-items:center;gap:7px;font-size:12.5px;padding:3px 2px;cursor:pointer}
+#sp-wrap .pane input[type=search],#sp-wrap .pane input[type=number]{width:66px;min-height:26px;font:inherit;font-size:12.5px;padding:0 6px;
+  background:#fffdf8;border:1px solid var(--line-2);color:var(--ink)}
+#sp-wrap .pane input[type=search]{width:100%;margin-bottom:6px}
+#sp-wrap .pane .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#sp-wrap .pane .scrl{max-height:190px;overflow:auto;margin-top:2px}
+#sp-wrap .pane .pRow{gap:4px}
+#sp-wrap .pane .plab{flex:0 0 62px;color:var(--ink-2);font-weight:700;font-size:12px}
+#sp-wrap .pane .sig{color:var(--gray);font-size:11px}
+#sp-wrap .pane .u{color:var(--gray);font-size:11px;margin-left:2px}
+#sp-wrap .pane .fav{justify-content:space-between}
+#sp-wrap .pane .favname{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+#sp-wrap .pane .favname em{display:block;font-style:normal;font-weight:400;color:var(--gray);font-size:10.5px}
+#sp-wrap .pane .acts{display:flex;gap:6px;margin-top:8px}
+#sp-wrap .pane .acts button{flex:1;appearance:none;font:inherit;font-size:12px;font-weight:700;padding:5px 0;cursor:pointer;
+  background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2)}
+#sp-wrap .pane .acts button.k{background:var(--red);border-color:var(--red);color:#fff7ee}
+#sp-wrap .hint{font-size:10.5px;color:var(--gray)}
+#sp-wrap .foot{padding:9px 12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#sp-wrap .btn{appearance:none;font:inherit;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;
+  background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2)}
+#sp-wrap .btn.k{background:var(--red);border-color:var(--red);color:#fff7ee}
+#sp-wrap .btn.g{border-color:var(--gold);color:var(--lit-ink)}
+#sp-wrap .btn .ic{width:13px;height:13px;vertical-align:-2px;margin-right:5px;display:inline-block}
+#sp-wrap .btn.k .ic{color:#fff7ee}
+#sp-wrap .res{margin-top:14px;contain:content}
+#sp-wrap table{width:100%;border-collapse:collapse;font-size:12.5px}
+#sp-wrap #tbl th:nth-child(12),#sp-wrap #tbl td:nth-child(12){width:40px}
+#sp-wrap th,#sp-wrap td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+#sp-wrap th:nth-child(-n+3),#sp-wrap td:nth-child(-n+3){text-align:left}
+#sp-wrap th{font-family:Georgia,serif;font-size:12px;color:var(--gray);cursor:pointer;user-select:none;background:#fffdf8}
+#sp-wrap th:hover{color:var(--red)}
+#sp-wrap td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sp-wrap td.cell-code{line-height:1.25}
+#sp-wrap .sub{display:block;font-size:10px;line-height:1.25;color:var(--gray);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sp-wrap td .nm{display:block;line-height:1.3}
+#sp-wrap .sub.stars{color:var(--gold);font-size:10.5px;letter-spacing:.5px}
+#sp-wrap tbody tr.drow{cursor:pointer}
+#sp-wrap tbody tr.drow:hover td{background:#fdfaf3}
+#sp-wrap tr.drow td{vertical-align:top}
+#sp-wrap tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
+  font-size:12px;line-height:1.65;padding:9px 10px}
+#sp-wrap tr.xrow .dl{margin:0 0 2px}
+#sp-wrap tr.xrow .dl b{color:var(--ink)}
+#sp-wrap tr.xrow .k{color:var(--gray);font-weight:700;margin-right:4px}
+#sp-wrap tr.xrow .go{color:var(--red);text-decoration:none}
+#sp-wrap .vcnt{font-size:11.5px;color:var(--gray)}
+#sp-wrap #dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
+  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
+#sp-wrap #dcard[hidden]{display:none}
+#sp-wrap .code{font-family:Georgia,serif;font-weight:700}
+#sp-wrap .up{color:var(--up)}
+#sp-wrap .down{color:var(--down)}
+#sp-wrap .na{color:var(--gray)}
+#sp-wrap .stars{color:var(--gold);letter-spacing:.5px}
+#sp-wrap .ms-na{color:var(--gray)}
+#sp-wrap .add{appearance:none;border:0;background:0 0;color:var(--red);font:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;padding:0 4px;line-height:1}
+#sp-wrap .picked{margin-top:12px;padding:10px;background:#fffdf8;border:1px dashed var(--line-2)}
+#sp-wrap .picked h4{margin:0 0 6px;font-size:11.5px;color:var(--gray);letter-spacing:.06em}
+#sp-wrap .picked .lst{display:flex;flex-wrap:wrap;gap:6px}
+#sp-wrap .pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2);
+  background:#fff;border:1px solid var(--line);padding:3px 7px}
+#sp-wrap .pill b{font-family:Georgia,serif}
+#sp-wrap .pill button{appearance:none;border:0;background:0 0;color:var(--red);cursor:pointer;font:inherit;padding:0}
+#sp-wrap .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:90;background:#2c2722;color:#fff7ee;
+  font-size:12.5px;font-weight:700;padding:8px 14px;opacity:0;transition:opacity .2s}
+#sp-wrap .toast.on{opacity:1}
+#sp-wrap .loading{padding:26px 4px;color:var(--gray);font-size:13px}
+@media (max-width:768px){
+#sp-wrap .groups{grid-template-columns:1fr}
+}
+@media (max-width:768px){
+#sp-wrap .panel{position:fixed;inset:0;z-index:70;background:var(--card);overflow:auto;padding:14px 12px 76px}
+#sp-wrap .stage{border-left:0;border-right:0}
+#sp-wrap .foot{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card)}
+#sp-wrap .res{overflow-x:auto}
+#sp-wrap table{font-size:12px}
+}
+</style>
+<script id="SP_PICKER_V1">
+(function(){
+if (document.getElementById("sp-wrap")) return;   /* 已注入 */
+var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJ0cnVlIj48c3BhbiBjbGFzcz0iY2FyZXQiPuKWvjwvc3Bhbj7mmbrog73mop3ku7YgPHNtYWxsPum7nuaTiuWxlemWi++8j+aUtuWQiDwvc21hbGw+PC9idXR0b24+CiAgICAgIDxkaXYgY2xhc3M9InN1bXMiIGlkPSJzcC1zdW1zIj48L2Rpdj4KICAgICAgPHNwYW4gY2xhc3M9ImhpdCIgaWQ9InNwLWhpdCI+4oCUPC9zcGFuPgogICAgICA8YnV0dG9uIGNsYXNzPSJyZXNldCIgaWQ9InNwLXJlc2V0Ij7ph43nva48L2J1dHRvbj4KICAgIDwvZGl2PgogICAgPGRpdiBjbGFzcz0icGFuZWwiIGlkPSJzcC1wYW5lbCI+CiAgICAgIDxkaXYgY2xhc3M9ImxvYWRpbmciIGlkPSJzcC1sb2FkaW5nIj7ovInlhaXos4fmlpnkuK3igKbvvIjpppbmrKHpnIDovInlhaXntIQgOCBNQiDmrbflj7Los4fmlpnvvIk8L2Rpdj4KICAgICAgPGRpdiBpZD0ic3AtYm9keSIgaGlkZGVuPgogICAgICAgIDxkaXYgY2xhc3M9InByZXNldHMiIGlkPSJzcC1wcmVzZXRzIj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJncm91cHMiIGlkPSJzcC1ncm91cHMiPjwvZGl2PgogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICAgPGRpdiBjbGFzcz0iZm9vdCI+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3Atdmlld1JlcyI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxjaXJjbGUgY3g9IjciIGN5PSI3IiByPSI0LjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIvPjxwYXRoIGQ9Ik0xMC40IDEwLjQgTDE0IDE0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuafpeeci+e1kOaenDwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4gZyIgaWQ9InNwLXNhdmVQcmVzZXQiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biIgaWQ9InNwLW15RmF2Ij48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggMS44bDEuOSAzLjkgNC4zLjYtMy4xIDMgLjcgNC4zTDggMTEuNmwtMy44IDIgLjctNC4zLTMuMS0zIDQuMy0uNnoiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjwvc3ZnPuaIkeeahOaUtuiXjzwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4iIGlkPSJzcC1jbGVhclBpY2tlZCI+5riF56m65b6F5Yqg5YWlPC9idXR0b24+CiAgICAgIDxzcGFuIGNsYXNzPSJoaW50IiBpZD0ic3AtZm9vdEhpbnQiPjwvc3Bhbj4KICAgIDwvZGl2PgogIDwvZGl2PgoKICA8c2VjdGlvbiBjbGFzcz0icmVzIiBpZD0ic3AtcmVzIiBoaWRkZW4+CiAgICA8ZGl2IGlkPSJzcC1yZXNIZWFkIiBzdHlsZT0iZm9udC1zaXplOjEycHg7Y29sb3I6dmFyKC0tZ3JheSk7bWFyZ2luLWJvdHRvbTo2cHgiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBpY2tlZCIgaWQ9InNwLXBpY2tlZCIgaGlkZGVuPgogICAgICA8aDQ+5b6F5Yqg5YWl5riF5Zau77yI6KSH6KO95Luj6Jmf5b6M5YiwIDA2IOeahOaQnOWwi+ahhuiyvOS4iu+8m+S5i+W+jOacg+ebtOWvqyAwNiDntYTlkIjlhLLlrZjvvIk8L2g0PgogICAgICA8ZGl2IGNsYXNzPSJsc3QiIGlkPSJzcC1waWNrZWRMc3QiPjwvZGl2PgogICAgICA8ZGl2IHN0eWxlPSJtYXJnaW4tdG9wOjhweCI+PGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0ic3AtY29weUNvZGVzIj7opIfoo73lhajpg6jku6PomZ88L2J1dHRvbj48L2Rpdj4KICAgIDwvZGl2PgogIDwvc2VjdGlvbj4KPGRpdiBjbGFzcz0icGFuZSIgaWQ9InNwLXBhbmUiIGhpZGRlbj48L2Rpdj4KPGRpdiBjbGFzcz0idG9hc3QiIGlkPSJzcC10b2FzdCI+PC9kaXY+";
+var __bytes = Uint8Array.from(atob(__b64), function(c){ return c.charCodeAt(0); });
+var __mark = new TextDecoder("utf-8").decode(__bytes);
+var __wrap = document.createElement("div"); __wrap.id = "sp-wrap";
+__wrap.innerHTML = __mark;
+document.body.appendChild(__wrap);
+
+(function(){
+  /* 錯誤可視化：試用版要能看到哪裡掛了，而不是白畫面 */
+  function fail(msg){ var e=document.getElementById('sp-loading'); if(e){ e.textContent='載入失敗：'+msg; e.style.color='#8f0d25'; } document.title='ERR '+msg; }
+  window.onerror=function(m,src,ln,col){ fail(m+' @'+(ln||'?')+':'+(col||'?')); };
+  window.addEventListener('unhandledrejection', function(ev){ fail(String(ev.reason&&ev.reason.message||ev.reason)); });
+  function step(t){ var e=document.getElementById('sp-loading'); if(e) e.textContent=t; }
+  var V = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  var BASE = './';
+  var LS_KEY = 'calculator-hub-smart-picker-v1';
+  var LS_PRESET = 'calculator-hub-smart-picker-presets-v1';
+  var D = {};                                  // 資料
+  var CATS = {type:[], region:[]};             // 由 assetClass 拆出
+  var S = {                                    // 條件狀態（未選＝不限）
+    type:[], region:[], risk:[], ccy:[], rate:[], nav:[], payday:[], dist:[], years:null,
+    ret:{}, navP:{}, vol:{},          // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
+    yieldMin:null, yieldMax:null,
+    houses:[], listYears:null, sort:'1Y', dir:-1
+  };
+  var PICKED = [];
+  var el = function(t,c,h){ var e=document.createElement(t); if(c) e.className=c; if(h!==undefined) e.innerHTML=h; return e; };
+  var $ = function(id){ return document.getElementById(id); };
+  function toast(t){ var x=$('sp-toast'); x.textContent=t; x.classList.add('on'); setTimeout(function(){x.classList.remove('on');},1900); }
+
+  /* ---------- 載入資料（runtime 版號破快取） ---------- */
+  function loadScript(name){
+    return new Promise(function(res,rej){
+      var s=document.createElement('script');
+      s.src = BASE+'data/'+name+'.js?v='+V;
+      s.onload=res; s.onerror=function(){ res(); };   // 缺檔不致命
+      document.head.appendChild(s);
+    });
+  }
+  function fd(key){ return (window.__FUND_DATA__||{})['data/'+key+'.js']; }
+  async function boot(){
+    step('等待 06 載入資料…');
+    var _t0 = Date.now();
+    while ((!fd('catalog') || !((fd('catalog')||{}).funds||[]).length) && (Date.now()-_t0) < 30000){
+      await new Promise(function(r){ setTimeout(r, 300); });
+    }
+    step('讀取 06 已載入的資料…');
+    D.cat = fd('catalog')||{}; D.dref = fd('distribution-references')||{};
+    D.man = fd('manifest')||{}; D.sm = fd('smart-metrics')||{};
+    D.vol = fd('smart-vol') || {funds:{}};
+    if (!D.vol.funds || !Object.keys(D.vol.funds).length){ await loadScript('smart-vol'); D.vol = fd('smart-vol')||{funds:{}}; }
+    step('建立索引…');
+    buildMeta(); restore();
+    step('渲染面板…');
+    render(); $('sp-loading').hidden=true; $('sp-body').hidden=false;
+    step('');
+    run();
+    /* 手機：預設收合（全屏抽屜不該一開就蓋住結果），桌面維持展開 */
+    if (innerWidth < 768){
+      $('sp-panel').hidden = true;
+      var tg = $('sp-toggle');
+      tg.setAttribute('aria-expanded','false');
+      var ca = tg.querySelector('.caret'); if(ca) ca.textContent = '▸';
+    }
+  }
+
+  /* ---------- 由 assetClass 拆「類型／地區」 ---------- */
+  function splitClass(a){
+    a = (a||'').trim();
+    if (a.indexOf(' - ') > 0){ var p=a.split(' - '); return [p[0].trim(), p.slice(1).join(' - ').trim()]; }
+    if (a.indexOf('/') > 0){ var q=a.split('/'); return [q[q.length-1].trim(), '環球']; }
+    return [a||'其他','環球'];
+  }
+  var TYPE_ORDER = ['股票','多元資產','固定收入','貨幣市場'];
+  var REGION_ORDER = ['環球','亞太區','中國及香港','美國','歐洲','新興市場','行業'];
+  function orderBy(list, pref){
+    var out = pref.filter(function(x){ return list.indexOf(x) >= 0; });
+    list.forEach(function(x){ if (out.indexOf(x) < 0) out.push(x); });
+    return out;
+  }
+  function buildMeta(){
+    var funds = D.cat.funds||[];
+    var tset={}, rset={};
+    funds.forEach(function(f){ var s=splitClass(f.assetClass); f._type=s[0]; f._region=s[1]; tset[s[0]]=1; rset[s[1]]=1; });
+    CATS.type = orderBy(Object.keys(tset), TYPE_ORDER);
+    CATS.region = orderBy(Object.keys(rset), REGION_ORDER);
+    D.byCode = {}; funds.forEach(function(f){ D.byCode[f.code]=f; });
+  }
+
+  /* ---------- 指標取值 ---------- */
+  var PERIODS = ['YTD','3M','1Y','3Y','5Y'];
+  var PLAB = { YTD:'年初至今', '3M':'3 個月', '1Y':'1 年', '3Y':'3 年', '5Y':'5 年' };
+  function rowOf(code){
+    var arr = (D.sm && D.sm.default) || [];
+    return arr.find(function(x){ return x.code === code; }) || null;
+  }
+  function mOf(code, per){                     // 該期的回報／NAV 分位（performancePeriods 五期齊全）
+    var row = rowOf(code); if(!row) return {};
+    return ((row.performancePeriods||{})[per]) || (row.periods||{})[per] || {};
+  }
+  function volPair(code, per){                 // 該期 [年化波動率%, 最大回撤%]（A：派息基金＝Z 開頭不給）
+    if (isDist(code)) return null;
+    var r = (D.vol.funds||{})[code]; if(!r) return null;
+    return r[per] || null;
+  }
+  function volOf(code, per){ var h=volPair(code,per); return h ? h[0] : null; }
+  function mddOf(code, per){ var h=volPair(code,per); return h ? h[1] : null; }
+  /* 派息基金＝代號 Z 開頭（與 06 bundle 的判據 Ho() 一致；用戶明確：只有 Z 開頭才是派息基金） */
+  function isDist(code){ return /^Z/i.test(String(code||'').trim()); }
+  function yieldOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
+  function q(v, rq){                            // 單一期間條件的比對（min/max 皆可為 null）
+    if(!rq || (rq.min==null && rq.max==null)) return true;
+    if(v==null) return false;
+    if(rq.min!=null && v < rq.min) return false;
+    if(rq.max!=null && v > rq.max) return false;
+    return true;
+  }
+  function listYearsOf(code){
+    var idx=(D.man.navIndex||{})[code]; if(!idx||!idx.firstTimestamp) return null;
+    return (Date.now()-idx.firstTimestamp)/31557600000;   // 365.25 天
+  }
+  function paydayOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r? r.payDayBucket : null; }
+
+  /* ---------- 篩選 ---------- */
+  function match(f){
+    var m = function(sel, v){ return sel.length===0 || sel.indexOf(v)>=0; };
+    if (!m(S.type, f._type)) return false;
+    if (!m(S.region, f._region)) return false;
+    if (!m(S.dist, isDist(f.code) ? 'dist' : 'nondist')) return false;
+    if (!m(S.risk, f.risk||'中')) return false;
+    if (!m(S.ccy, f.currencyCode||'')) return false;
+    if (!m(S.rate, String(f.rating||0))) return false;
+    if (S.listYears!=null){ var ly=listYearsOf(f.code); if (ly==null || ly < S.listYears) return false; }
+    if (!m(S.payday, paydayOf(f.code)||'')) return false;
+    if (S.houses.length && S.houses.indexOf(f.house||'')<0) return false;
+    /* 期間類條件：每一期各自判斷，期與期之間「且」（AND） */
+    for (var pi=0; pi<PERIODS.length; pi++){
+      var per = PERIODS[pi];
+      var needR = S.ret[per], needN = S.navP[per], needV = S.vol[per];
+      if (needR || needN){
+        var m0 = mOf(f.code, per);
+        if (needR && !q(m0.returnPercent, needR)) return false;
+        if (needN && !q(m0.navPercentile, needN)) return false;
+      }
+      if (needV && !q(volOf(f.code, per), needV)) return false;
+    }
+    if (S.yieldMin!=null || S.yieldMax!=null){
+      var y = yieldOf(f.code); if (y==null) return false;
+      if (S.yieldMin!=null && y < S.yieldMin) return false;
+      if (S.yieldMax!=null && y > S.yieldMax) return false;
+    }
+    return true;
+  }
+  function results(){
+    var out = (D.cat.funds||[]).filter(match);
+    var key=S.sort, d=S.dir;
+    out.sort(function(a,b){
+      var va=sortVal(a,key), vb=sortVal(b,key);
+      if (va==null) return 1; if (vb==null) return -1;
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return out;
+  }
+  function sortVal(f,k){
+    if (k==='yield') return yieldOf(f.code);
+    if (k==='rate') return f.rating||0;
+    if (PERIODS.indexOf(k)>=0) return mOf(f.code, k).returnPercent;
+    return f.code;
+  }
+
+  /* ---------- 面板渲染 ---------- */
+  var GROUPS = [
+    {k:'type',   label:'類型', multi:true,  open:function(){ return CATS.type; }, val:function(x){return x;} },
+    {k:'region', label:'地區', multi:true,  open:function(){ return CATS.region; }, val:function(x){return x;} },
+    {k:'dist',   label:'派息', multi:true,  open:function(){ return ['dist','nondist']; },
+      val:function(x){ return x==='dist'?'派息基金':'非派息基金'; } },
+    {k:'risk',   label:'風險', multi:true,  open:function(){ return ['低','中','高']; }, val:function(x){return x;} },
+    {k:'ccy',    label:'幣種', multi:true,  open:function(){ return ['USD','CNY','HKD','EUR']; }, val:function(x){return x;} },
+    {k:'rate',   label:'晨星評級', multi:true, open:function(){ return ['5','4','3','2','1','0']; },
+      val:function(x){ return x==='0' ? '無評級' : '★'.repeat(+x); } },
+    {k:'payday', label:'派息日', multi:true, open:function(){ return ['early','mid','late']; },
+      val:function(x){ return {early:'月初',mid:'月中',late:'月底'}[x]; } }
+  ];
+  function render(){
+    var gs=$('sp-groups'); gs.innerHTML='';
+    GROUPS.forEach(function(g){
+      var box=el('div','g'), lab=el('div','gl',g.label), cc=el('div','gc');
+      g.open().forEach(function(x){
+        var on = S[g.k].indexOf(x)>=0;
+        var b=el('button','chip'+(on?' on':''), g.val(x));
+        b.onclick=function(){ var i=S[g.k].indexOf(x); if(i<0)S[g.k].push(x); else S[g.k].splice(i,1); render(); save(); run(); };
+        cc.appendChild(b);
+      });
+      box.appendChild(lab); box.appendChild(cc); gs.appendChild(box);
+    });
+    gs.appendChild(popRow('期間回報', periodLabel('ret','%'), 'ret'));
+    gs.appendChild(popRow('NAV 位置', periodLabel('navP',''), 'navP'));
+    gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
+    gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
+    gs.appendChild(popRow('上架時間', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
+    gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
+    // 常用指標
+    var ps=$('sp-presets'); ps.innerHTML=''; ps.appendChild(el('span','lbl','常用指標'));
+    [['低風險高息',{risk:['低'],yieldMin:5}],
+     ['高評級',{rate:['5','4']}],
+     ['1／3／5 年都正回報',{ret:{'1Y':{min:0},'3Y':{min:0},'5Y':{min:0}}}],
+     ['月底派息',{payday:['late']}]].forEach(function(p){
+      var b=el('button','chip',p[0]);
+      b.onclick=function(){ Object.assign(S,p[1]); render(); save(); run(); toast('已套用：'+p[0]); };
+      ps.appendChild(b);
+    });
+    renderSums();
+  }
+  function popRow(label, val, k){
+    var box=el('div','g'), lab=el('div','gl',label), cc=el('div','gc');
+    var b=el('button','pop'+(isOn(k)?' on':''), '<span class="v">'+val+'</span><span class="caret">▾</span>');
+    b.onclick=function(e){ e.stopPropagation(); openPane(k, b); };
+    cc.appendChild(b); box.appendChild(lab); box.appendChild(cc);
+    return box;
+  }
+  function isOn(k){
+    if(k==='navP') return hasPeriod('navP');
+    if(k==='yield') return S.yieldMin!=null||S.yieldMax!=null;
+    if(k==='vol') return hasPeriod('vol');
+    if(k==='years') return S.listYears!=null;
+    if(k==='ret') return hasPeriod('ret');
+    if(k==='house') return S.houses.length>0;
+    return false;
+  }
+  function rangeLabel(a,b,unit){
+    if(a==null&&b==null) return '不限';
+    return (a!=null?('≥'+a):'')+(a!=null&&b!=null?'、':'')+(b!=null?('≤'+b):'')+unit;
+  }
+  function periodLabel(key, unit){          // 多期條件的摘要文字（每期各自列出）
+    var out = [];
+    PERIODS.forEach(function(per){
+      var rq = S[key][per]; if(!rq) return;
+      out.push(PLAB[per] + (rq.min!=null?('≥'+rq.min):'') + (rq.max!=null?('≤'+rq.max):'') + unit);
+    });
+    return out.length ? out.join('、') : '不限';
+  }
+  function hasPeriod(key){ return PERIODS.some(function(per){ return !!S[key][per]; }); }
+
+
+  /* ---------- 浮層 ---------- */
+  var panes = {
+    nav: function(p){
+      p.appendChild(el('h4','','快捷（一次設全部期間）'));
+      var r = el('div','row');
+      [['high','高（分位 ≥70）',70,100],['mid','中（30–70）',30,70],['low','低（<30）',0,30]].forEach(function(t){
+        var b = el('button','chip', t[1]);
+        b.onclick = function(ev){
+          ev.stopPropagation();
+          PERIODS.forEach(function(per){ S.navP[per] = { min: t[2], max: t[3] }; });
+          openPane('navP', null); render(); save(); run();
+        };
+        r.appendChild(b);
+      });
+      p.appendChild(r);
+      p.appendChild(el('h4','','每期 NAV 分位（0–100）'));
+      periodRows(p, 'navP', '');
+      p.appendChild(acts('navP'));
+    },
+    ret: function(p){
+      p.appendChild(el('h4','','每期回報（%）——同期兩值＝區間；期與期之間「且」'));
+      periodRows(p, 'ret', '%');
+      p.appendChild(acts('ret'));
+    },
+    yield: function(p){
+      p.appendChild(el('h4','','年化派息率（%，兩值＝區間）'));
+      p.appendChild(numRow('yieldMin','yieldMax'));
+      p.appendChild(acts('yield'));
+    },
+    vol: function(p){
+      p.appendChild(el('h4','','每期年化波動率（%）——只對非派息基金有效（派息基金＝Z 開頭不給值）'));
+      periodRows(p, 'vol', '%');
+      p.appendChild(acts('vol'));
+    },
+    years: function(p){
+      p.appendChild(el('h4','','上架滿 N 年（＝我們能取得資料的最早年數）'));
+      var r=el('div','row');
+      [0,1,2,3,5,10].forEach(function(n){
+        var on=(n===0? S.listYears==null : S.listYears===n);
+        var b=el('button','chip'+(on?' on':''), n===0?'不限':('≥ '+n+' 年'));
+        b.onclick=function(ev){ ev.stopPropagation(); S.listYears = n===0?null:n; closePane(); render(); save(); run(); };
+        r.appendChild(b);
+      });
+      p.appendChild(r); p.appendChild(acts('years'));
+    },
+    house: function(p){
+      p.appendChild(el('h4','','基金公司（可搜尋、多選）'));
+      var q=el('input'); q.type='search'; q.placeholder='搜尋…';
+      p.appendChild(q);
+      var scr=el('div','scrl');
+      var all = Array.from(new Set((D.cat.funds||[]).map(function(f){return f.house||'';}))).filter(Boolean).sort();
+      function draw(){
+        scr.innerHTML='';
+        all.filter(function(h){ return !q.value || h.toLowerCase().indexOf(q.value.toLowerCase())>=0; }).forEach(function(h){
+          var l=el('label'), cb=el('input'); cb.type='checkbox'; cb.checked=S.houses.indexOf(h)>=0;
+          cb.onchange=function(){ var i=S.houses.indexOf(h); if(cb.checked&&i<0)S.houses.push(h); if(!cb.checked&&i>=0)S.houses.splice(i,1); save(); renderSums(); run(); };
+          l.appendChild(cb); l.appendChild(el('span','',h)); scr.appendChild(l);
+        });
+      }
+      q.oninput=draw; draw(); p.appendChild(scr);
+      p.appendChild(acts('house'));
+    }
+  };
+  function periodRows(pane, key, unit){
+    PERIODS.forEach(function(per){
+      var r = el('div','row pRow');
+      r.appendChild(el('span','plab', PLAB[per]));
+      [['min','≥'],['max','≤']].forEach(function(t){
+        var o = S[key][per] || {};
+        var i = el('input'); i.type = 'number'; i.step = '0.1';
+        if (o[t[0]] != null) i.value = o[t[0]];
+        i.oninput = function(){
+          var cur = S[key][per] || {};
+          cur[t[0]] = (i.value === '' ? null : +i.value);
+          if (cur.min == null && cur.max == null) delete S[key][per]; else S[key][per] = cur;
+          save(); renderSums(); run();
+        };
+        r.appendChild(el('span','sig', t[1]));
+        r.appendChild(i);
+      });
+      r.appendChild(el('span','u', unit));
+      pane.appendChild(r);
+    });
+  }
+  function numRow(a,b){
+    var r=el('div','row');
+    [['≥',a],['≤',b]].forEach(function(t){
+      r.appendChild(el('span','hint',t[0]));
+      var i=el('input'); i.type='number'; i.step='0.1';
+      if(S[t[1]]!=null) i.value=S[t[1]];
+      i.oninput=function(){ S[t[1]] = i.value===''?null:+i.value; save(); renderSums(); run(); };
+      r.appendChild(i);
+    });
+    return r;
+  }
+  function acts(k){
+    var d=el('div','acts');
+    var c=el('button','','清除');
+    c.onclick=function(){
+      if(k==='navP'){S.navP={};}
+      if(k==='ret'){S.ret={};}
+      if(k==='yield'){S.yieldMin=S.yieldMax=null;}
+      if(k==='vol'){S.vol={};}
+      if(k==='years'){S.listYears=null;}
+      if(k==='house'){S.houses=[];}
+      closePane(); render(); save(); run();
+    };
+    var o=el('button','k','完成');
+    o.onclick=function(){ closePane(); render(); };
+    d.appendChild(c); d.appendChild(o); return d;
+  }
+  var paneOpenedBy = null;
+  function openPane(k, anchorEl){
+    var p=$('sp-pane'); p.innerHTML=''; p.hidden=false;
+    paneOpenedBy = anchorEl || null;
+    panes[k](p);
+    if(anchorEl){
+      var r=anchorEl.getBoundingClientRect();
+      var w=p.offsetWidth, h=p.offsetHeight;
+      var left=Math.min(Math.max(8, r.left), innerWidth-w-8);
+      var top=(r.bottom+6+h>innerHeight-8) ? Math.max(8, r.top-h-6) : r.bottom+6;
+      p.style.left=left+'px'; p.style.top=top+'px';
+    }
+  }
+  var S_BASE = null;   // 供取回時保留預設鍵（避免 restore 後缺欄位）
+  function closePane(){ $('sp-pane').hidden=true; $('sp-pane').innerHTML=''; paneOpenedBy=null; }
+  document.addEventListener('click', function(e){
+    var p=$('sp-pane');
+    // ① e.target 若已被重繪摘除（isConnected=false）不能當成「點到外面」
+    // ② 也不能把「剛開啟浮層的那個按鈕」本身當成外面
+    var byAnchor = paneOpenedBy && (e.target === paneOpenedBy || paneOpenedBy.contains(e.target));
+    if(!p.hidden && !byAnchor && e.target.isConnected && !p.contains(e.target) && !e.target.closest('.pop')) closePane();
+  });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePane(); });
+  /* 只在「使用者真的滾動」時關浮層：內容重排造成的細微 scroll 不關（否則控件一動就被關掉） */
+  var lastY = window.scrollY;
+  addEventListener('scroll', function(){
+    if (Math.abs(window.scrollY - lastY) > 6){ lastY = window.scrollY; closePane(); }
+  }, true);
+
+  /* ---------- 摘要／命中／結果 ---------- */
+  var SUMDEF = [
+    ['type','類型'],['region','地區'],['dist','派息'],['risk','風險'],['ccy','幣種'],['rate','評級'],['payday','派息日']
+  ];
+  function renderSums(){
+    var box=$('sp-sums'); box.innerHTML='';
+    SUMDEF.forEach(function(t){
+      var arr=S[t[0]]; if(!arr.length) return;
+      var txt = arr.map(function(x){
+        if(t[0]==='rate') return x==='0'?'無評級':(x+'★');
+        if(t[0]==='payday') return {early:'月初',mid:'月中',late:'月底'}[x];
+        if(t[0]==='dist') return x==='dist'?'派息':'非派息';
+        return x;
+      }).join('、');
+      var b=el('button','sum',t[1]+'：'+txt+' <span class="x">✕</span>');
+      b.onclick=function(){ S[t[0]]=[]; render(); save(); run(); };
+      box.appendChild(b);
+    });
+    /* 數值／其他類條件進摘要（按大類別，列出各期；點 ✕ 清掉該類） */
+    var extra = [
+      ['期間回報', hasPeriod('ret') ? periodLabel('ret','%') : null, function(){ S.ret={}; }],
+      ['NAV 位置', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
+      ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
+      ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
+        function(){ S.yieldMin=S.yieldMax=null; }],
+      ['上架時間', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
+    ];
+    extra.forEach(function(t){
+      if(!t[1]) return;
+      var b=el('button','sum',t[0]+'：'+t[1]+' <span class="x">✕</span>');
+      b.onclick=function(){ t[2](); render(); save(); run(); };
+      box.appendChild(b);
+    });
+    if(S.houses.length){ var b=el('button','sum','公司：'+S.houses.length+' 家 <span class="x">✕</span>');
+      b.onclick=function(){ S.houses=[]; render(); save(); run(); }; box.appendChild(b); }
+  }
+  var HOVER_OK = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  function detailHTML(f){
+    var inner=[];
+    var r1=PERIODS.map(function(per){ return PLAB[per]+' '+pct(mOf(f.code,per).returnPercent); }).join('　');
+    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return q==null?'—':Math.round(q); }).join(' / ');
+    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' '+(v==null?'—':(v.toFixed(2)+'%')); }).join('　');
+    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' '+(d==null?'—':(d.toFixed(1)+'%')); }).join('　');
+    var r0 = f.rating||0;
+    inner.push('<div class="dl"><b>'+f.code+'</b>　'+(f.name||'')+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
+    inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
+    inner.push('<div class="dl"><span class="k">NAV 分位</span>'+r2+'</div>');
+    inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
+    inner.push('<div class="dl"><span class="k">類型</span>'+f._type+'　<span class="k">地區</span>'+f._region
+      +'　<span class="k">幣種</span>'+(f.currencyCode||'—')+'　<span class="k">風險</span>'+(f.risk||'—')
+      +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
+      +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
+      +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
+    inner.push('<div class="dl"><a class="go" href="./06-fund-portfolio-workbench.html?fund='+f.code+'">在 06 開啟 '+f.code+' 走勢圖 →</a></div>');
+    return inner.join('');
+  }
+  function toggleRow(code, row){
+    var nx = row.nextElementSibling;
+    if (nx && nx.className === 'xrow'){ nx.remove(); return; }
+    var tb = row.parentNode;
+    var tr = el('tr','xrow'), td = el('td','');
+    td.colSpan = 99;
+    var f = D.byCode[code]; if(!f) return;
+    td.innerHTML = detailHTML(f);
+    tr.appendChild(td);
+    tb.insertBefore(tr, row.nextSibling);
+  }
+  function showCard(code, row){
+    var f = D.byCode[code]; if(!f) return;
+    var c = document.getElementById('sp-dcard');
+    if(!c){ c = el('div',''); c.id='dcard'; document.body.appendChild(c); }
+    c.innerHTML = detailHTML(f); c.hidden = false;
+    var r = row.getBoundingClientRect();
+    var top = r.bottom + 6, h = c.offsetHeight, w = c.offsetWidth;
+    if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    c.style.left = Math.min(Math.max(8, r.left), innerWidth - w - 8) + 'px';
+    c.style.top = top + 'px';
+  }
+  function hideCard(){ var c=document.getElementById('sp-dcard'); if(c) c.hidden = true; }
+  function run(){
+    hideCard();
+    var out=results();
+    $('sp-hit').textContent='符合 '+out.length+' 檔 / '+(D.cat.funds||[]).length;
+    renderTable(out);
+  }
+  var ROW_CAP = 80;        // 預設只渲染 80 列（146×12 全渲染會拖慢展開／收合）
+var SHOW_ALL = false;
+  /* 欄位依檢視而異；副標雙行讓「類型／地區／幣種／評級」不佔新欄 */
+  function cols(){
+    return [['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],
+            ['3Y','3 年'],['5Y','5 年'],['yield','最新年化派息率']];
+  }
+  var WID = {  // 固定佈局用：'*' 表示自適應（吃剩餘寬度）
+    code:58, name:'*', YTD:78, '3M':72, '1Y':70, '3Y':70, '5Y':70, yield:104
+  };
+  function renderTable(rows){
+    var th=document.querySelector('#sp-tbl thead'), tb=document.querySelector('#sp-tbl tbody');
+    th.innerHTML=''; tb.innerHTML='';
+    var C = cols();
+    /* 欄寬用 colgroup（兩種檢視欄數不同，比 nth-child 乾淨） */
+    var old = document.querySelector('#sp-tbl colgroup'); if(old) old.remove();
+    var cg = document.createElement('colgroup');
+    C.forEach(function(c){ var co=document.createElement('col'); var w=WID[c[0]];
+      if(w!=='*') co.style.width=w+'px'; cg.appendChild(co); });
+    var co2=document.createElement('col'); co2.style.width='40px'; cg.appendChild(co2);
+    document.querySelector('#sp-tbl').insertBefore(cg, document.querySelector('#sp-tbl thead'));
+    var tr=el('tr');
+    C.forEach(function(c){
+      var t=el('th','',c[1]+(S.sort===c[0]?(S.dir<0?' ▼':' ▲'):''));
+      t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} save(); run(); };
+      tr.appendChild(t);
+    });
+    tr.appendChild(el('th','','加入'));
+    th.appendChild(tr);
+    var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
+    rows.slice(0, lim).forEach(function(f){
+      var row=el('tr'); row.className='drow'; row.setAttribute('data-code', f.code);
+      /* 代號（副標：星級） */
+      var r0 = f.rating||0;
+      row.appendChild(el('td','cell-code',
+        '<span class="code">'+f.code+'</span><span class="sub stars">'+(r0?('★'.repeat(r0)):'<span class="ms-na">—</span>')+'</span>'));
+      /* 基金名（副標：類型 · 地區 · 幣種） */
+      row.appendChild(el('td','name',
+        '<span class="nm">'+(f.name||'')+'</span><span class="sub">'+f._type+' · '+f._region+' · '+(f.currencyCode||'')+'</span>'));
+      PERIODS.forEach(function(per){
+        var v = mOf(f.code, per).returnPercent;
+        row.appendChild(el('td', cls(v), pct(v)));
+      });
+      var y = yieldOf(f.code);
+      row.appendChild(el('td','', y==null?'—':(y.toFixed(2)+'%')));
+      var td=el('td',''), b=el('button','add','+');
+      b.title='加入待加入清單';
+      b.onclick=function(ev){ ev.stopPropagation(); if(PICKED.indexOf(f.code)<0){PICKED.push(f.code); renderPicked(); toast('已加入 '+f.code);} };
+      td.appendChild(b); row.appendChild(td);
+      /* 點列展開長尾（手機／桌面都可）；桌面另給 hover 卡 */
+      row.onclick=function(){ toggleRow(f.code, row); };
+      if (HOVER_OK){
+        row.addEventListener('mouseenter', function(){ showCard(f.code, row); });
+        row.addEventListener('mouseleave', hideCard);
+      }
+      tb.appendChild(row);
+    });
+    if(rows.length > lim){
+      var mb=el('button','btn','顯示全部 '+rows.length+' 檔');
+      mb.style.marginTop='8px';
+      mb.onclick=function(){ SHOW_ALL=true; run(); };
+      var trM=el('tr'), tdM=el('td',''); tdM.colSpan=C.length+1; tdM.appendChild(mb); trM.appendChild(tdM); tb.appendChild(trM);
+    }
+    document.getElementById('sp-resHead').innerHTML =
+      '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
+      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
+    $('sp-res').hidden=false;
+  }
+  function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
+  function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
+  function renderPicked(){
+    var p=$('sp-picked'); if(!PICKED.length){ p.hidden=true; return; }
+    p.hidden=false;
+    var box=$('sp-pickedLst'); box.innerHTML='';
+    PICKED.forEach(function(c){
+      var s=el('span','pill','<b>'+c+'</b>');
+      var x=el('button','','✕'); x.onclick=function(){ PICKED.splice(PICKED.indexOf(c),1); renderPicked(); };
+      s.appendChild(x); box.appendChild(s);
+    });
+  }
+
+  /* ---------- 本機記憶 ---------- */
+  function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+  function restore(){ try{ var v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(v) Object.assign(S, v); }catch(e){} }
+
+  /* ---------- 事件 ---------- */
+  $('sp-toggle').onclick=function(){
+    var p=$('sp-panel'); p.hidden=!p.hidden;
+    this.setAttribute('aria-expanded', String(!p.hidden));
+    this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
+  };
+  $('sp-reset').onclick=function(){
+    Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
+    S.ret={}; S.navP={}; S.vol={}; S.houses=[];
+    S.yieldMin=S.yieldMax=null; S.listYears=null;
+    render(); save(); run(); toast('已重置');
+  };
+  function favs(){ try{ return JSON.parse(localStorage.getItem(LS_PRESET)||'[]'); }catch(e){ return []; } }
+  function setFavs(a){ try{ localStorage.setItem(LS_PRESET, JSON.stringify(a)); }catch(e){} }
+  $('sp-savePreset').onclick=function(){
+    var name=prompt('收藏名稱？','方案 '+(new Date().toLocaleDateString('zh-HK')));
+    if(!name) return;
+    var a=favs(); a.push({name:name, s:JSON.parse(JSON.stringify(S)), at:Date.now()}); setFavs(a);
+    toast('已收藏：'+name+'（按「我的收藏」可取回）');
+  };
+  $('sp-myFav').onclick=function(){ openPane('favs', this); };
+  panes.favs=function(p){
+    p.appendChild(el('h4','','我的收藏（存在本機）'));
+    var a=favs();
+    if(!a.length){ p.appendChild(el('div','hint','尚無收藏。設好條件後按「收藏」即可存入。')); return; }
+    var scr=el('div','scrl');
+    a.forEach(function(it, idx){
+      var r=el('div','row fav');
+      r.appendChild(el('span','favname', it.name+'<em>'+(new Date(it.at).toLocaleDateString('zh-HK'))+'</em>'));
+      var ap=el('button','chip','取回');
+      ap.onclick=function(ev){ ev.stopPropagation(); S=JSON.parse(JSON.stringify(it.s)); save(); render(); run(); closePane(); toast('已取回：'+it.name); };
+      var del=el('button','chip','刪除');
+      del.onclick=function(ev){ ev.stopPropagation(); var b=favs(); b.splice(idx,1); setFavs(b); openPane('favs', null); toast('已刪除'); };
+      r.appendChild(ap); r.appendChild(del); scr.appendChild(r);
+    });
+    p.appendChild(scr);
+  };
+  $('sp-viewRes').onclick=function(){ var p=$('sp-panel'); if(!p.hidden) $('sp-toggle').click(); $('sp-res').scrollIntoView({behavior:'smooth'}); };
+  $('sp-clearPicked').onclick=function(){ PICKED=[]; renderPicked(); };
+  $('sp-copyCodes').onclick=function(){
+    var t=PICKED.join(' ');
+    navigator.clipboard?.writeText(t).then(function(){ toast('已複製：'+t); }, function(){ toast(t); });
+  };
+  $('sp-footHint').textContent='條件自動存本機｜'+new Date().toLocaleDateString('zh-HK');
+
+  /* 掛到 06：插在原本智能條件面板後方，並把原面板隱藏（保留 DOM，不動 React） */
+  function mountInto06(){
+    var host = document.querySelector('.smart-fund-filter') || document.querySelector('details');
+    var wrap = document.getElementById('sp-wrap');
+    if (host && wrap){
+      if (!wrap.getAttribute('data-mounted')){
+        host.parentNode.insertBefore(wrap, host.nextSibling);
+        wrap.setAttribute('data-mounted','1');
+      }
+    }
+    var pf = document.querySelector('.smart-fund-filter');
+    if (pf){
+      var d = pf.closest('details'); if (d) d.style.display = 'none';
+      pf.style.display = 'none';                 /* 原面板本身也藏（details 不存在時的保險） */
+    }
+  }
+  document.addEventListener('DOMContentLoaded', mountInto06);
+  var _boot = boot;
+  boot = function(){ return _boot().then(mountInto06); };
+  /* React 掛載 & 資料載入都晚於本腳本 → 輪詢掛載／隱藏原面板，直到成功 */
+  var _mt = setInterval(mountInto06, 700);
+  setTimeout(function(){ clearInterval(_mt); }, 60000);
+  if (document.readyState !== 'loading') setTimeout(mountInto06, 800);
+  boot();
+})();
+
+})();
+</script>
+</body></html>
