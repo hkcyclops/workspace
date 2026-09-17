@@ -1348,8 +1348,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   display:inline-flex;align-items:center;gap:7px;padding:2px 0}
 #sp-wrap .toggle .caret{color:var(--red);font-size:11px}
 #sp-wrap .toggle small{color:var(--gray);font-weight:600;font-size:10.5px}
-#sp-wrap .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
-#sp-wrap .sum{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--lit-ink);
+#sp-wrap .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 180px;min-width:0}
+#sp-wrap .sum{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--lit-ink);white-space:nowrap;
   background:var(--lit-bg);padding:3px 7px;cursor:pointer;border:0}
 #sp-wrap .sum .x{color:var(--red);font-weight:800}
 #sp-wrap .hit{font-size:12px;font-weight:800;color:var(--red);white-space:nowrap}
@@ -1460,6 +1460,10 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap #sp-tbl th{font-size:9px}
 #sp-wrap .code{font-size:12px}
 #sp-wrap .res{overflow-x:auto}
+#sp-wrap /* ⚠️ 手機 .bar 一行放不下 toggle+hit+reset+.sums；.sums 曾被壓成 2px 寬 →
+     摘要 chip 被撐成 51x58 的窄高方塊上下疊住。讓它自己佔一整行。 */
+  .sums{order:9;flex:1 1 100%}
+#sp-wrap .pane{max-height:calc(100vh - 20px);overflow:auto}
 #sp-wrap .foot{gap:6px}
 }
 </style>
@@ -1830,8 +1834,11 @@ document.body.appendChild(__wrap);
     if(anchorEl){
       var r=anchorEl.getBoundingClientRect();
       var w=p.offsetWidth, h=p.offsetHeight;
-      var left=Math.min(Math.max(8, r.left), innerWidth-w-8);
-      var top=(r.bottom+6+h>innerHeight-8) ? Math.max(8, r.top-h-6) : r.bottom+6;
+      /* ⚠️ 兩軸都要夾進視窗：手機上面板很長，錨點可能落在視窗外，
+         只夾 X 的話浮層會整塊跑到畫面外（實測 top=812 > 視窗 780，根本點不到） */
+      var left=Math.min(Math.max(8, r.left), Math.max(8, innerWidth-w-8));
+      var top=(r.bottom+6+h>innerHeight-8) ? (r.top-h-6) : (r.bottom+6);
+      top=Math.min(Math.max(8, top), Math.max(8, innerHeight-h-8));
       p.style.left=left+'px'; p.style.top=top+'px';
     }
   }
