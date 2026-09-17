@@ -1382,6 +1382,13 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .custbtn{font-size:11px}
 #sp-wrap .custbody{margin-top:6px;padding-top:7px;border-top:1px dashed var(--line)}
 #sp-wrap .more{margin-top:6px}
+#sp-wrap /* ③ 數值輸入組：每個輸入框後面跟住單位；兩組之間加分隔線，避免黏埋一齊 */
+.igrpwrap{display:inline-flex;align-items:center}
+#sp-wrap .igrp{display:inline-flex;align-items:center;gap:3px}
+#sp-wrap .igrp+.igrp{border-left:1px solid var(--line);margin-left:12px;padding-left:12px}
+#sp-wrap .igrp .sig{color:var(--ink-2);font-weight:700;font-size:11px}
+#sp-wrap .igrp .u{color:var(--gray);font-size:11px}
+#sp-wrap .pane .igrp input[type=number]{width:56px}
 #sp-wrap .retrow,#sp-wrap .navrow{flex-wrap:wrap;gap:5px}
 #sp-wrap .retrow .chip,#sp-wrap .navrow .chip{font-size:11px}
 #sp-wrap .panel[hidden]{display:none}
@@ -1523,7 +1530,7 @@ th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
 <script id="SP_PICKER_V1">
 (function(){
 if (document.getElementById("sp-wrap")) return;   /* 已注入 */
-var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0xMS45NiAxMS45NkE1LjYgNS42IDAgMSAwIDQuMDQgMTEuOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTggOC4yIDEwLjQgNS44IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuaZuuiDveaineS7tjxzcGFuIGNsYXNzPSJjYXJldCI+4pa4PC9zcGFuPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+PHNwYW4gY2xhc3M9InZ0eHQiPuafpeeci+e1kOaenDwvc3Bhbj48L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGdvbGQiIGlkPSJzcC1zYXZlUHJlc2V0Ij48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggMS44bDEuOSAzLjkgNC4zLjYtMy4xIDMgLjcgNC4zTDggMTEuNmwtMy44IDIgLjctNC4zLTMuMS0zIDQuMy0uNnoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPuaUtuiXjzwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4iIGlkPSJzcC1teUZhdiI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L3N2Zz7miJHnmoTmlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC1hZGRUbzA2IiBkYXRhLWFkZD0iMSIgZGlzYWJsZWQ+5Yqg5YWl57WE5ZCIPC9idXR0b24+CiAgICAgIDxzcGFuIGNsYXNzPSJoaW50IiBpZD0ic3AtZm9vdEhpbnQiPjwvc3Bhbj4KICAgIDwvZGl2PgogIDwvZGl2PgoKICA8c2VjdGlvbiBjbGFzcz0icmVzIiBpZD0ic3AtcmVzIiBoaWRkZW4+CiAgICA8ZGl2IGlkPSJzcC1yZXNIZWFkIiBzdHlsZT0ibWFyZ2luLWJvdHRvbTo2cHg7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtnYXA6MTBweDtmbGV4LXdyYXA6d3JhcCI+PC9kaXY+CiAgICA8ZGl2IHN0eWxlPSJvdmVyZmxvdy14OmF1dG8iPjx0YWJsZSBpZD0ic3AtdGJsIj48dGhlYWQ+PC90aGVhZD48dGJvZHk+PC90Ym9keT48L3RhYmxlPjwvZGl2PgogIDwvc2VjdGlvbj4KPGRpdiBjbGFzcz0icGFuZSIgaWQ9InNwLXBhbmUiIGhpZGRlbj48L2Rpdj4KPGRpdiBjbGFzcz0idG9hc3QiIGlkPSJzcC10b2FzdCI+PC9kaXY+";
+var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0xMS45NiAxMS45NkE1LjYgNS42IDAgMSAwIDQuMDQgMTEuOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTggOC4yIDEwLjQgNS44IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuaZuuiDveaineS7tjxzcGFuIGNsYXNzPSJjYXJldCI+4pa4PC9zcGFuPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+PHNwYW4gY2xhc3M9InZ0eHQiPuafpeeci+e1kOaenDwvc3Bhbj48L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGdvbGQiIGlkPSJzcC1zYXZlUHJlc2V0Ij48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggMS44bDEuOSAzLjkgNC4zLjYtMy4xIDMgLjcgNC4zTDggMTEuNmwtMy44IDIgLjctNC4zLTMuMS0zIDQuMy0uNnoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPuaUtuiXjzwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4iIGlkPSJzcC1teUZhdiI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L3N2Zz7miJHnmoTmlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC1hZGRUbzA2IiBkYXRhLWFkZD0iMSIgZGlzYWJsZWQ+5Yqg5YWl57WE5ZCIPC9idXR0b24+CiAgICA8L2Rpdj4KICA8L2Rpdj4KCiAgPHNlY3Rpb24gY2xhc3M9InJlcyIgaWQ9InNwLXJlcyIgaGlkZGVuPgogICAgPGRpdiBpZD0ic3AtcmVzSGVhZCIgc3R5bGU9Im1hcmdpbi1ib3R0b206NnB4O2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7Z2FwOjEwcHg7ZmxleC13cmFwOndyYXAiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICA8L3NlY3Rpb24+CjxkaXYgY2xhc3M9InBhbmUiIGlkPSJzcC1wYW5lIiBoaWRkZW4+PC9kaXY+CjxkaXYgY2xhc3M9InRvYXN0IiBpZD0ic3AtdG9hc3QiPjwvZGl2Pg==";
 var __bytes = Uint8Array.from(atob(__b64), function(c){ return c.charCodeAt(0); });
 var __mark = new TextDecoder("utf-8").decode(__bytes);
 var __wrap = document.createElement("div"); __wrap.id = "sp-wrap";
@@ -1669,7 +1676,7 @@ document.body.appendChild(__wrap);
     if (S.listYears!=null){ var ly=listYearsOf(f.code); if (ly==null || ly < S.listYears) return false; }
     if (!m(S.payday, paydayOf(f.code)||'')) return false;
     if (S.houses.length && S.houses.indexOf(f.house||'')<0) return false;
-    /* 期間類條件：每一期各自判斷，期與期之間「且」（AND） */
+    /* 期間類條件：每一期各自判斷，期與期之間為 AND */
     for (var pi=0; pi<PERIODS.length; pi++){
       var per = PERIODS[pi];
       var needR = S.ret[per], needN = S.navP[per], needV = S.vol[per];
@@ -1807,20 +1814,7 @@ document.body.appendChild(__wrap);
         NAVP.forEach(function(per){
           var r = el('div','row pRow');
           r.appendChild(el('span','plab', PLAB[per]));
-          [['min','≥'],['max','≤']].forEach(function(t){
-            var o = S.navP[per] || {};
-            var i = el('input'); i.type = 'number'; i.step = '1';
-            if (o[t[0]] != null) i.value = o[t[0]];
-            i.oninput = function(){
-              var cur = JSON.parse(JSON.stringify(S.navP));
-              var c = cur[per] || {};
-              c[t[0]] = (i.value === '' ? null : +i.value);
-              if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
-              S.navP = cur; renderSums(); run();
-            };
-            r.appendChild(el('span','sig', t[1]));
-            r.appendChild(i);
-          });
+          r.appendChild(rangeInputs('navP', per, '', '1'));
           body.appendChild(r);
         });
       }));
@@ -1829,7 +1823,7 @@ document.body.appendChild(__wrap);
     ret: function(p){
       p.appendChild(paneTitle('期間回報（%）','ret'));
       p.appendChild(dataLine('1 年中位約 ' + medOf('1Y') + '%，範圍 ' + rangeOf('1Y')));
-      var MAIN = ['YTD','1Y','3Y'], REST = ['3M','5Y'];   /* A：常用 3 期先顯示，其餘收喺「更多」 */
+      var MAIN = ['1Y','3Y','5Y'], REST = ['YTD','3M'];   /* 主顯示 1年／3年／5年；YTD／3個月 收喺「更多」 */
       function row(per){
         var r = el('div','row pRow retrow');
         r.appendChild(el('span','plab', PLAB[per]));
@@ -1848,29 +1842,16 @@ document.body.appendChild(__wrap);
           };
           r.appendChild(b);
         });
-        [['min','≥'],['max','≤']].forEach(function(t){
-          var o = S.ret[per] || {};
-          var i = el('input'); i.type = 'number'; i.step = '1';
-          if (o[t[0]] != null) i.value = o[t[0]];
-          i.oninput = function(){
-            var cur = JSON.parse(JSON.stringify(S.ret));
-            var c = cur[per] || {};
-            c[t[0]] = (i.value === '' ? null : +i.value);
-            if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
-            S.ret = cur; renderSums(); run();
-          };
-          r.appendChild(el('span','sig', t[1]));
-          r.appendChild(i);
-        });
-        r.appendChild(el('span','u','%'));
+        r.appendChild(rangeInputs('ret', per, '%'));
         return r;
       }
+      /* 「更多」放頂：REST 係時間上最早嘅兩期，展開後仍然保持 YTD→3M→1Y→3Y→5Y 順序 */
       var more = el('div','more'); more.hidden = true;
       REST.forEach(function(per){ more.appendChild(row(per)); });
       var mb = el('button','chip custbtn','更多年期 ›');
       mb.onclick = function(ev){ ev.stopPropagation(); more.hidden = !more.hidden; mb.classList.toggle('on', !more.hidden); };
-      MAIN.forEach(function(per){ p.appendChild(row(per)); });
       p.appendChild(mb); p.appendChild(more);
+      MAIN.forEach(function(per){ p.appendChild(row(per)); });
       p.appendChild(acts('ret'));
     },
     yield: function(p){
@@ -1896,21 +1877,7 @@ document.body.appendChild(__wrap);
         ['1Y','3Y','5Y'].forEach(function(per){
           var r = el('div','row pRow');
           r.appendChild(el('span','plab', PLAB[per]));
-          [['min','≥'],['max','≤']].forEach(function(t){
-            var o = S.vol[per] || {};
-            var i = el('input'); i.type = 'number'; i.step = '1';
-            if (o[t[0]] != null) i.value = o[t[0]];
-            i.oninput = function(){
-              var cur = JSON.parse(JSON.stringify(S.vol));
-              var c = cur[per] || {};
-              c[t[0]] = (i.value === '' ? null : +i.value);
-              if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
-              S.vol = cur; renderSums(); run();
-            };
-            r.appendChild(el('span','sig', t[1]));
-            r.appendChild(i);
-          });
-          r.appendChild(el('span','u','%'));
+          r.appendChild(rangeInputs('vol', per, '%'));
           body.appendChild(r);
         });
       }));
@@ -1967,7 +1934,7 @@ document.body.appendChild(__wrap);
 
   /* 「?」說明：書面語、用「元」唔用「蚊」 */
   var HINTS = {
-    ret: '各段時間的回報，正數為升、負數為跌。例如 −5% 即每 100 元虧損 5 元；期與期之間為「且」。',
+    ret: '各段時間的回報，正數為升、負數為跌。例如 −5% 即每 100 元虧損 5 元；期與期之間為 AND（全部符合）。',
     navP: '用來判斷現價相對本身歷史是偏便宜還是偏貴。分位低（30 以下）＝接近該時段的低位，即相對便宜；分位高（70 以上）＝接近高位，即相對貴。0 為期內最低、100 為期內最高；例如分位 20，表示現價只高於該時段內約兩成時間的價位。',
     vol: '一年內價格的升跌幅度；數值愈大代表上落愈大。例如 20% 即每 100 元一年內約升跌 20 元。只適用於非派息基金（派息基金為 Z 開頭）。',
     yield: '按最近派息推算的一年派息率，只適用於派息基金（Z 開頭）。例如 6% 即每 100 元一年派息 6 元。'
@@ -2014,6 +1981,43 @@ document.body.appendChild(__wrap);
     return wrap;
   }
 
+  /* ③ 每組＝「≥ [輸入] 單位」；兩組用 .igrpwrap 分開，單位跟住每個輸入框 */
+  function rangeInputs(key, per, unit, step){
+    var wrap = el('span','igrpwrap');
+    [['min','≥'],['max','≤']].forEach(function(t){
+      var g = el('span','igrp');
+      g.appendChild(el('span','sig', t[1]));
+      var i = el('input'); i.type = 'number'; i.step = step || '1';
+      var o = S[key][per] || {};
+      if (o[t[0]] != null) i.value = o[t[0]];
+      i.oninput = function(){
+        var cur = JSON.parse(JSON.stringify(S[key]));
+        var c = cur[per] || {};
+        c[t[0]] = (i.value === '' ? null : +i.value);
+        if (c.min == null && c.max == null) delete cur[per]; else cur[per] = c;
+        S[key] = cur; renderSums(); run();
+      };
+      g.appendChild(i);
+      if (unit) { var u = el('span','u', unit); g.appendChild(u); }
+      wrap.appendChild(g);
+    });
+    return wrap;
+  }
+  function rangeInputsRaw(ka, kb, unit, step){     /* 年化派息率用（兩個獨立 state key） */
+    var wrap = el('span','igrpwrap');
+    [['≥',ka],['≤',kb]].forEach(function(t){
+      var g = el('span','igrp');
+      g.appendChild(el('span','sig', t[0]));
+      var i = el('input'); i.type = 'number'; i.step = step || '1';
+      if (S[t[1]] != null) i.value = S[t[1]];
+      i.oninput = function(){ S[t[1]] = (i.value === '' ? null : +i.value); renderSums(); run(); };
+      g.appendChild(i);
+      if (unit) { var u = el('span','u', unit); g.appendChild(u); }
+      wrap.appendChild(g);
+    });
+    return wrap;
+  }
+
   function periodRows(pane, key, unit, step){
     PERIODS.forEach(function(per){
       var r = el('div','row pRow');
@@ -2036,14 +2040,8 @@ document.body.appendChild(__wrap);
     });
   }
   function numRow(a,b){
-    var r=el('div','row');
-    [['≥',a],['≤',b]].forEach(function(t){
-      r.appendChild(el('span','hint',t[0]));
-      var i=el('input'); i.type='number'; i.step='0.1';
-      if(S[t[1]]!=null) i.value=S[t[1]];
-      i.oninput=function(){ S[t[1]] = i.value===''?null:+i.value; renderSums(); run(); };
-      r.appendChild(i);
-    });
+    var r = el('div','row');
+    r.appendChild(rangeInputsRaw(a, b, '%', '0.1'));
     return r;
   }
   function acts(k){
@@ -2412,7 +2410,6 @@ var SHOW_ALL = false;
     syncStage();
   };
   $('sp-addTo06').onclick=addTo06;      /* 唯一的「加入組合」（底部）；結果表頭那顆已移除，避免重複 */
-  $('sp-footHint').textContent='按「收藏」才留住｜'+new Date().toLocaleDateString('zh-HK');
 
   /* 掛到 06：插在原本智能條件面板後方，並把原面板隱藏（保留 DOM，不動 React） */
   function mountInto06(){
