@@ -122,6 +122,7 @@ tr.xrow .dl{margin:0 0 2px}
 .dl b.fname{color:#2c2722;font-weight:800}                      /* ④ 基金名加粗 */
 
 .vcnt{font-size:10px;color:#94897b;font-weight:700}
+.pickhint{color:#9b1730;font-weight:800}
 #dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
   box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:11px;line-height:1.6}
 #dcard[hidden]{display:none}
@@ -161,7 +162,7 @@ td.cell-pick{text-align:center}
   <header class="masthead">
     <p class="eyebrow">AIA · TMP2 / SMART PICKER（試用版）</p>
     <h1>智選基金</h1>
-    <p class="sub">依 <b>類型／地區／風險／晨星評級／派息日／上架時間／回報／波動率</b> 等條件篩出基金；波動率與月榜同口徑（日報酬母體標準差 × √252，只對非派息基金有效）。<br>條件會自動記在本機。<a href="./06-fund-portfolio-workbench.html">← 回 06 基金組合</a></p>
+    <p class="sub">依 <b>類型／地區／風險／晨星評級／派息日／平台歷史／回報／波動率</b> 等條件篩出基金；波動率與月榜同口徑（日報酬母體標準差 × √252，只對非派息基金有效）。<br>條件會自動記在本機。<a href="./06-fund-portfolio-workbench.html">← 回 06 基金組合</a></p>
   </header>
 
   <div class="stage">
@@ -385,7 +386,7 @@ td.cell-pick{text-align:center}
     gs.appendChild(popRow('NAV 位置', periodLabel('navP',''), 'navP'));
     gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
-    gs.appendChild(popRow('上架時間', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
+    gs.appendChild(popRow('平台歷史', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
     gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
     // 常用指標
     var ps=$('presets'); ps.innerHTML=''; ps.appendChild(el('span','lbl','常用指標'));
@@ -432,7 +433,7 @@ td.cell-pick{text-align:center}
 
   /* ---------- 浮層 ---------- */
   var panes = {
-    nav: function(p){
+    navP: function(p){
       p.appendChild(el('h4','','快捷（一次設全部期間）'));
       var r = el('div','row');
       [['high','高（分位 ≥70）',70,100],['mid','中（30–70）',30,70],['low','低（<30）',0,30]].forEach(function(t){
@@ -446,7 +447,7 @@ td.cell-pick{text-align:center}
       });
       p.appendChild(r);
       p.appendChild(el('h4','','每期 NAV 分位（0–100）'));
-      periodRows(p, 'navP', '');
+      periodRows(p, 'navP', '', '1');   /* 分位是整數 0–100 */
       p.appendChild(acts('navP'));
     },
     ret: function(p){
@@ -465,7 +466,7 @@ td.cell-pick{text-align:center}
       p.appendChild(acts('vol'));
     },
     years: function(p){
-      p.appendChild(el('h4','','上架滿 N 年（＝我們能取得資料的最早年數）'));
+      p.appendChild(el('h4','','平台歷史滿 N 年（＝我們能取得資料的最早年數）'));
       var r=el('div','row');
       [0,1,2,3,5,10].forEach(function(n){
         var on=(n===0? S.listYears==null : S.listYears===n);
@@ -493,13 +494,13 @@ td.cell-pick{text-align:center}
       p.appendChild(acts('house'));
     }
   };
-  function periodRows(pane, key, unit){
+  function periodRows(pane, key, unit, step){
     PERIODS.forEach(function(per){
       var r = el('div','row pRow');
       r.appendChild(el('span','plab', PLAB[per]));
       [['min','≥'],['max','≤']].forEach(function(t){
         var o = S[key][per] || {};
-        var i = el('input'); i.type = 'number'; i.step = '0.1';
+        var i = el('input'); i.type = 'number'; i.step = step || '0.1';
         if (o[t[0]] != null) i.value = o[t[0]];
         i.oninput = function(){
           var cur = S[key][per] || {};
@@ -598,7 +599,7 @@ td.cell-pick{text-align:center}
       ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
       ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
         function(){ S.yieldMin=S.yieldMax=null; }],
-      ['上架時間', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
+      ['平台歷史', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
     ];
     extra.forEach(function(t){
       if(!t[1]) return;
@@ -626,7 +627,7 @@ td.cell-pick{text-align:center}
       +'　<span class="k">幣種</span><b>'+(f.currencyCode||'—')+'</b>　<span class="k">風險</span><b>'+(f.risk||'—')+'</b>'
       +'　<span class="k">評級</span><b>'+(r0?('★'.repeat(r0)):'—')+'</b>'
       +'　<span class="k">派息日</span><b>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')+'</b>'
-      +'　<span class="k">上架</span><b>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(2)+' 年');})()+'</b></div>');
+      +'　<span class="k">平台歷史</span><b>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(2)+' 年');})()+'</b></div>');
     return inner.join('');
   }
   function toggleRow(code, row){
@@ -688,7 +689,9 @@ var SHOW_ALL = false;
       t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} save(); run(); };
       tr.appendChild(t);
     });
-    tr.appendChild(el('th','','選取'));
+    var thPick=el('th','','選取');
+    thPick.title='勾選後按「加入組合」，會把該基金送進 06 的組合配置';
+    tr.appendChild(thPick);
     th.appendChild(tr);
     var inPortList = portfolioCodes();
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
@@ -714,7 +717,7 @@ var SHOW_ALL = false;
         cb.checked=true; cb.disabled=true; cb.title='已在 06 組合中';
       } else {
         cb.checked = PICK.indexOf(f.code)>=0;
-        cb.title='勾選後按「加入組合」送進 06';
+        cb.title='勾選後按「加入組合」，送進 06 的組合配置';
         cb.onchange=function(ev){ ev.stopPropagation();
           var k=PICK.indexOf(f.code);
           if (cb.checked){ if(k<0) PICK.push(f.code); } else if(k>=0){ PICK.splice(k,1); }
@@ -738,7 +741,8 @@ var SHOW_ALL = false;
     }
     document.getElementById('resHead').innerHTML =
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
-      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
+      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）'
+      + '｜<b class="pickhint">勾選方格後按「加入組合」，即送進 06 的組合配置</b></span>';
     $('res').hidden = !RES_SHOWN || $('panel').hidden;   /* 面板收合時，基金表也一起收 */
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(2)+'%'); }   /* ② 一律 2 位 */
