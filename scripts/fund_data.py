@@ -15,6 +15,7 @@
 """
 import argparse
 import bisect
+from statistics import pstdev
 import datetime
 import hashlib
 import io
@@ -155,7 +156,7 @@ def load_existing(prefer_json=True):
     沒有則退回解析已發布的 data/*.js（CI 環境）。"""
     out = {'nav': {}, 'distributions': {}, 'tops': {}}
     if prefer_json:
-        for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics'):
+        for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics', 'smart-vol'):
             fp = os.path.join(DATA, name + '.json')
             if os.path.exists(fp):
                 out['tops'][name] = json.load(io.open(fp, encoding='utf-8'))
@@ -174,7 +175,7 @@ def load_existing(prefer_json=True):
             return out
 
     # 退回讀已發布的 .js
-    for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics'):
+    for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics', 'smart-vol'):
         o = read_published_js('data/%s.js' % name)
         if o is not None:
             out['tops'][name] = o
@@ -292,8 +293,30 @@ def _mk_periods(pts, ts_list, latest_ts):
     return periods, perf
 
 
+def window_vol_mdd(window):
+    """區間內的年化波動率與最大回撤——**與基金月榜同口徑**：
+       波動率 = 日報酬母體標準差 × √252（純 NAV，未含派息調整）
+       最大回撤 = 區間內由峰值回落的最大幅度（負數）
+       ⚠️ 派息基金的 NAV 為除淨後，其 vol 會偏低；06 依選項 A 只對非派息基金顯示/篩選。
+    """
+    vals = [v for _, v in window]
+    if len(vals) < 3:
+        return None, None
+    rets = [vals[i] / vals[i - 1] - 1 for i in range(1, len(vals)) if vals[i - 1] > 0]
+    vol = pstdev(rets) * (252 ** 0.5) * 100 if len(rets) > 2 else None
+    peak, worst = vals[0], 0.0
+    for v in vals:
+        if v > peak:
+            peak = v
+        if peak > 0:
+            d = (v - peak) / peak * 100
+            if d < worst:
+                worst = d
+    return vol, worst
+
+
 def period_metric(pts, ts_list, target, required):
-    """依 Manus 規則算單一期間指標。"""
+    """依 Manus 規則算單一期間指標。（波動率／最大回撤改存獨立的 smart-vol，見 build_smart_vol）"""
     latest_ts, latest_nav = pts[-1]
     idx = bisect.bisect_right(ts_list, target) - 1
     if idx < 0:
@@ -321,6 +344,49 @@ def period_metric(pts, ts_list, target, required):
 DEFAULT_PERIODS = [('1Y', 12, 200), ('3Y', 36, 600), ('5Y', 60, 1000)]
 PERF_PERIODS = [('YTD', None, 20), ('3M', 3, 45), ('1Y', 12, 200),
                 ('3Y', 36, 600), ('5Y', 60, 1000)]
+
+
+SMART_VOL_PERIODS = [('YTD', None), ('3M', 3), ('1Y', 12), ('3Y', 36), ('5Y', 60)]
+
+
+def build_smart_vol(navs):
+    """波動率／最大回撤（獨立檔 data/smart-vol.js，**06 不載入**，只有選股器需要）。
+
+    為什麼獨立：smart-metrics 的 customYears 是 30 份重複結構，把 vol/mdd 塞進去會被放大
+    31 倍（實測 8.4 MB → 9.8 MB），拖慢 06 首屏。獨立檔只有 ~0.1 MB。
+
+    口徑＝基金月榜（build_rankings.py）：日報酬母體標準差 × √252、純 NAV 未含派息調整。
+    窗口：YTD／3M／1Y／3Y／5Y ＋ 自訂 1–30 年（c1…c30），值四捨五入到小數 2 位。
+    """
+    out = {}
+    for code in sorted(navs):
+        pts = navs[code]
+        if not pts:
+            continue
+        ts_list = [p[0] for p in pts]
+        latest_ts = pts[-1][0]
+        row = {}
+
+        def put(key, tgt):
+            idx = bisect.bisect_right(ts_list, tgt) - 1
+            if idx < 0:
+                return
+            vol, mdd = window_vol_mdd(pts[idx:])
+            if vol is not None:
+                row[key] = [round(vol, 2), (round(mdd, 2) if mdd is not None else None)]
+
+        for key, n in SMART_VOL_PERIODS:
+            put(key, year_start(latest_ts) if n is None else months_before(latest_ts, n))
+        for n in range(1, 31):
+            put('c%d' % n, years_before(latest_ts, n))
+        if row:
+            out[code] = row
+    return {'meta': {
+        'source': '與基金月榜同口徑：日報酬母體標準差 × √252（純 NAV，未含派息調整）',
+        'windows': [k for k, _ in SMART_VOL_PERIODS] + ['c1..c30（自訂 1–30 年）'],
+        'fields': '[年化波動率%, 最大回撤%]',
+        'built': datetime.datetime.now().strftime('%Y-%m-%d %H:%M')},
+        'funds': out}
 
 
 def build_smart_metrics(navs):
@@ -439,6 +505,25 @@ def build_manifest(navs, dists, prev):
     return {'source': src, 'navIndex': nav_index, 'files': files}
 
 
+def pay_day_bucket(recs):
+    """由最近派息紀錄推「常見派息日」→ 月初／月中／月底。
+
+    取最近 ≤12 筆的日號中位數（比平均值抗單月例外），分桶：
+      1–10 → early（月初）｜11–20 → mid（月中）｜21–31 → late（月底）
+    少於 3 筆可判斷紀錄 → (None, None)，UI 顯示「—」。
+    """
+    days = []
+    for r in recs[-12:]:
+        m = re.match(r'^(\d{4})-(\d{2})-(\d{2})$', r.get('recordDate') or '')
+        if m:
+            days.append(int(m.group(3)))
+    if len(days) < 3:
+        return None, None
+    days.sort()
+    med = days[len(days) // 2]
+    return med, ('early' if med <= 10 else ('mid' if med <= 20 else 'late'))
+
+
 def build_distribution_references(dists, navs, info_by_code):
     """取每只基金最近一次派息，算年化派息率。"""
     out = {}
@@ -461,6 +546,9 @@ def build_distribution_references(dists, navs, info_by_code):
             'singlePaymentYield': amt / nav * 100,
             'annualizedDistributionRate': amt / nav * 12 * 100,
             'impliedPaymentsPerYear': 12,
+            # 常見派息日（月初／月中／月底）：由最近 ≤12 筆派息紀錄的日號中位數分桶
+            'payDayMedian': pay_day_bucket(recs)[0],
+            'payDayBucket': pay_day_bucket(recs)[1],
             'sourceUrl': base + 'records.html?id=%s&cat=%s&lang=zh' % (code, CAT),
             'overrideAuthorized': False,
         }
@@ -586,6 +674,8 @@ def cmd_fetch(args):
     drefs = build_distribution_references(dists, navs, info_by_code)
     print('重建 smart-metrics ...')
     smart = build_smart_metrics(navs)
+    print('計算波動率／最大回撤（smart-vol）...')
+    smart_vol = build_smart_vol(navs)
     sys.stdout.flush()
 
     if args.dry:
@@ -605,7 +695,8 @@ def cmd_fetch(args):
                   io.open(os.path.join(DATA, 'distributions', code + '.json'), 'w', encoding='utf-8'),
                   ensure_ascii=False, separators=(',', ':'))
     for name, obj in (('manifest', manifest), ('catalog', catalog),
-                      ('distribution-references', drefs), ('smart-metrics', smart)):
+                      ('distribution-references', drefs), ('smart-metrics', smart),
+                      ('smart-vol', smart_vol)):
         json.dump(obj, io.open(os.path.join(DATA, name + '.json'), 'w', encoding='utf-8'),
                   ensure_ascii=False, separators=(',', ':'))
     print('\n寫出完成 →', DATA)
@@ -642,7 +733,7 @@ def cmd_pack(args):
         written += 1
         total += len(out.encode('utf-8'))
 
-    for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics'):
+    for name in ('manifest', 'catalog', 'distribution-references', 'smart-metrics', 'smart-vol'):
         if name in ex['tops']:
             emit('data/%s.json' % name, ex['tops'][name])
     for code in sorted(ex['nav']):
