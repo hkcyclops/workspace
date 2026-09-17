@@ -1,0 +1,2 @@
+# 抓取快取（fund_data.py fetch 產生，不進倉庫）
+.cache/
