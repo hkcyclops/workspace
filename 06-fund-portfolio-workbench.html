@@ -1330,7 +1330,13 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap{
   --bg:#faf8f4; --card:#fffdf8; --ink:#2c2722; --ink-2:#453c34; --gray:#8d7c65; --line:#eadfce;
   --line-2:#ddcfba; --red:#8f0d25; --gold:#c8a85b; --lit-bg:#fdf3e3; --lit-ink:#8d641d;
-  --up:#b13446; --down:#2f7a5a;
+  /* 漲跌色跟著 06 的語言慣例：繁（HK）綠漲紅跌、簡（CN）紅漲綠跌 ——
+     與 06 自己的 :root[data-hub-language=…] .gain/.loss 同色票 */
+  --up:#347558; --down:#b13446;
+}
+#sp-wrap /* ⚠️ 切到簡體時把漲跌色反過來（與 06 一致）；少了這段就會兩種語言都紅漲綠跌 */
+:root[data-hub-language=simplified] #sp-wrap,:root[data-hub-language="simplified"] #sp-wrap{
+  --up:#b13446; --down:#347558;
 }
 #sp-wrap *{box-sizing:border-box}
 #sp-wrap{color:var(--ink);font:14px/1.5 "Noto Sans TC",ui-sans-serif,system-ui,sans-serif}
