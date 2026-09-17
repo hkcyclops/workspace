@@ -20,13 +20,16 @@ a{color:var(--red)}
 h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-weight:500}
 .sub{margin:6px 0 0;font-size:12.5px;color:var(--ink-2)}
 .sub b{color:var(--ink)}
-.stage{background:var(--card);border:1px solid var(--line);box-shadow:inset 0 2px var(--gold);
+.stage{background:var(--card);border:1px solid #e5d5bd;border-radius:12px;overflow:hidden;
+  box-shadow:inset 0 2px var(--gold);
   font:14px/1.5 "Noto Sans TC",ui-sans-serif,system-ui,sans-serif;color:var(--ink)}
-.bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:11px 13px;
+  background:linear-gradient(135deg,#fffdf7f5,#f9f4ead1);border-bottom:0}
+.stage.open .bar{border-bottom:1px solid #eadfce}
 .toggle{appearance:none;border:0;background:0 0;font:inherit;font-weight:800;cursor:pointer;color:var(--ink);
-  display:inline-flex;align-items:center;gap:7px;padding:2px 0}
+  display:inline-flex;align-items:center;gap:7px;padding:2px 0;color:#7f1028}
+.toggle .ic{width:15px;height:15px;flex:0 0 auto;display:block}
 .toggle .caret{color:var(--red);font-size:11px}
-.toggle small{color:var(--gray);font-weight:600;font-size:10.5px}
 .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 180px;min-width:0}
 .sum{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--lit-ink);white-space:nowrap;
   background:var(--lit-bg);padding:3px 7px;cursor:pointer;border:0}
@@ -36,6 +39,8 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
   padding:3px 8px;cursor:pointer}
 .panel{padding:12px 12px 14px;contain:layout style}
 .panel[hidden]{display:none}
+/* ① 面板收合時，底部那一排（查看結果／收藏／我的收藏／加入組合／提示）也一起收 */
+.panel[hidden]~.foot{display:none}
 .presets{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
 .presets .lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--gray);margin-right:2px}
 .groups{display:grid;grid-template-columns:1fr 1fr;gap:2px 22px;margin-top:8px}
@@ -155,7 +160,7 @@ td.cell-pick{text-align:center}
 
   <div class="stage">
     <div class="bar">
-      <button class="toggle" id="toggle" aria-expanded="false"><span class="caret">▸</span>智能條件 <small>點擊展開／收合</small></button>
+      <button class="toggle" id="toggle" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.7V8.2l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>智能條件<span class="caret">▸</span></button>
       <div class="sums" id="sums"></div>
       <span class="hit" id="hit">—</span>
       <button class="reset" id="reset">重置</button>
@@ -235,6 +240,7 @@ td.cell-pick{text-align:center}
     render(); $('loading').hidden=true; $('body').hidden=false;
     step('');
     renderPickBtn();
+    syncStage();
     run();
     /* 防止載入期間露出半成品（注入到 06 時外層是 visibility:hidden） */
     var w=document.getElementById('sp-wrap'); if(w) w.style.visibility='';
@@ -805,8 +811,11 @@ var SHOW_ALL = false;
   function restore(){ try{ var v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(v) Object.assign(S, v); }catch(e){} }
 
   /* ---------- 事件 ---------- */
+  /* 用 panel 反查 .stage，避免抓到別的元素 */
+  function syncStage(){ var st=$('panel').closest('.stage'); if(st) st.classList.toggle('open', !$('panel').hidden); }
   $('toggle').onclick=function(){
     var p=$('panel'); p.hidden=!p.hidden;
+    syncStage();
     this.setAttribute('aria-expanded', String(!p.hidden));
     this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
     if (p.hidden){
