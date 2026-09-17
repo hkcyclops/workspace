@@ -63,6 +63,13 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .pane input[type=search]{width:100%;margin-bottom:6px}
 .pane .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pane .scrl{max-height:190px;overflow:auto;margin-top:2px}
+.pane .pRow{gap:4px}
+.pane .plab{flex:0 0 62px;color:var(--ink-2);font-weight:700;font-size:12px}
+.pane .sig{color:var(--gray);font-size:11px}
+.pane .u{color:var(--gray);font-size:11px;margin-left:2px}
+.pane .fav{justify-content:space-between}
+.pane .favname{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.pane .favname em{display:block;font-style:normal;font-weight:400;color:var(--gray);font-size:10.5px}
 .pane .acts{display:flex;gap:6px;margin-top:8px}
 .pane .acts button{flex:1;appearance:none;font:inherit;font-size:12px;font-weight:700;padding:5px 0;cursor:pointer;
   background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2)}
@@ -75,19 +82,17 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .btn.g{border-color:var(--gold);color:var(--lit-ink)}
 .res{margin-top:14px;contain:content}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-/* 效能：固定佈局＋單行省略（auto 佈局要為 146×12 格算 min-content，展開/收合會卡 1–2 秒） */
+/* 效能：固定佈局＋單行省略（auto 佈局要為 146×N 格算 min-content，展開/收合會卡 1–2 秒） */
 #tbl{table-layout:fixed}
 #tbl th:nth-child(1),#tbl td:nth-child(1){width:58px}
-#tbl th:nth-child(2),#tbl td:nth-child(2){width:29%}
-#tbl th:nth-child(3),#tbl td:nth-child(3){width:72px}
-#tbl th:nth-child(4),#tbl td:nth-child(4){width:78px}
-#tbl th:nth-child(5),#tbl td:nth-child(5){width:50px}
-#tbl th:nth-child(6),#tbl td:nth-child(6){width:74px}
-#tbl th:nth-child(7),#tbl td:nth-child(7){width:64px}
-#tbl th:nth-child(8),#tbl td:nth-child(8){width:64px}
-#tbl th:nth-child(9),#tbl td:nth-child(9){width:62px}
-#tbl th:nth-child(10),#tbl td:nth-child(10){width:54px}
-#tbl th:nth-child(11),#tbl td:nth-child(11){width:54px}
+#tbl th:nth-child(2),#tbl td:nth-child(2){width:30%}
+#tbl th:nth-child(3),#tbl td:nth-child(3){width:82px}
+#tbl th:nth-child(4),#tbl td:nth-child(4){width:74px}
+#tbl th:nth-child(5),#tbl td:nth-child(5){width:70px}
+#tbl th:nth-child(6),#tbl td:nth-child(6){width:70px}
+#tbl th:nth-child(7),#tbl td:nth-child(7){width:70px}
+#tbl th:nth-child(8),#tbl td:nth-child(8){width:110px}
+#tbl th:nth-child(9),#tbl td:nth-child(9){width:40px}
 #tbl th:nth-child(12),#tbl td:nth-child(12){width:40px}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
@@ -145,7 +150,8 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     </div>
     <div class="foot">
       <button class="btn k" id="viewRes">查看結果</button>
-      <button class="btn g" id="savePreset">★ 收藏此條件</button>
+      <button class="btn g" id="savePreset">收藏</button>
+      <button class="btn" id="myFav">我的收藏</button>
       <button class="btn" id="clearPicked">清空待加入</button>
       <span class="hint" id="footHint"></span>
     </div>
@@ -179,9 +185,9 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   var CATS = {type:[], region:[]};             // 由 assetClass 拆出
   var S = {                                    // 條件狀態（未選＝不限）
     type:[], region:[], risk:[], ccy:[], rate:[], nav:[], payday:[], dist:[], years:null,
-    retMin:null, retMax:null, volMin:null, volMax:null, volWin:'same', yieldMin:null, yieldMax:null,
-    navMin:null, navMax:null,
-    houses:[], listYears:null, win:'1Y', sort:'ret', dir:-1
+    ret:{}, navP:{}, vol:{},          // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
+    yieldMin:null, yieldMax:null,
+    houses:[], listYears:null, sort:'1Y', dir:-1
   };
   var PICKED = [];
   var el = function(t,c,h){ var e=document.createElement(t); if(c) e.className=c; if(h!==undefined) e.innerHTML=h; return e; };
@@ -238,28 +244,32 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   }
 
   /* ---------- 指標取值 ---------- */
-  function winKey(){ return S.win; }
-  function metric(code){                       // 回報／NAV 分位（跟年期）
-    var key = S.win, arr = D.sm && D.sm.default, row=null;
-    if (S.win.indexOf('c')===0){ var n=S.win.slice(1); var c=(D.sm.customYears||{})[n]||[]; row=c.find(function(x){return x.code===code;}); }
-    else { row=(arr||[]).find(function(x){return x.code===code;}); }
-    if(!row) return {};
-    if (S.win.indexOf('c')===0){ return (row.customPeriod||{}).metric||{}; }
-    // 1Y/3Y/5Y 用 periods；YTD/3M 用 performancePeriods
-    var per = row.periods && row.periods[key];
-    if (!per) per = (row.performancePeriods||{})[key];
-    return per||{};
+  var PERIODS = ['YTD','3M','1Y','3Y','5Y'];
+  var PLAB = { YTD:'年初至今', '3M':'3 個月', '1Y':'1 年', '3Y':'3 年', '5Y':'5 年' };
+  function rowOf(code){
+    var arr = (D.sm && D.sm.default) || [];
+    return arr.find(function(x){ return x.code === code; }) || null;
   }
-  function volOf(code, isDist){                // 波動率（A：只對非派息有效）
-    if (isDist) return null;
-    var w = S.volWin==='same' ? S.win : S.volWin;
+  function mOf(code, per){                     // 該期的回報／NAV 分位（performancePeriods 五期齊全）
+    var row = rowOf(code); if(!row) return {};
+    return ((row.performancePeriods||{})[per]) || (row.periods||{})[per] || {};
+  }
+  function volOf(code, per){                   // 該期年化波動率（A：派息基金＝Z 開頭不給）
+    if (isDist(code)) return null;
     var r = (D.vol.funds||{})[code]; if(!r) return null;
-    var hit = r[w];
+    var hit = r[per];
     return hit ? hit[0] : null;
   }
   /* 派息基金＝代號 Z 開頭（與 06 bundle 的判據 Ho() 一致；用戶明確：只有 Z 開頭才是派息基金） */
   function isDist(code){ return /^Z/i.test(String(code||'').trim()); }
   function yieldOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
+  function q(v, rq){                            // 單一期間條件的比對（min/max 皆可為 null）
+    if(!rq || (rq.min==null && rq.max==null)) return true;
+    if(v==null) return false;
+    if(rq.min!=null && v < rq.min) return false;
+    if(rq.max!=null && v > rq.max) return false;
+    return true;
+  }
   function listYearsOf(code){
     var idx=(D.man.navIndex||{})[code]; if(!idx||!idx.firstTimestamp) return null;
     return (Date.now()-idx.firstTimestamp)/31557600000;   // 365.25 天
@@ -278,17 +288,16 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     if (S.listYears!=null){ var ly=listYearsOf(f.code); if (ly==null || ly < S.listYears) return false; }
     if (!m(S.payday, paydayOf(f.code)||'')) return false;
     if (S.houses.length && S.houses.indexOf(f.house||'')<0) return false;
-    var mt = metric(f.code);
-    var ret = mt.returnPercent, nv = mt.navPercentile;
-    if (S.retMin!=null && (ret==null || ret < S.retMin)) return false;
-    if (S.retMax!=null && (ret==null || ret > S.retMax)) return false;
-    if (S.navMin!=null && (nv==null || nv < S.navMin)) return false;
-    if (S.navMax!=null && (nv==null || nv > S.navMax)) return false;
-    if (S.volMin!=null || S.volMax!=null){
-      var v = volOf(f.code, isDist(f.code));
-      if (v==null) return false;
-      if (S.volMin!=null && v < S.volMin) return false;
-      if (S.volMax!=null && v > S.volMax) return false;
+    /* 期間類條件：每一期各自判斷，期與期之間「且」（AND） */
+    for (var pi=0; pi<PERIODS.length; pi++){
+      var per = PERIODS[pi];
+      var needR = S.ret[per], needN = S.navP[per], needV = S.vol[per];
+      if (needR || needN){
+        var m0 = mOf(f.code, per);
+        if (needR && !q(m0.returnPercent, needR)) return false;
+        if (needN && !q(m0.navPercentile, needN)) return false;
+      }
+      if (needV && !q(volOf(f.code, per), needV)) return false;
     }
     if (S.yieldMin!=null || S.yieldMax!=null){
       var y = yieldOf(f.code); if (y==null) return false;
@@ -308,12 +317,9 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     return out;
   }
   function sortVal(f,k){
-    if (k==='ret') return metric(f.code).returnPercent;
-    if (k==='vol') return volOf(f.code, isDist(f.code));
     if (k==='yield') return yieldOf(f.code);
     if (k==='rate') return f.rating||0;
-    if (k==='nav') return metric(f.code).navPercentile;
-    if (k==='years') return listYearsOf(f.code);
+    if (PERIODS.indexOf(k)>=0) return mOf(f.code, k).returnPercent;
     return f.code;
   }
 
@@ -342,21 +348,20 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
       });
       box.appendChild(lab); box.appendChild(cc); gs.appendChild(box);
     });
-    gs.appendChild(popRow('NAV 位置', navLabel(), 'nav'));
+    gs.appendChild(popRow('期間回報', periodLabel('ret','%'), 'ret'));
+    gs.appendChild(popRow('NAV 位置', periodLabel('navP',''), 'navP'));
+    gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
-    gs.appendChild(popRow('波動率', volLabel(), 'vol'));
-    gs.appendChild(popRow('上架時間', S.listYears?('滿 '+S.listYears+' 年以上'):'不限', 'years'));
-    gs.appendChild(popRow('期間回報', rangeLabel(S.retMin,S.retMax,'%'), 'ret'));
+    gs.appendChild(popRow('上架時間', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
     gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
-    gs.appendChild(popRow('年期', { '1Y':'1 年','3Y':'3 年','5Y':'5 年' }[S.win]||'自訂', 'win'));
     // 常用指標
     var ps=$('presets'); ps.innerHTML=''; ps.appendChild(el('span','lbl','常用指標'));
     [['低風險高息',{risk:['低'],yieldMin:5}],
      ['高評級',{rate:['5','4']}],
-     ['近一年正回報',{retMin:0,win:'1Y'}],
+     ['1／3／5 年都正回報',{ret:{'1Y':{min:0},'3Y':{min:0},'5Y':{min:0}}}],
      ['月底派息',{payday:['late']}]].forEach(function(p){
       var b=el('button','chip',p[0]);
-      b.onclick=function(){ Object.assign(S,p[1]); if(!p[1].win) S.win=S.win; render(); save(); run(); toast('已套用：'+p[0]); };
+      b.onclick=function(){ Object.assign(S,p[1]); render(); save(); run(); toast('已套用：'+p[0]); };
       ps.appendChild(b);
     });
     renderSums();
@@ -369,54 +374,51 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     return box;
   }
   function isOn(k){
-    if(k==='nav') return S.navMin!=null||S.navMax!=null||S.nav.length>0;
+    if(k==='navP') return hasPeriod('navP');
     if(k==='yield') return S.yieldMin!=null||S.yieldMax!=null;
-    if(k==='vol') return S.volMin!=null||S.volMax!=null;
+    if(k==='vol') return hasPeriod('vol');
     if(k==='years') return S.listYears!=null;
-    if(k==='ret') return S.retMin!=null||S.retMax!=null;
+    if(k==='ret') return hasPeriod('ret');
     if(k==='house') return S.houses.length>0;
     return false;
-  }
-  function navLabel(){
-    var a=S.navMin, b=S.navMax;
-    if(a==null&&b==null) return S.nav.length?('快捷 '+S.nav.map(function(x){return {high:'高',mid:'中',low:'低'}[x];}).join('/')):'不限';
-    return (a!=null?a:'')+'–'+(b!=null?b:'');
   }
   function rangeLabel(a,b,unit){
     if(a==null&&b==null) return '不限';
     return (a!=null?('≥'+a):'')+(a!=null&&b!=null?'、':'')+(b!=null?('≤'+b):'')+unit;
   }
-  function volLabel(){
-    var w = S.volWin==='same' ? '' : ('（'+({ '1Y':'1 年','3Y':'3 年','5Y':'5 年' }[S.volWin]||'自訂')+'）');
-    return rangeLabel(S.volMin,S.volMax,'%')+w;
+  function periodLabel(key, unit){          // 多期條件的摘要文字（每期各自列出）
+    var out = [];
+    PERIODS.forEach(function(per){
+      var rq = S[key][per]; if(!rq) return;
+      out.push(PLAB[per] + (rq.min!=null?('≥'+rq.min):'') + (rq.max!=null?('≤'+rq.max):'') + unit);
+    });
+    return out.length ? out.join('、') : '不限';
   }
+  function hasPeriod(key){ return PERIODS.some(function(per){ return !!S[key][per]; }); }
+
 
   /* ---------- 浮層 ---------- */
   var panes = {
     nav: function(p){
-      p.appendChild(el('h4','','快捷'));
-      var r=el('div','row');
-      [['high','高（分位 ≥70）',70,101],['mid','中（30–70）',30,70],['low','低（分位 <30）',0,30]].forEach(function(t){
-        var on=S.navMin===t[2]&&S.navMax===t[3];
-        var b=el('button','chip'+(on?' on':''),t[1]);
-        b.onclick=function(ev){ ev.stopPropagation(); S.navMin=t[2]; S.navMax=t[3]; S.nav=[t[0]]; closePane(); render(); save(); run(); };
+      p.appendChild(el('h4','','快捷（一次設全部期間）'));
+      var r = el('div','row');
+      [['high','高（分位 ≥70）',70,100],['mid','中（30–70）',30,70],['low','低（<30）',0,30]].forEach(function(t){
+        var b = el('button','chip', t[1]);
+        b.onclick = function(ev){
+          ev.stopPropagation();
+          PERIODS.forEach(function(per){ S.navP[per] = { min: t[2], max: t[3] }; });
+          openPane('navP', null); render(); save(); run();
+        };
         r.appendChild(b);
       });
       p.appendChild(r);
-      p.appendChild(el('h4','','或自訂分位（0–100，兩值＝區間）'));
-      var r2=el('div','row');
-      [['最低','navMin'],['最高','navMax']].forEach(function(t){
-        r2.appendChild(el('span','hint',t[0]));
-        var i=el('input'); i.type='number'; i.min=0; i.max=100;
-        if(S[t[1]]!=null) i.value=S[t[1]];
-        i.oninput=function(){ S[t[1]] = i.value===''?null:+i.value; S.nav=[]; save(); renderSums(); run(); };
-        r2.appendChild(i);
-      });
-      p.appendChild(r2); p.appendChild(acts('nav'));
+      p.appendChild(el('h4','','每期 NAV 分位（0–100）'));
+      periodRows(p, 'navP', '');
+      p.appendChild(acts('navP'));
     },
     ret: function(p){
-      p.appendChild(el('h4','','期間回報（%，跟年期；兩值＝區間）'));
-      p.appendChild(numRow('retMin','retMax'));
+      p.appendChild(el('h4','','每期回報（%）——同期兩值＝區間；期與期之間「且」'));
+      periodRows(p, 'ret', '%');
       p.appendChild(acts('ret'));
     },
     yield: function(p){
@@ -425,17 +427,8 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
       p.appendChild(acts('yield'));
     },
     vol: function(p){
-      p.appendChild(el('h4','','年期'));
-      var r=el('div','row');
-      [['same','跟隨'],['1Y','1 年'],['3Y','3 年'],['5Y','5 年']].forEach(function(t){
-        var on=S.volWin===t[0];
-        var b=el('button','chip'+(on?' on':''),t[1]);
-        b.onclick=function(ev){ ev.stopPropagation(); S.volWin=t[0]; openPane('vol', null); render(); save(); run(); };
-        r.appendChild(b);
-      });
-      p.appendChild(r);
-      p.appendChild(el('h4','','年化波動率 ≤（只對非派息基金有效）'));
-      p.appendChild(numRow('volMin','volMax'));
+      p.appendChild(el('h4','','每期年化波動率（%）——只對非派息基金有效（派息基金＝Z 開頭不給值）'));
+      periodRows(p, 'vol', '%');
       p.appendChild(acts('vol'));
     },
     years: function(p){
@@ -448,22 +441,6 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
         r.appendChild(b);
       });
       p.appendChild(r); p.appendChild(acts('years'));
-    },
-    win: function(p){
-      p.appendChild(el('h4','','回報／NAV 分位的計算窗口（決定「期間回報」欄）'));
-      var r=el('div','row'); [['1Y','1 年'],['3Y','3 年'],['5Y','5 年']].forEach(function(t){
-        var on=S.win===t[0];
-        var b=el('button','chip'+(on?' on':''),t[1]);
-        b.onclick=function(ev){ ev.stopPropagation(); S.win=t[0]; closePane(); render(); save(); run(); };
-        r.appendChild(b);
-      });
-      p.appendChild(r);
-      var r2=el('div','row'); r2.appendChild(el('span','hint','自訂年數（1–30）'));
-      var i=el('input'); i.type='number'; i.min=1; i.max=30;
-      if(S.win.indexOf('c')===0) i.value=S.win.slice(1);
-      i.oninput=function(){ if(i.value) S.win='c'+i.value; save(); renderSums(); run(); };
-      r2.appendChild(i); p.appendChild(r2);
-      p.appendChild(acts('win'));
     },
     house: function(p){
       p.appendChild(el('h4','','基金公司（可搜尋、多選）'));
@@ -483,6 +460,27 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
       p.appendChild(acts('house'));
     }
   };
+  function periodRows(pane, key, unit){
+    PERIODS.forEach(function(per){
+      var r = el('div','row pRow');
+      r.appendChild(el('span','plab', PLAB[per]));
+      [['min','≥'],['max','≤']].forEach(function(t){
+        var o = S[key][per] || {};
+        var i = el('input'); i.type = 'number'; i.step = '0.1';
+        if (o[t[0]] != null) i.value = o[t[0]];
+        i.oninput = function(){
+          var cur = S[key][per] || {};
+          cur[t[0]] = (i.value === '' ? null : +i.value);
+          if (cur.min == null && cur.max == null) delete S[key][per]; else S[key][per] = cur;
+          save(); renderSums(); run();
+        };
+        r.appendChild(el('span','sig', t[1]));
+        r.appendChild(i);
+      });
+      r.appendChild(el('span','u', unit));
+      pane.appendChild(r);
+    });
+  }
   function numRow(a,b){
     var r=el('div','row');
     [['≥',a],['≤',b]].forEach(function(t){
@@ -498,10 +496,10 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     var d=el('div','acts');
     var c=el('button','','清除');
     c.onclick=function(){
-      if(k==='nav'){S.nav=[];S.navMin=S.navMax=null;}
-      if(k==='ret'){S.retMin=S.retMax=null;}
+      if(k==='navP'){S.navP={};}
+      if(k==='ret'){S.ret={};}
       if(k==='yield'){S.yieldMin=S.yieldMax=null;}
-      if(k==='vol'){S.volMin=S.volMax=null;S.volWin='same';}
+      if(k==='vol'){S.vol={};}
       if(k==='years'){S.listYears=null;}
       if(k==='house'){S.houses=[];}
       closePane(); render(); save(); run();
@@ -510,8 +508,10 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     o.onclick=function(){ closePane(); render(); };
     d.appendChild(c); d.appendChild(o); return d;
   }
+  var paneOpenedBy = null;
   function openPane(k, anchorEl){
     var p=$('pane'); p.innerHTML=''; p.hidden=false;
+    paneOpenedBy = anchorEl || null;
     panes[k](p);
     if(anchorEl){
       var r=anchorEl.getBoundingClientRect();
@@ -521,11 +521,14 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
       p.style.left=left+'px'; p.style.top=top+'px';
     }
   }
-  function closePane(){ $('pane').hidden=true; $('pane').innerHTML=''; }
+  var S_BASE = null;   // 供取回時保留預設鍵（避免 restore 後缺欄位）
+  function closePane(){ $('pane').hidden=true; $('pane').innerHTML=''; paneOpenedBy=null; }
   document.addEventListener('click', function(e){
     var p=$('pane');
-    // e.target 若已被重繪摘除（isConnected=false），不能當成「點到浮層外面」
-    if(!p.hidden && e.target.isConnected && !p.contains(e.target) && !e.target.closest('.pop')) closePane();
+    // ① e.target 若已被重繪摘除（isConnected=false）不能當成「點到外面」
+    // ② 也不能把「剛開啟浮層的那個按鈕」本身當成外面
+    var byAnchor = paneOpenedBy && (e.target === paneOpenedBy || paneOpenedBy.contains(e.target));
+    if(!p.hidden && !byAnchor && e.target.isConnected && !p.contains(e.target) && !e.target.closest('.pop')) closePane();
   });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePane(); });
   /* 只在「使用者真的滾動」時關浮層：內容重排造成的細微 scroll 不關（否則控件一動就被關掉） */
@@ -552,21 +555,14 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
       b.onclick=function(){ S[t[0]]=[]; render(); save(); run(); };
       box.appendChild(b);
     });
-    /* 數值／其他類條件也要進摘要（否則看不出哪些條件生效） */
-    var WLAB = { '1Y':'1 年','3Y':'3 年','5Y':'5 年' };
+    /* 數值／其他類條件進摘要（按大類別，列出各期；點 ✕ 清掉該類） */
     var extra = [
-      ['期間回報', (S.retMin!=null||S.retMax!=null) ? rangeLabel(S.retMin,S.retMax,'%') : null,
-        function(){ S.retMin=S.retMax=null; }],
-      ['NAV 位置', (S.navMin!=null||S.navMax!=null) ? navLabel() : null,
-        function(){ S.navMin=S.navMax=null; S.nav=[]; }],
+      ['期間回報', hasPeriod('ret') ? periodLabel('ret','%') : null, function(){ S.ret={}; }],
+      ['NAV 位置', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
+      ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
       ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
         function(){ S.yieldMin=S.yieldMax=null; }],
-      ['波動率', (S.volMin!=null||S.volMax!=null) ? rangeLabel(S.volMin,S.volMax,'%')+((S.volWin!=='same')?('@'+((WLAB[S.volWin])||('自訂 '+S.volWin.slice(1)+' 年'))):'') : null,
-        function(){ S.volMin=S.volMax=null; S.volWin='same'; }],
-      ['上架時間', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null,
-        function(){ S.listYears=null; }],
-      ['年期', S.win!=='1Y' ? ((WLAB[S.win])||('自訂 '+S.win.slice(1)+' 年')) : null,
-        function(){ S.win='1Y'; }]
+      ['上架時間', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
     ];
     extra.forEach(function(t){
       if(!t[1]) return;
@@ -584,8 +580,8 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   }
   var ROW_CAP = 80;        // 預設只渲染 80 列（146×12 全渲染會拖慢展開／收合）
 var SHOW_ALL = false;
-var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','地區'],['ccy','幣種'],['ret','期間回報'],
-            ['vol','波動率'],['yield','派息率'],['rate','評級'],['payday','派息日'],['years','上架']];
+  var COLS=[['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],['3Y','3 年'],['5Y','5 年'],
+            ['yield','最新年化派息率']];
   function renderTable(rows){
     var th=document.querySelector('#tbl thead'), tb=document.querySelector('#tbl tbody');
     th.innerHTML=''; tb.innerHTML='';
@@ -599,28 +595,21 @@ var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','
     th.appendChild(tr);
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
     rows.slice(0, lim).forEach(function(f){
-      var mt=metric(f.code), v=volOf(f.code, isDist(f.code));
-      var r=f.rating||0, pay=paydayOf(f.code), ly=listYearsOf(f.code);
       var row=el('tr');
       row.appendChild(el('td','','<span class="code">'+f.code+'</span>'));
-      row.appendChild(el('td','name',f.name||''));
-      row.appendChild(el('td','',f._type));
-      row.appendChild(el('td','',f._region));
-      row.appendChild(el('td','',f.currencyCode||''));
-      row.appendChild(el('td', cls(mt.returnPercent), pct(mt.returnPercent)));
-      row.appendChild(el('td', v==null?'na':'', v==null?'—':(v.toFixed(2)+'%')));
-      row.appendChild(el('td','', yieldOf(f.code)==null?'—':(yieldOf(f.code).toFixed(2)+'%')));
-      row.appendChild(el('td','stars', r? '★'.repeat(r) : '<span class="ms-na">—</span>'));
-      row.appendChild(el('td','', pay? {early:'月初',mid:'月中',late:'月底'}[pay] : '—'));
-      row.appendChild(el('td','', ly==null?'—':(ly.toFixed(1)+' 年')));
+      row.appendChild(el('td','name', f.name||''));
+      PERIODS.forEach(function(per){
+        var v = mOf(f.code, per).returnPercent;
+        row.appendChild(el('td', cls(v), pct(v)));
+      });
+      var y = yieldOf(f.code);
+      row.appendChild(el('td','', y==null?'—':(y.toFixed(2)+'%')));
       var td=el('td',''), b=el('button','add','+');
       b.title='加入待加入清單';
       b.onclick=function(){ if(PICKED.indexOf(f.code)<0){PICKED.push(f.code); renderPicked(); toast('已加入 '+f.code);} };
       td.appendChild(b); row.appendChild(td);
       tb.appendChild(row);
     });
-    var WLAB={ '1Y':'1 年','3Y':'3 年','5Y':'5 年' };
-    var wl = WLAB[S.win] || ('自訂 '+S.win.slice(1)+' 年');
     if(rows.length > lim){
       var mb=el('button','btn','顯示全部 '+rows.length+' 檔');
       mb.style.marginTop='8px';
@@ -628,7 +617,7 @@ var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','
       tb.appendChild(el('tr')).appendChild(el('td','')).appendChild(mb);
       var trLast=tb.lastChild; trLast.firstChild.colSpan=12;
     }
-    $('resHead').textContent='共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')+''+(rows.length>300?'（只列前 300）':'')+'｜期間＝'+wl+'｜波動率只對非派息基金有效（顯示「—」者不參與波動率篩選）';
+    $('resHead').textContent='共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')+'；派息率只對派息基金（Z 開頭）顯示，其餘為「—」';
     $('res').hidden=false;
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
@@ -656,17 +645,34 @@ var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','
   };
   $('reset').onclick=function(){
     Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
-    S.retMin=S.retMax=S.volMin=S.volMax=S.yieldMin=S.yieldMax=S.navMin=S.navMax=S.listYears=null;
-    S.volWin='same'; S.win='1Y'; S.nav=[];
+    S.ret={}; S.navP={}; S.vol={}; S.houses=[];
+    S.yieldMin=S.yieldMax=null; S.listYears=null;
     render(); save(); run(); toast('已重置');
   };
+  function favs(){ try{ return JSON.parse(localStorage.getItem(LS_PRESET)||'[]'); }catch(e){ return []; } }
+  function setFavs(a){ try{ localStorage.setItem(LS_PRESET, JSON.stringify(a)); }catch(e){} }
   $('savePreset').onclick=function(){
     var name=prompt('收藏名稱？','方案 '+(new Date().toLocaleDateString('zh-HK')));
     if(!name) return;
-    try{ var a=JSON.parse(localStorage.getItem(LS_PRESET)||'[]');
-      a.push({name:name, s:JSON.parse(JSON.stringify(S)), at:Date.now()});
-      localStorage.setItem(LS_PRESET, JSON.stringify(a)); toast('已收藏：'+name);
-    }catch(e){ toast('收藏失敗（本機儲存不可用）'); }
+    var a=favs(); a.push({name:name, s:JSON.parse(JSON.stringify(S)), at:Date.now()}); setFavs(a);
+    toast('已收藏：'+name+'（按「我的收藏」可取回）');
+  };
+  $('myFav').onclick=function(){ openPane('favs', this); };
+  panes.favs=function(p){
+    p.appendChild(el('h4','','我的收藏（存在本機）'));
+    var a=favs();
+    if(!a.length){ p.appendChild(el('div','hint','尚無收藏。設好條件後按「收藏」即可存入。')); return; }
+    var scr=el('div','scrl');
+    a.forEach(function(it, idx){
+      var r=el('div','row fav');
+      r.appendChild(el('span','favname', it.name+'<em>'+(new Date(it.at).toLocaleDateString('zh-HK'))+'</em>'));
+      var ap=el('button','chip','取回');
+      ap.onclick=function(ev){ ev.stopPropagation(); S=JSON.parse(JSON.stringify(it.s)); save(); render(); run(); closePane(); toast('已取回：'+it.name); };
+      var del=el('button','chip','刪除');
+      del.onclick=function(ev){ ev.stopPropagation(); var b=favs(); b.splice(idx,1); setFavs(b); openPane('favs', null); toast('已刪除'); };
+      r.appendChild(ap); r.appendChild(del); scr.appendChild(r);
+    });
+    p.appendChild(scr);
   };
   $('viewRes').onclick=function(){ var p=$('panel'); if(!p.hidden) $('toggle').click(); $('res').scrollIntoView({behavior:'smooth'}); };
   $('clearPicked').onclick=function(){ PICKED=[]; renderPicked(); };
