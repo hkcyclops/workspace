@@ -86,31 +86,35 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .btn .ic{width:13px;height:13px;vertical-align:0;margin-right:0;display:block;flex:0 0 auto}
 .btn.k .ic{color:#fff7ee}
 .res{margin-top:14px;contain:content}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-#tbl th:nth-child(12),#tbl td:nth-child(12){width:40px}
-th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:11px}
+#tbl{table-layout:fixed}
+#tbl th,#tbl td{overflow:hidden;text-overflow:ellipsis}
+#tbl tbody td{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em}
+th,td{padding:8px 5px;border-bottom:1px solid #eee3d4;text-align:right;white-space:nowrap;line-height:1.22}
 th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
-th{font-family:Georgia,serif;font-size:12px;color:var(--gray);cursor:pointer;user-select:none;background:#fffdf8}
+th{font:inherit;font-size:10px;font-weight:800;color:#49372f;background:#f0e8dc;
+  border-bottom:1px solid #d8c8b3;cursor:pointer;user-select:none}
 th:hover{color:var(--red)}
-td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;color:#3e332c}
 td.cell-code{line-height:1.25}
-.sub{display:block;font-size:10px;line-height:1.25;color:var(--gray);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub{display:block;font-size:10px;line-height:1.25;color:#9c907f;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 td .nm{display:block;line-height:1.3}
 .sub.stars{color:var(--gold);font-size:10.5px;letter-spacing:.5px}
 tbody tr.drow{cursor:pointer}
-tbody tr.drow:hover td{background:#fdfaf3}
+tbody tr.drow.alt td{background:#fffaf2}
+tbody tr.drow:hover td{background:#f3e3cc}
 tr.drow td{vertical-align:top}
 tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
   font-size:12px;line-height:1.65;padding:9px 10px}
 tr.xrow .dl{margin:0 0 2px}
 tr.xrow .dl b{color:var(--ink)}
 tr.xrow .k{color:var(--gray);font-weight:700;margin-right:4px}
-tr.xrow .go{color:var(--red);text-decoration:none}
-.vcnt{font-size:11.5px;color:var(--gray)}
+
+.vcnt{font-size:10px;color:#94897b;font-weight:700}
 #dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
   box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
 #dcard[hidden]{display:none}
-.code{font-family:Georgia,serif;font-weight:700}
+.code{font-family:Georgia,serif;font-weight:700;font-size:14px;color:#8f0d25}
 .up{color:var(--up)} .down{color:var(--down)} .na{color:var(--gray)}
 .stars{color:var(--gold);letter-spacing:.5px}
 .ms-na{color:var(--gray)}
@@ -123,11 +127,17 @@ td.cell-pick{text-align:center}
 .loading{padding:26px 4px;color:var(--gray);font-size:13px}
 /* 手機：全屏抽屜 */
 @media (max-width:768px){
-  .panel{position:fixed;inset:0;z-index:70;background:var(--card);overflow:auto;padding:14px 12px 76px}
+  /* 不用全屏抽屜：抽屜會蓋住 .bar（toggle）→ 收不起來，也蓋住結果表 → 無法勾選加入組合。
+     維持內聯展開，配合預設收合，就不會一開就淹掉畫面。 */
   .stage{border-left:0;border-right:0}
-  .panel:not([hidden])~.foot{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card)}
+  .groups{grid-template-columns:1fr}
+  .g{padding:4px 0}
+  table{font-size:10px}
+  th,td{padding:6px 3px}
+  #tbl th{font-size:9px}
+  .code{font-size:12px}
   .res{overflow-x:auto}
-  table{font-size:12px}
+  .foot{gap:6px}
 }
 </style>
 </head>
@@ -157,13 +167,13 @@ td.cell-pick{text-align:center}
       <button class="btn k" id="viewRes"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4 L14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>查看結果</button>
       <button class="btn gold" id="savePreset"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>收藏</button>
       <button class="btn" id="myFav"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor"/></svg>我的收藏</button>
-      <button class="btn k" id="addTo06" disabled>加入組合</button>
+      <button class="btn k" id="addTo06" data-add="1" disabled>加入組合</button>
       <span class="hint" id="footHint"></span>
     </div>
   </div>
 
   <section class="res" id="res" hidden>
-    <div id="resHead" style="font-size:12px;color:var(--gray);margin-bottom:6px"></div>
+    <div id="resHead" style="margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"></div>
     <div style="overflow-x:auto"><table id="tbl"><thead></thead><tbody></tbody></table></div>
   </section>
 </div>
@@ -597,7 +607,6 @@ td.cell-pick{text-align:center}
       +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
       +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
       +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
-    inner.push('<div class="dl"><a class="go" href="./06-fund-portfolio-workbench.html?fund='+f.code+'">在 06 開啟 '+f.code+' 走勢圖 →</a></div>');
     return inner.join('');
   }
   function toggleRow(code, row){
@@ -614,7 +623,9 @@ td.cell-pick{text-align:center}
   function showCard(code, row){
     var f = D.byCode[code]; if(!f) return;
     var c = document.getElementById('dcard');
-    if(!c){ c = el('div',''); c.id='dcard'; document.body.appendChild(c); }
+    if(!c){ c = el('div',''); c.id='dcard';
+      /* 注入到 06 時我們的 CSS 會被 scope 成 #sp-wrap #sp-dcard → 卡片必須放在 #sp-wrap 內才會套到樣式 */
+      (document.getElementById('sp-wrap')||document.body).appendChild(c); }
     c.innerHTML = detailHTML(f); c.hidden = false;
     var r = row.getBoundingClientRect();
     var top = r.bottom + 6, h = c.offsetHeight, w = c.offsetWidth;
@@ -636,8 +647,9 @@ var SHOW_ALL = false;
     return [['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],
             ['3Y','3 年'],['5Y','5 年'],['yield','最新年化派息率']];
   }
-  var WID = {  // 固定佈局用：'*' 表示自適應（吃剩餘寬度）
-    code:58, name:'*', YTD:78, '3M':72, '1Y':70, '3Y':70, '5Y':70, yield:104
+  var WID = {  // table-layout:fixed 用；百分比 → 任何寬度都塞得下（不再橫向卷軸）
+    code:'9%', name:'25%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
+    yield:'15%', pick:'9%'
   };
   function renderTable(rows){
     var th=document.querySelector('#tbl thead'), tb=document.querySelector('#tbl tbody');
@@ -647,8 +659,8 @@ var SHOW_ALL = false;
     var old = document.querySelector('#tbl colgroup'); if(old) old.remove();
     var cg = document.createElement('colgroup');
     C.forEach(function(c){ var co=document.createElement('col'); var w=WID[c[0]];
-      if(w!=='*') co.style.width=w+'px'; cg.appendChild(co); });
-    var co2=document.createElement('col'); co2.style.width='40px'; cg.appendChild(co2);
+      if(w!=='*') co.style.width=(typeof w==='number')?(w+'px'):w; cg.appendChild(co); });
+    var co2=document.createElement('col'); co2.style.width=WID.pick; cg.appendChild(co2);
     document.querySelector('#tbl').insertBefore(cg, document.querySelector('#tbl thead'));
     var tr=el('tr');
     C.forEach(function(c){
@@ -660,8 +672,9 @@ var SHOW_ALL = false;
     th.appendChild(tr);
     var inPortList = portfolioCodes();
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
-    rows.slice(0, lim).forEach(function(f){
-      var row=el('tr'); row.className='drow'; row.setAttribute('data-code', f.code);
+    rows.slice(0, lim).forEach(function(f, _i){
+      var row=el('tr'); row.className = (_i % 2) ? 'drow alt' : 'drow';
+      row.setAttribute('data-code', f.code);
       /* 代號（副標：星級） */
       var r0 = f.rating||0;
       row.appendChild(el('td','cell-code',
@@ -705,8 +718,9 @@ var SHOW_ALL = false;
     }
     document.getElementById('resHead').innerHTML =
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
-      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
-    $('res').hidden = !RES_SHOWN;
+      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>'
+      + '<button class="btn k addbtn" data-add="1" disabled>加入組合</button>';
+    $('res').hidden = !RES_SHOWN || $('panel').hidden;   /* 面板收合時，基金表也一起收 */
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
@@ -723,9 +737,11 @@ var SHOW_ALL = false;
     return out;
   }
   function renderPickBtn(){
-    var b=$('addTo06'); if(!b) return;
-    b.disabled = !PICK.length;
-    b.textContent = PICK.length ? ('加入組合（'+PICK.length+'）') : '加入組合';
+    var btns=document.querySelectorAll('[data-add]');
+    for (var i=0;i<btns.length;i++){
+      btns[i].disabled = !PICK.length;
+      btns[i].textContent = PICK.length ? ('加入組合（'+PICK.length+'）') : '加入組合';
+    }
   }
   /* 勾選 → 一鍵把代號送進 06 的「搜尋並加入基金」（用原生 setter 觸發 React） */
   function addTo06(){
@@ -741,7 +757,7 @@ var SHOW_ALL = false;
       toast('組合最多 10 隻，本次只加入前 '+room+' 隻');
       todo = todo.slice(0, room);
     }
-    var btn=$('addTo06'); btn.disabled=true;
+    renderPickBtn(); Array.prototype.forEach.call(document.querySelectorAll('[data-add]'), function(b){ b.disabled=true; });
     var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
     var i=0, added=[], miss=[];
     function finish(){
@@ -786,7 +802,13 @@ var SHOW_ALL = false;
     var p=$('panel'); p.hidden=!p.hidden;
     this.setAttribute('aria-expanded', String(!p.hidden));
     this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
-    if (!p.hidden && !RES_SHOWN){ RES_SHOWN=true; run(); }   /* 展開＝開始使用 */
+    if (p.hidden){
+      $('res').hidden = true;                    /* ① 折疊智能條件 → 基金表一起收 */
+    } else if (!RES_SHOWN){
+      RES_SHOWN=true; run();                     /* 展開＝開始使用 */
+    } else {
+      $('res').hidden = false;
+    }
   };
   $('reset').onclick=function(){
     Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
@@ -822,6 +844,12 @@ var SHOW_ALL = false;
   $('viewRes').onclick=function(){ var p=$('panel'); if(!p.hidden) $('toggle').click();
     RES_SHOWN=true; run(); $('res').scrollIntoView({behavior:'smooth'}); };
   $('addTo06').onclick=addTo06;
+  /* 結果表頭那顆用事件委派（它每次 run() 都重建） */
+  var _rh=$('resHead');
+  if (_rh) _rh.addEventListener('click', function(e){
+    var t=e.target && e.target.closest ? e.target.closest('[data-add]') : null;
+    if (t) addTo06();
+  });
   $('footHint').textContent='條件自動存本機｜'+new Date().toLocaleDateString('zh-HK');
 
   boot();

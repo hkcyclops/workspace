@@ -1406,31 +1406,34 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .btn .ic{width:13px;height:13px;vertical-align:0;margin-right:0;display:block;flex:0 0 auto}
 #sp-wrap .btn.k .ic{color:#fff7ee}
 #sp-wrap .res{margin-top:14px;contain:content}
-#sp-wrap table{width:100%;border-collapse:collapse;font-size:12.5px}
-#sp-wrap #tbl th:nth-child(12),#sp-wrap #tbl td:nth-child(12){width:40px}
-#sp-wrap th,#sp-wrap td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+#sp-wrap table{width:100%;border-collapse:collapse;font-size:11px}
+#sp-wrap #sp-tbl{table-layout:fixed}
+#sp-wrap #sp-tbl th,#sp-wrap #sp-tbl td{overflow:hidden;text-overflow:ellipsis}
+#sp-wrap #sp-tbl tbody td{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em}
+#sp-wrap th,#sp-wrap td{padding:8px 5px;border-bottom:1px solid #eee3d4;text-align:right;white-space:nowrap;line-height:1.22}
 #sp-wrap th:nth-child(-n+3),#sp-wrap td:nth-child(-n+3){text-align:left}
-#sp-wrap th{font-family:Georgia,serif;font-size:12px;color:var(--gray);cursor:pointer;user-select:none;background:#fffdf8}
+#sp-wrap th{font:inherit;font-size:10px;font-weight:800;color:#49372f;background:#f0e8dc;
+  border-bottom:1px solid #d8c8b3;cursor:pointer;user-select:none}
 #sp-wrap th:hover{color:var(--red)}
-#sp-wrap td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#sp-wrap td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;color:#3e332c}
 #sp-wrap td.cell-code{line-height:1.25}
-#sp-wrap .sub{display:block;font-size:10px;line-height:1.25;color:var(--gray);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sp-wrap .sub{display:block;font-size:10px;line-height:1.25;color:#9c907f;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sp-wrap td .nm{display:block;line-height:1.3}
 #sp-wrap .sub.stars{color:var(--gold);font-size:10.5px;letter-spacing:.5px}
 #sp-wrap tbody tr.drow{cursor:pointer}
-#sp-wrap tbody tr.drow:hover td{background:#fdfaf3}
+#sp-wrap tbody tr.drow.alt td{background:#fffaf2}
+#sp-wrap tbody tr.drow:hover td{background:#f3e3cc}
 #sp-wrap tr.drow td{vertical-align:top}
 #sp-wrap tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
   font-size:12px;line-height:1.65;padding:9px 10px}
 #sp-wrap tr.xrow .dl{margin:0 0 2px}
 #sp-wrap tr.xrow .dl b{color:var(--ink)}
 #sp-wrap tr.xrow .k{color:var(--gray);font-weight:700;margin-right:4px}
-#sp-wrap tr.xrow .go{color:var(--red);text-decoration:none}
-#sp-wrap .vcnt{font-size:11.5px;color:var(--gray)}
-#sp-wrap #dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
+#sp-wrap .vcnt{font-size:10px;color:#94897b;font-weight:700}
+#sp-wrap #sp-dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
   box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
-#sp-wrap #dcard[hidden]{display:none}
-#sp-wrap .code{font-family:Georgia,serif;font-weight:700}
+#sp-wrap #sp-dcard[hidden]{display:none}
+#sp-wrap .code{font-family:Georgia,serif;font-weight:700;font-size:14px;color:#8f0d25}
 #sp-wrap .up{color:var(--up)}
 #sp-wrap .down{color:var(--down)}
 #sp-wrap .na{color:var(--gray)}
@@ -1447,17 +1450,23 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .groups{grid-template-columns:1fr}
 }
 @media (max-width:768px){
-#sp-wrap .panel{position:fixed;inset:0;z-index:70;background:var(--card);overflow:auto;padding:14px 12px 76px}
-#sp-wrap .stage{border-left:0;border-right:0}
-#sp-wrap .panel:not([hidden])~.foot{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card)}
+#sp-wrap /* 不用全屏抽屜：抽屜會蓋住 .bar（toggle）→ 收不起來，也蓋住結果表 → 無法勾選加入組合。
+     維持內聯展開，配合預設收合，就不會一開就淹掉畫面。 */
+  .stage{border-left:0;border-right:0}
+#sp-wrap .groups{grid-template-columns:1fr}
+#sp-wrap .g{padding:4px 0}
+#sp-wrap table{font-size:10px}
+#sp-wrap th,#sp-wrap td{padding:6px 3px}
+#sp-wrap #sp-tbl th{font-size:9px}
+#sp-wrap .code{font-size:12px}
 #sp-wrap .res{overflow-x:auto}
-#sp-wrap table{font-size:12px}
+#sp-wrap .foot{gap:6px}
 }
 </style>
 <script id="SP_PICKER_V1">
 (function(){
 if (document.getElementById("sp-wrap")) return;   /* 已注入 */
-var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHNwYW4gY2xhc3M9ImNhcmV0Ij7ilrg8L3NwYW4+5pm66IO95qKd5Lu2IDxzbWFsbD7pu57mk4rlsZXplovvvI/mlLblkIg8L3NtYWxsPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+5p+l55yL57WQ5p6cPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBnb2xkIiBpZD0ic3Atc2F2ZVByZXNldCI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz7mlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0ic3AtbXlGYXYiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9zdmc+5oiR55qE5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3AtYWRkVG8wNiIgZGlzYWJsZWQ+5Yqg5YWl57WE5ZCIPC9idXR0b24+CiAgICAgIDxzcGFuIGNsYXNzPSJoaW50IiBpZD0ic3AtZm9vdEhpbnQiPjwvc3Bhbj4KICAgIDwvZGl2PgogIDwvZGl2PgoKICA8c2VjdGlvbiBjbGFzcz0icmVzIiBpZD0ic3AtcmVzIiBoaWRkZW4+CiAgICA8ZGl2IGlkPSJzcC1yZXNIZWFkIiBzdHlsZT0iZm9udC1zaXplOjEycHg7Y29sb3I6dmFyKC0tZ3JheSk7bWFyZ2luLWJvdHRvbTo2cHgiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICA8L3NlY3Rpb24+CjxkaXYgY2xhc3M9InBhbmUiIGlkPSJzcC1wYW5lIiBoaWRkZW4+PC9kaXY+CjxkaXYgY2xhc3M9InRvYXN0IiBpZD0ic3AtdG9hc3QiPjwvZGl2Pg==";
+var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHNwYW4gY2xhc3M9ImNhcmV0Ij7ilrg8L3NwYW4+5pm66IO95qKd5Lu2IDxzbWFsbD7pu57mk4rlsZXplovvvI/mlLblkIg8L3NtYWxsPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+5p+l55yL57WQ5p6cPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBnb2xkIiBpZD0ic3Atc2F2ZVByZXNldCI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz7mlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0ic3AtbXlGYXYiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9zdmc+5oiR55qE5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3AtYWRkVG8wNiIgZGF0YS1hZGQ9IjEiIGRpc2FibGVkPuWKoOWFpee1hOWQiDwvYnV0dG9uPgogICAgICA8c3BhbiBjbGFzcz0iaGludCIgaWQ9InNwLWZvb3RIaW50Ij48L3NwYW4+CiAgICA8L2Rpdj4KICA8L2Rpdj4KCiAgPHNlY3Rpb24gY2xhc3M9InJlcyIgaWQ9InNwLXJlcyIgaGlkZGVuPgogICAgPGRpdiBpZD0ic3AtcmVzSGVhZCIgc3R5bGU9Im1hcmdpbi1ib3R0b206NnB4O2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7Z2FwOjEwcHg7ZmxleC13cmFwOndyYXAiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICA8L3NlY3Rpb24+CjxkaXYgY2xhc3M9InBhbmUiIGlkPSJzcC1wYW5lIiBoaWRkZW4+PC9kaXY+CjxkaXYgY2xhc3M9InRvYXN0IiBpZD0ic3AtdG9hc3QiPjwvZGl2Pg==";
 var __bytes = Uint8Array.from(atob(__b64), function(c){ return c.charCodeAt(0); });
 var __mark = new TextDecoder("utf-8").decode(__bytes);
 var __wrap = document.createElement("div"); __wrap.id = "sp-wrap";
@@ -1895,7 +1904,6 @@ document.body.appendChild(__wrap);
       +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
       +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
       +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
-    inner.push('<div class="dl"><a class="go" href="./06-fund-portfolio-workbench.html?fund='+f.code+'">在 06 開啟 '+f.code+' 走勢圖 →</a></div>');
     return inner.join('');
   }
   function toggleRow(code, row){
@@ -1912,7 +1920,9 @@ document.body.appendChild(__wrap);
   function showCard(code, row){
     var f = D.byCode[code]; if(!f) return;
     var c = document.getElementById('sp-dcard');
-    if(!c){ c = el('div',''); c.id='dcard'; document.body.appendChild(c); }
+    if(!c){ c = el('div',''); c.id='sp-dcard';
+      /* 注入到 06 時我們的 CSS 會被 scope 成 #sp-wrap #sp-dcard → 卡片必須放在 #sp-wrap 內才會套到樣式 */
+      (document.getElementById('sp-wrap')||document.body).appendChild(c); }
     c.innerHTML = detailHTML(f); c.hidden = false;
     var r = row.getBoundingClientRect();
     var top = r.bottom + 6, h = c.offsetHeight, w = c.offsetWidth;
@@ -1934,8 +1944,9 @@ var SHOW_ALL = false;
     return [['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],
             ['3Y','3 年'],['5Y','5 年'],['yield','最新年化派息率']];
   }
-  var WID = {  // 固定佈局用：'*' 表示自適應（吃剩餘寬度）
-    code:58, name:'*', YTD:78, '3M':72, '1Y':70, '3Y':70, '5Y':70, yield:104
+  var WID = {  // table-layout:fixed 用；百分比 → 任何寬度都塞得下（不再橫向卷軸）
+    code:'9%', name:'25%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
+    yield:'15%', pick:'9%'
   };
   function renderTable(rows){
     var th=document.querySelector('#sp-tbl thead'), tb=document.querySelector('#sp-tbl tbody');
@@ -1945,8 +1956,8 @@ var SHOW_ALL = false;
     var old = document.querySelector('#sp-tbl colgroup'); if(old) old.remove();
     var cg = document.createElement('colgroup');
     C.forEach(function(c){ var co=document.createElement('col'); var w=WID[c[0]];
-      if(w!=='*') co.style.width=w+'px'; cg.appendChild(co); });
-    var co2=document.createElement('col'); co2.style.width='40px'; cg.appendChild(co2);
+      if(w!=='*') co.style.width=(typeof w==='number')?(w+'px'):w; cg.appendChild(co); });
+    var co2=document.createElement('col'); co2.style.width=WID.pick; cg.appendChild(co2);
     document.querySelector('#sp-tbl').insertBefore(cg, document.querySelector('#sp-tbl thead'));
     var tr=el('tr');
     C.forEach(function(c){
@@ -1958,8 +1969,9 @@ var SHOW_ALL = false;
     th.appendChild(tr);
     var inPortList = portfolioCodes();
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
-    rows.slice(0, lim).forEach(function(f){
-      var row=el('tr'); row.className='drow'; row.setAttribute('data-code', f.code);
+    rows.slice(0, lim).forEach(function(f, _i){
+      var row=el('tr'); row.className = (_i % 2) ? 'drow alt' : 'drow';
+      row.setAttribute('data-code', f.code);
       /* 代號（副標：星級） */
       var r0 = f.rating||0;
       row.appendChild(el('td','cell-code',
@@ -2003,8 +2015,9 @@ var SHOW_ALL = false;
     }
     document.getElementById('sp-resHead').innerHTML =
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
-      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
-    $('sp-res').hidden = !RES_SHOWN;
+      + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>'
+      + '<button class="btn k addbtn" data-add="1" disabled>加入組合</button>';
+    $('sp-res').hidden = !RES_SHOWN || $('sp-panel').hidden;   /* 面板收合時，基金表也一起收 */
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
@@ -2021,9 +2034,11 @@ var SHOW_ALL = false;
     return out;
   }
   function renderPickBtn(){
-    var b=$('sp-addTo06'); if(!b) return;
-    b.disabled = !PICK.length;
-    b.textContent = PICK.length ? ('加入組合（'+PICK.length+'）') : '加入組合';
+    var btns=document.querySelectorAll('[data-add]');
+    for (var i=0;i<btns.length;i++){
+      btns[i].disabled = !PICK.length;
+      btns[i].textContent = PICK.length ? ('加入組合（'+PICK.length+'）') : '加入組合';
+    }
   }
   /* 勾選 → 一鍵把代號送進 06 的「搜尋並加入基金」（用原生 setter 觸發 React） */
   function addTo06(){
@@ -2039,7 +2054,7 @@ var SHOW_ALL = false;
       toast('組合最多 10 隻，本次只加入前 '+room+' 隻');
       todo = todo.slice(0, room);
     }
-    var btn=$('sp-addTo06'); btn.disabled=true;
+    renderPickBtn(); Array.prototype.forEach.call(document.querySelectorAll('[data-add]'), function(b){ b.disabled=true; });
     var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
     var i=0, added=[], miss=[];
     function finish(){
@@ -2084,7 +2099,13 @@ var SHOW_ALL = false;
     var p=$('sp-panel'); p.hidden=!p.hidden;
     this.setAttribute('aria-expanded', String(!p.hidden));
     this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
-    if (!p.hidden && !RES_SHOWN){ RES_SHOWN=true; run(); }   /* 展開＝開始使用 */
+    if (p.hidden){
+      $('sp-res').hidden = true;                    /* ① 折疊智能條件 → 基金表一起收 */
+    } else if (!RES_SHOWN){
+      RES_SHOWN=true; run();                     /* 展開＝開始使用 */
+    } else {
+      $('sp-res').hidden = false;
+    }
   };
   $('sp-reset').onclick=function(){
     Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
@@ -2120,6 +2141,12 @@ var SHOW_ALL = false;
   $('sp-viewRes').onclick=function(){ var p=$('sp-panel'); if(!p.hidden) $('sp-toggle').click();
     RES_SHOWN=true; run(); $('sp-res').scrollIntoView({behavior:'smooth'}); };
   $('sp-addTo06').onclick=addTo06;
+  /* 結果表頭那顆用事件委派（它每次 run() 都重建） */
+  var _rh=$('sp-resHead');
+  if (_rh) _rh.addEventListener('click', function(e){
+    var t=e.target && e.target.closest ? e.target.closest('[data-add]') : null;
+    if (t) addTo06();
+  });
   $('sp-footHint').textContent='條件自動存本機｜'+new Date().toLocaleDateString('zh-HK');
 
   /* 掛到 06：插在原本智能條件面板後方，並把原面板隱藏（保留 DOM，不動 React） */
