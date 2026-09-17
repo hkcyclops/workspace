@@ -1422,6 +1422,11 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap #sp-tbl tbody td.name{font-weight:700}
 #sp-wrap /* 基金名 700（同 06 .fund-option b） */
 #sp-tbl tbody td.cell-pick{font-weight:400}
+#sp-wrap /* ⚠️ 數字字體必須跟 06 自己的列表一致：06 對所有數字欄位指定 mono 字族
+   （.fund-info-table .performance-cell / .results-row>span 等），我們原本是 Noto Sans TC → 不一致 */
+#sp-tbl tbody td.up,#sp-wrap #sp-tbl tbody td.down,#sp-wrap #sp-tbl tbody td.na,#sp-wrap #sp-tbl tbody td.num{
+  font-family:SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;font-variant-numeric:tabular-nums lining-nums;
+  font-feature-settings:"tnum" 1,"lnum" 1;font-kerning:none}
 #sp-wrap th,#sp-wrap td{padding:8px 5px;border-bottom:1px solid #eee3d4;text-align:right;white-space:nowrap;line-height:1.22}
 #sp-wrap /* 只有「代號／基金名」靠左；舊版 -n+3 會把第 3 欄（年初至今）也靠左 → 數據看起來擠在左邊 */
 th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
@@ -1445,6 +1450,9 @@ th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
 #sp-wrap /* 標籤：紅＋粗 */
 .dl b.fname{color:#2c2722;font-weight:800}
 #sp-wrap /* ④ 基金名加粗 */
+.dl b.num{font-family:SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;font-variant-numeric:tabular-nums lining-nums;
+  font-feature-settings:"tnum" 1,"lnum" 1;font-kerning:none}
+#sp-wrap /* ⑥ 數字字體同 06 */
 
 .vcnt{font-size:10px;color:#94897b;font-weight:700}
 #sp-wrap .pickhint{color:#9b1730;font-weight:800}
@@ -1925,10 +1933,11 @@ document.body.appendChild(__wrap);
   function detailHTML(f){
     var inner=[];
     /* ③④ 標籤用 <span class="k">（紅＋粗）、內容一律用 <b>（深＋粗）→ 類別與內容一眼可分 */
-    var r1=PERIODS.map(function(per){ return PLAB[per]+' <b>'+pct(mOf(f.code,per).returnPercent)+'</b>'; }).join('　');
-    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return '<b>'+(q==null?'—':Math.round(q))+'</b>'; }).join(' / ');
-    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' <b>'+(v==null?'—':(v.toFixed(2)+'%'))+'</b>'; }).join('　');
-    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' <b>'+(d==null?'—':(d.toFixed(2)+'%'))+'</b>'; }).join('　');
+    /* 數字值加 class="num" → 用 06 的 mono 字族；純中文值（類型/地區…）不加 */
+    var r1=PERIODS.map(function(per){ return PLAB[per]+' <b class="num">'+pct(mOf(f.code,per).returnPercent)+'</b>'; }).join('　');
+    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return '<b class="num">'+(q==null?'—':Math.round(q))+'</b>'; }).join(' / ');
+    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' <b class="num">'+(v==null?'—':(v.toFixed(2)+'%'))+'</b>'; }).join('　');
+    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' <b class="num">'+(d==null?'—':(d.toFixed(2)+'%'))+'</b>'; }).join('　');
     var r0 = f.rating||0;
     inner.push('<div class="dl"><b class="fname">'+f.code+'　'+(f.name||'')+'</b>'+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
     inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
