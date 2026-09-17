@@ -176,7 +176,7 @@ td.cell-pick{text-align:center}
   <header class="masthead">
     <p class="eyebrow">AIA · TMP2 / SMART PICKER（試用版）</p>
     <h1>智選基金</h1>
-    <p class="sub">依 <b>類型／地區／風險／晨星評級／派息日／平台歷史／回報／波動率</b> 等條件篩出基金；波動率與月榜同口徑（日報酬母體標準差 × √252，只對非派息基金有效）。<br>條件會自動記在本機。<a href="./06-fund-portfolio-workbench.html">← 回 06 基金組合</a></p>
+    <p class="sub">依 <b>類型／地區／風險／晨星評級／派息日／平台歷史／回報／波動率</b> 等條件篩出基金；波動率與月榜同口徑（日報酬母體標準差 × √252，只對非派息基金有效）。<br>條件不會自動記住；按「收藏」才會留住。<a href="./06-fund-portfolio-workbench.html">← 回 06 基金組合</a></p>
   </header>
 
   <div class="stage">
@@ -221,7 +221,6 @@ td.cell-pick{text-align:center}
   function step(t){ var e=document.getElementById('loading'); if(e) e.textContent=t; }
   var V = new Date().toISOString().slice(0,10).replace(/-/g,'');
   var BASE = './';
-  var LS_KEY = 'calculator-hub-smart-picker-v1';
   var LS_PRESET = 'calculator-hub-smart-picker-presets-v1';
   var D = {};                                  // 資料
   var CATS = {type:[], region:[]};             // 由 assetClass 拆出
@@ -256,7 +255,9 @@ td.cell-pick{text-align:center}
     await loadScript('smart-metrics');
     D.sm = fd('smart-metrics')||{};
     step('建立索引…');
-    buildMeta(); restore();
+    buildMeta();
+    /* 條件不再自動存本機：每次開頁都從「不限」開始；清掉舊版殘留的鍵 */
+    try{ localStorage.removeItem('calculator-hub-smart-picker-v1'); }catch(e){}
     step('渲染面板…');
     render(); $('loading').hidden=true; $('body').hidden=false;
     step('');
@@ -391,7 +392,7 @@ td.cell-pick{text-align:center}
       g.open().forEach(function(x){
         var on = S[g.k].indexOf(x)>=0;
         var b=el('button','chip'+(on?' on':''), g.val(x));
-        b.onclick=function(){ var i=S[g.k].indexOf(x); if(i<0)S[g.k].push(x); else S[g.k].splice(i,1); render(); save(); run(); };
+        b.onclick=function(){ var i=S[g.k].indexOf(x); if(i<0)S[g.k].push(x); else S[g.k].splice(i,1); render(); run(); };
         cc.appendChild(b);
       });
       box.appendChild(lab); box.appendChild(cc); gs.appendChild(box);
@@ -409,7 +410,7 @@ td.cell-pick{text-align:center}
      ['1／3／5 年都正回報',{ret:{'1Y':{min:0},'3Y':{min:0},'5Y':{min:0}}}],
      ['月底派息',{payday:['late']}]].forEach(function(p){
       var b=el('button','chip',p[0]);
-      b.onclick=function(){ Object.assign(S,p[1]); render(); save(); run(); toast('已套用：'+p[0]); };
+      b.onclick=function(){ Object.assign(S,p[1]); render(); run(); toast('已套用：'+p[0]); };
       ps.appendChild(b);
     });
     renderSums();
@@ -455,7 +456,7 @@ td.cell-pick{text-align:center}
         b.onclick = function(ev){
           ev.stopPropagation();
           PERIODS.forEach(function(per){ S.navP[per] = { min: t[2], max: t[3] }; });
-          openPane('navP', null); render(); save(); run();
+          openPane('navP', null); render(); run();
         };
         r.appendChild(b);
       });
@@ -485,7 +486,7 @@ td.cell-pick{text-align:center}
       [0,1,2,3,5,10].forEach(function(n){
         var on=(n===0? S.listYears==null : S.listYears===n);
         var b=el('button','chip'+(on?' on':''), n===0?'不限':('≥ '+n+' 年'));
-        b.onclick=function(ev){ ev.stopPropagation(); S.listYears = n===0?null:n; closePane(); render(); save(); run(); };
+        b.onclick=function(ev){ ev.stopPropagation(); S.listYears = n===0?null:n; closePane(); render(); run(); };
         r.appendChild(b);
       });
       p.appendChild(r); p.appendChild(acts('years'));
@@ -500,7 +501,7 @@ td.cell-pick{text-align:center}
         scr.innerHTML='';
         all.filter(function(h){ return !q.value || h.toLowerCase().indexOf(q.value.toLowerCase())>=0; }).forEach(function(h){
           var l=el('label'), cb=el('input'); cb.type='checkbox'; cb.checked=S.houses.indexOf(h)>=0;
-          cb.onchange=function(){ var i=S.houses.indexOf(h); if(cb.checked&&i<0)S.houses.push(h); if(!cb.checked&&i>=0)S.houses.splice(i,1); save(); renderSums(); run(); };
+          cb.onchange=function(){ var i=S.houses.indexOf(h); if(cb.checked&&i<0)S.houses.push(h); if(!cb.checked&&i>=0)S.houses.splice(i,1); renderSums(); run(); };
           l.appendChild(cb); l.appendChild(el('span','',h)); scr.appendChild(l);
         });
       }
@@ -520,7 +521,7 @@ td.cell-pick{text-align:center}
           var cur = S[key][per] || {};
           cur[t[0]] = (i.value === '' ? null : +i.value);
           if (cur.min == null && cur.max == null) delete S[key][per]; else S[key][per] = cur;
-          save(); renderSums(); run();
+          renderSums(); run();
         };
         r.appendChild(el('span','sig', t[1]));
         r.appendChild(i);
@@ -535,7 +536,7 @@ td.cell-pick{text-align:center}
       r.appendChild(el('span','hint',t[0]));
       var i=el('input'); i.type='number'; i.step='0.1';
       if(S[t[1]]!=null) i.value=S[t[1]];
-      i.oninput=function(){ S[t[1]] = i.value===''?null:+i.value; save(); renderSums(); run(); };
+      i.oninput=function(){ S[t[1]] = i.value===''?null:+i.value; renderSums(); run(); };
       r.appendChild(i);
     });
     return r;
@@ -550,7 +551,7 @@ td.cell-pick{text-align:center}
       if(k==='vol'){S.vol={};}
       if(k==='years'){S.listYears=null;}
       if(k==='house'){S.houses=[];}
-      closePane(); render(); save(); run();
+      closePane(); render(); run();
     };
     var o=el('button','k','完成');
     o.onclick=function(){ closePane(); render(); };
@@ -603,7 +604,7 @@ td.cell-pick{text-align:center}
         return x;
       }).join('、');
       var b=el('button','sum',t[1]+'：'+txt+' <span class="x">✕</span>');
-      b.onclick=function(){ S[t[0]]=[]; render(); save(); run(); };
+      b.onclick=function(){ S[t[0]]=[]; render(); run(); };
       box.appendChild(b);
     });
     /* 數值／其他類條件進摘要（按大類別，列出各期；點 ✕ 清掉該類） */
@@ -618,11 +619,11 @@ td.cell-pick{text-align:center}
     extra.forEach(function(t){
       if(!t[1]) return;
       var b=el('button','sum',t[0]+'：'+t[1]+' <span class="x">✕</span>');
-      b.onclick=function(){ t[2](); render(); save(); run(); };
+      b.onclick=function(){ t[2](); render(); run(); };
       box.appendChild(b);
     });
     if(S.houses.length){ var b=el('button','sum','公司：'+S.houses.length+' 家 <span class="x">✕</span>');
-      b.onclick=function(){ S.houses=[]; render(); save(); run(); }; box.appendChild(b); }
+      b.onclick=function(){ S.houses=[]; render(); run(); }; box.appendChild(b); }
   }
   var HOVER_OK = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
   function detailHTML(f){
@@ -701,7 +702,7 @@ var SHOW_ALL = false;
     var tr=el('tr');
     C.forEach(function(c){
       var t=el('th','',c[1]+(S.sort===c[0]?(S.dir<0?' ▼':' ▲'):''));
-      t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} save(); run(); };
+      t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} run(); };
       tr.appendChild(t);
     });
     var thPick=el('th','','選取');
@@ -832,8 +833,6 @@ var SHOW_ALL = false;
   }
 
   /* ---------- 本機記憶 ---------- */
-  function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
-  function restore(){ try{ var v=JSON.parse(localStorage.getItem(LS_KEY)||'null'); if(v) Object.assign(S, v); }catch(e){} }
 
   /* ---------- 事件 ---------- */
   /* 用 panel 反查 .stage，避免抓到別的元素 */
@@ -855,7 +854,7 @@ var SHOW_ALL = false;
     Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
     S.ret={}; S.navP={}; S.vol={}; S.houses=[];
     S.yieldMin=S.yieldMax=null; S.listYears=null;
-    render(); save(); run(); toast('已重置');
+    render(); run(); toast('已重置');
   };
   function favs(){ try{ return JSON.parse(localStorage.getItem(LS_PRESET)||'[]'); }catch(e){ return []; } }
   function setFavs(a){ try{ localStorage.setItem(LS_PRESET, JSON.stringify(a)); }catch(e){} }
@@ -875,7 +874,7 @@ var SHOW_ALL = false;
       var r=el('div','row fav');
       r.appendChild(el('span','favname', it.name+'<em>'+(new Date(it.at).toLocaleDateString('zh-HK'))+'</em>'));
       var ap=el('button','chip','取回');
-      ap.onclick=function(ev){ ev.stopPropagation(); S=JSON.parse(JSON.stringify(it.s)); save(); render(); run(); closePane(); toast('已取回：'+it.name); };
+      ap.onclick=function(ev){ ev.stopPropagation(); S=JSON.parse(JSON.stringify(it.s)); render(); run(); closePane(); toast('已取回：'+it.name); };
       var del=el('button','chip','刪除');
       del.onclick=function(ev){ ev.stopPropagation(); var b=favs(); b.splice(idx,1); setFavs(b); openPane('favs', null); toast('已刪除'); };
       r.appendChild(ap); r.appendChild(del); scr.appendChild(r);
