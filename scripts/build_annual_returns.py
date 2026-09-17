@@ -11,7 +11,14 @@
 import re, os, sys, glob, json, datetime, bisect
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-D = os.path.join(HERE, "_deploy-workspace", "data")
+# 雙佈局自適應：
+#   本地：<workspace>/calculator-hub/scripts/ → 資料在 <workspace>/calculator-hub/_deploy-workspace/data
+#   Actions：repo 根就是 deploy workspace → 資料在 <repo>/data
+#   （2026-09-14 加入本步驟時只寫了本地佈局，導致 Actions 連續 3 天 FileNotFoundError、
+#     後面的 Commit 步驟被跳過、線上資料自 9/13 起停止更新）
+_WS = os.path.join(HERE, "_deploy-workspace")
+ROOT = _WS if os.path.isdir(_WS) else HERE
+D = os.path.join(ROOT, "data")
 OUT = os.path.join(D, "annual-returns.js")
 START_YEAR = 2021            # 固定起點（2021 起；之後每年自動追加，不會丟掉舊年份）
 FALLBACK_ANCHOR = datetime.date(2026, 9, 10)
@@ -123,7 +130,7 @@ def main():
     js = "window.__ANNUAL__=" + json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + ";\n"
     open(OUT, "w", encoding="utf-8", newline="").write(js)
     print(f"基準 {anchor}｜年份 {years[0]}~{years[-1]}")
-    print(f"已寫入 {os.path.relpath(OUT, HERE)}：{len(out)} 檔 × {len(years)} 年"
+    print(f"已寫入 {os.path.relpath(OUT, ROOT)}：{len(out)} 檔 × {len(years)} 年"
           f"（{len(js.encode())/1024:.1f} KB，無資料格 {miss}）")
     for y in years:
         k = sum(1 for c in out if str(y) in out[c])
