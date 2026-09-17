@@ -1365,9 +1365,13 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .reset{appearance:none;background:0 0;border:1px solid #b78e42;color:#8d641d;font:inherit;font-size:11.5px;
   padding:3px 8px;cursor:pointer}
 #sp-wrap .panel{padding:12px 12px 14px;contain:layout style}
+#sp-wrap /* ② 條件列表加一體框：表示「呢一塊係一個整體」 */
+#sp-body{border:1px solid #eadfce;border-radius:10px;padding:10px 12px 12px;background:#fffdf8}
 #sp-wrap .panel[hidden]{display:none}
 #sp-wrap /* ① 面板收合時，底部那一排（查看結果／收藏／我的收藏／加入組合／提示）也一起收 */
 .panel[hidden]~.foot{display:none}
+#sp-wrap /* 但「查看結果」只係收埋篩選項，底部按鈕列要留低 → .stage.keepfoot 例外（特異性要高過上面） */
+.stage.keepfoot .panel[hidden]~.foot{display:flex}
 #sp-wrap .presets{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
 #sp-wrap .presets .lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#9b1730;margin-right:2px}
 #sp-wrap .groups{display:grid;grid-template-columns:1fr 1fr;gap:2px 22px;margin-top:8px}
@@ -1502,7 +1506,7 @@ th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
 <script id="SP_PICKER_V1">
 (function(){
 if (document.getElementById("sp-wrap")) return;   /* 已注入 */
-var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0xMS45NiAxMS45NkE1LjYgNS42IDAgMSAwIDQuMDQgMTEuOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTggOC4yIDEwLjQgNS44IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuaZuuiDveaineS7tjxzcGFuIGNsYXNzPSJjYXJldCI+4pa4PC9zcGFuPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+5p+l55yL57WQ5p6cPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBnb2xkIiBpZD0ic3Atc2F2ZVByZXNldCI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz7mlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0ic3AtbXlGYXYiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9zdmc+5oiR55qE5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3AtYWRkVG8wNiIgZGF0YS1hZGQ9IjEiIGRpc2FibGVkPuWKoOWFpee1hOWQiDwvYnV0dG9uPgogICAgICA8c3BhbiBjbGFzcz0iaGludCIgaWQ9InNwLWZvb3RIaW50Ij48L3NwYW4+CiAgICA8L2Rpdj4KICA8L2Rpdj4KCiAgPHNlY3Rpb24gY2xhc3M9InJlcyIgaWQ9InNwLXJlcyIgaGlkZGVuPgogICAgPGRpdiBpZD0ic3AtcmVzSGVhZCIgc3R5bGU9Im1hcmdpbi1ib3R0b206NnB4O2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7Z2FwOjEwcHg7ZmxleC13cmFwOndyYXAiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICA8L3NlY3Rpb24+CjxkaXYgY2xhc3M9InBhbmUiIGlkPSJzcC1wYW5lIiBoaWRkZW4+PC9kaXY+CjxkaXYgY2xhc3M9InRvYXN0IiBpZD0ic3AtdG9hc3QiPjwvZGl2Pg==";
+var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0xMS45NiAxMS45NkE1LjYgNS42IDAgMSAwIDQuMDQgMTEuOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTggOC4yIDEwLjQgNS44IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuaZuuiDveaineS7tjxzcGFuIGNsYXNzPSJjYXJldCI+4pa4PC9zcGFuPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+PHNwYW4gY2xhc3M9InZ0eHQiPuafpeeci+e1kOaenDwvc3Bhbj48L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGdvbGQiIGlkPSJzcC1zYXZlUHJlc2V0Ij48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggMS44bDEuOSAzLjkgNC4zLjYtMy4xIDMgLjcgNC4zTDggMTEuNmwtMy44IDIgLjctNC4zLTMuMS0zIDQuMy0uNnoiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPuaUtuiXjzwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4iIGlkPSJzcC1teUZhdiI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJjdXJyZW50Q29sb3IiLz48L3N2Zz7miJHnmoTmlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC1hZGRUbzA2IiBkYXRhLWFkZD0iMSIgZGlzYWJsZWQ+5Yqg5YWl57WE5ZCIPC9idXR0b24+CiAgICAgIDxzcGFuIGNsYXNzPSJoaW50IiBpZD0ic3AtZm9vdEhpbnQiPjwvc3Bhbj4KICAgIDwvZGl2PgogIDwvZGl2PgoKICA8c2VjdGlvbiBjbGFzcz0icmVzIiBpZD0ic3AtcmVzIiBoaWRkZW4+CiAgICA8ZGl2IGlkPSJzcC1yZXNIZWFkIiBzdHlsZT0ibWFyZ2luLWJvdHRvbTo2cHg7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtnYXA6MTBweDtmbGV4LXdyYXA6d3JhcCI+PC9kaXY+CiAgICA8ZGl2IHN0eWxlPSJvdmVyZmxvdy14OmF1dG8iPjx0YWJsZSBpZD0ic3AtdGJsIj48dGhlYWQ+PC90aGVhZD48dGJvZHk+PC90Ym9keT48L3RhYmxlPjwvZGl2PgogIDwvc2VjdGlvbj4KPGRpdiBjbGFzcz0icGFuZSIgaWQ9InNwLXBhbmUiIGhpZGRlbj48L2Rpdj4KPGRpdiBjbGFzcz0idG9hc3QiIGlkPSJzcC10b2FzdCI+PC9kaXY+";
 var __bytes = Uint8Array.from(atob(__b64), function(c){ return c.charCodeAt(0); });
 var __mark = new TextDecoder("utf-8").decode(__bytes);
 var __wrap = document.createElement("div"); __wrap.id = "sp-wrap";
@@ -2070,7 +2074,11 @@ var SHOW_ALL = false;
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
       + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）'
       + '｜<b class="pickhint">勾選方格後按「加入組合」，即送進 06 的組合配置</b></span>';
-    $('sp-res').hidden = !RES_SHOWN || $('sp-panel').hidden;   /* 面板收合時，基金表也一起收 */
+    /* 「查看結果」只收篩選項（keepfoot）時，結果表要留住；只有撳標題成塊收起先收埋結果 */
+    var _st=$('sp-panel').closest('.stage');
+    var _folded = $('sp-panel').hidden && !(_st && _st.classList.contains('keepfoot'));
+    $('sp-res').hidden = !RES_SHOWN || _folded;
+
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(2)+'%'); }   /* ② 一律 2 位 */
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
@@ -2147,9 +2155,15 @@ var SHOW_ALL = false;
 
   /* ---------- 事件 ---------- */
   /* 用 panel 反查 .stage，避免抓到別的元素 */
-  function syncStage(){ var st=$('sp-panel').closest('.stage'); if(st) st.classList.toggle('open', !$('sp-panel').hidden); }
+  function syncStage(){
+    var st=$('sp-panel').closest('.stage');
+    if (st) st.classList.toggle('open', !$('sp-panel').hidden);
+    var b=$('sp-viewRes'), t=b && b.querySelector('.vtxt');
+    if (t) t.textContent = $('sp-panel').hidden ? '更改條件' : '查看結果';
+  }
   $('sp-toggle').onclick=function(){
     var p=$('sp-panel'); p.hidden=!p.hidden;
+    var _st=p.closest('.stage'); if (_st) _st.classList.remove('keepfoot');   /* 撳標題收＝成塊收 */
     syncStage();
     this.setAttribute('aria-expanded', String(!p.hidden));
     this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
@@ -2192,10 +2206,23 @@ var SHOW_ALL = false;
     });
     p.appendChild(scr);
   };
-  $('sp-viewRes').onclick=function(){ var p=$('sp-panel'); if(!p.hidden) $('sp-toggle').click();
-    RES_SHOWN=true; run(); $('sp-res').scrollIntoView({behavior:'smooth'}); };
+  /* 查看結果 ⇄ 更改條件：只收合「篩選項」本身，底部按鈕列留低（唔係成塊收起） */
+  $('sp-viewRes').onclick=function(){
+    var p=$('sp-panel'), st=p.closest('.stage');
+    if (!p.hidden){
+      p.hidden=true;
+      if (st) st.classList.add('keepfoot');        /* 底部留低 */
+      RES_SHOWN=true; run();
+      $('sp-res').scrollIntoView({behavior:'smooth'});
+    } else {
+      p.hidden=false;
+      if (st) st.classList.remove('keepfoot');
+      p.scrollIntoView({behavior:'smooth'});
+    }
+    syncStage();
+  };
   $('sp-addTo06').onclick=addTo06;      /* 唯一的「加入組合」（底部）；結果表頭那顆已移除，避免重複 */
-  $('sp-footHint').textContent='條件自動存本機｜'+new Date().toLocaleDateString('zh-HK');
+  $('sp-footHint').textContent='按「收藏」才留住｜'+new Date().toLocaleDateString('zh-HK');
 
   /* 掛到 06：插在原本智能條件面板後方，並把原面板隱藏（保留 DOM，不動 React） */
   function mountInto06(){
