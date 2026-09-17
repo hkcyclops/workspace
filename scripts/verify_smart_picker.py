@@ -42,34 +42,12 @@ try:
         p("  副標：代號=%r 名稱=%r" % (sub["代號副標"], sub["名稱副標"]))
         chk(sub["代號副標"] and ("★" in sub["代號副標"] or "—" in sub["代號副標"]), "代號副標＝星級")
         chk(sub["名稱副標"] and sub["名稱副標"].count("·") == 2, "名稱副標＝類型 · 地區 · 幣種")
-        # (2) 檢視 chips
-        vc = pg.eval_on_selector_all(".vchip", "els=>els.map(e=>e.textContent)")
-        p("  檢視 chips:", vc)
-        chk(vc == ["基本（表現）", "風險"], "檢視＝基本／風險")
+        # (2) 已撤掉檢視切換（單一表現檢視）
+        chk(len(pg.query_selector_all(".vchip")) == 0, "無檢視切換 chips（已依用戶要求移除）")
         th1 = pg.eval_on_selector_all("#tbl thead th", "els=>els.map(e=>e.textContent.replace(/[▼▲ ]/g,''))")
-        p("  基本表頭:", th1)
-        chk(th1 == ["代號","基金名","年初至今","3個月","1年","3年","5年","最新年化派息率","加入"], "基本欄位符合規格")
-        # (3) 風險檢視
-        pg.locator(".vchip").nth(1).click(); pg.wait_for_timeout(700)
-        th2 = pg.eval_on_selector_all("#tbl thead th", "els=>els.map(e=>e.textContent.replace(/[▼▲ ]/g,''))")
-        p("  風險表頭:", th2)
-        chk(th2 == ["代號","基金名","波動率1年","波動率3年","波動率5年","最大回撤1年","最大回撤3年","最大回撤5年","加入"], "風險欄位")
-        pg.locator(".groups .g:nth-child(3) .chip").first.click(); pg.wait_for_timeout(600)   # 派息基金
-        zrow = pg.evaluate("""() => {
-            const rows = Array.from(document.querySelectorAll('#tbl tbody tr.drow'));
-            const z = rows.find(r => /^Z/.test(r.children[0].textContent.trim()));
-            const nz = rows.find(r => !/^Z/.test(r.children[0].textContent.trim()));
-            const all = rows.map(r=>r.children[0].textContent.trim());
-            return {列數: rows.length, 全為Z: all.every(c=>/^Z/.test(c)),
-                    波動率全為破折號: rows.every(r=>r.children[2].textContent.trim()==='—'),
-                    樣本: rows.slice(0,3).map(r=>[r.children[0].textContent.trim(), r.children[2].textContent.trim()])};
-        }""")
-        p("  風險樣本（已篩派息基金）:", zrow)
-        chk(zrow["全為Z"] and zrow["波動率全為破折號"], "派息基金(Z)在風險檢視全為「—」")
-        pg.click("#reset"); pg.wait_for_timeout(500)
-        pg.locator(".vchip").nth(1).click(); pg.wait_for_timeout(500)   # 回風險檢視
-        pg.click("#reset"); pg.wait_for_timeout(500)
-        pg.locator(".vchip").nth(1).click(); pg.wait_for_timeout(600)
+        p("  表頭:", th1)
+        chk(th1 == ["代號","基金名","年初至今","3個月","1年","3年","5年","最新年化派息率","加入"], "欄位符合規格")
+        chk(len(th1) == 9, "列數＝9（不橫向滾）")
         # (4) 點列展開
         pg.locator("#tbl tbody tr.drow").first.click(); pg.wait_for_timeout(500)
         det = pg.evaluate("""() => { const x=document.querySelector('tr.xrow');
@@ -91,7 +69,6 @@ try:
         p("  依波動率3年排序（前4）:", seq)
         chk(seq == sorted(seq, reverse=True), "排序生效（大到小）")
         # (7) 收藏取回
-        pg.locator(".vchip").first.click(); pg.wait_for_timeout(400)
         pg.click("#savePreset"); pg.wait_for_timeout(500)
         pg.click("#reset"); pg.wait_for_timeout(400)
         pg.click("#myFav"); pg.wait_for_timeout(500)
