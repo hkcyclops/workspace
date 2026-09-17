@@ -84,23 +84,34 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .btn.k .ic{color:#fff7ee}
 .res{margin-top:14px;contain:content}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-/* 效能：固定佈局＋單行省略（auto 佈局要為 146×N 格算 min-content，展開/收合會卡 1–2 秒） */
-#tbl{table-layout:fixed}
-#tbl th:nth-child(1),#tbl td:nth-child(1){width:58px}
-#tbl th:nth-child(2),#tbl td:nth-child(2){width:30%}
-#tbl th:nth-child(3),#tbl td:nth-child(3){width:82px}
-#tbl th:nth-child(4),#tbl td:nth-child(4){width:74px}
-#tbl th:nth-child(5),#tbl td:nth-child(5){width:70px}
-#tbl th:nth-child(6),#tbl td:nth-child(6){width:70px}
-#tbl th:nth-child(7),#tbl td:nth-child(7){width:70px}
-#tbl th:nth-child(8),#tbl td:nth-child(8){width:110px}
-#tbl th:nth-child(9),#tbl td:nth-child(9){width:40px}
 #tbl th:nth-child(12),#tbl td:nth-child(12){width:40px}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
 th{font-family:Georgia,serif;font-size:12px;color:var(--gray);cursor:pointer;user-select:none;background:#fffdf8}
 th:hover{color:var(--red)}
 td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+td.cell-code{line-height:1.25}
+.sub{display:block;font-size:10px;line-height:1.25;color:var(--gray);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td .nm{display:block;line-height:1.3}
+.sub.stars{color:var(--gold);font-size:10.5px;letter-spacing:.5px}
+tbody tr.drow{cursor:pointer}
+tbody tr.drow:hover td{background:#fdfaf3}
+tr.drow td{vertical-align:top}
+tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
+  font-size:12px;line-height:1.65;padding:9px 10px}
+tr.xrow .dl{margin:0 0 2px}
+tr.xrow .dl b{color:var(--ink)}
+tr.xrow .k{color:var(--gray);font-weight:700;margin-right:4px}
+tr.xrow .go{color:var(--red);text-decoration:none}
+.vchips{display:inline-flex;align-items:center;gap:6px;margin-right:10px}
+.vchips b{font-size:10.5px;color:var(--gray);letter-spacing:.06em}
+.vchip{appearance:none;border:0;background:0 0;font:inherit;font-size:12px;color:var(--gray);cursor:pointer;padding:2px 1px}
+.vchip:hover{color:var(--red)}
+.vchip.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
+.vcnt{font-size:11.5px;color:var(--gray)}
+#dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
+  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
+#dcard[hidden]{display:none}
 .code{font-family:Georgia,serif;font-weight:700}
 .up{color:var(--up)} .down{color:var(--down)} .na{color:var(--gray)}
 .stars{color:var(--gold);letter-spacing:.5px}
@@ -189,7 +200,7 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     type:[], region:[], risk:[], ccy:[], rate:[], nav:[], payday:[], dist:[], years:null,
     ret:{}, navP:{}, vol:{},          // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
     yieldMin:null, yieldMax:null,
-    houses:[], listYears:null, sort:'1Y', dir:-1
+    houses:[], listYears:null, sort:'1Y', dir:-1, view:'basic'
   };
   var PICKED = [];
   var el = function(t,c,h){ var e=document.createElement(t); if(c) e.className=c; if(h!==undefined) e.innerHTML=h; return e; };
@@ -220,6 +231,13 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     render(); $('loading').hidden=true; $('body').hidden=false;
     step('');
     run();
+    /* 手機：預設收合（全屏抽屜不該一開就蓋住結果），桌面維持展開 */
+    if (innerWidth < 768){
+      $('panel').hidden = true;
+      var tg = $('toggle');
+      tg.setAttribute('aria-expanded','false');
+      var ca = tg.querySelector('.caret'); if(ca) ca.textContent = '▸';
+    }
   }
 
   /* ---------- 由 assetClass 拆「類型／地區」 ---------- */
@@ -256,12 +274,13 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     var row = rowOf(code); if(!row) return {};
     return ((row.performancePeriods||{})[per]) || (row.periods||{})[per] || {};
   }
-  function volOf(code, per){                   // 該期年化波動率（A：派息基金＝Z 開頭不給）
+  function volPair(code, per){                 // 該期 [年化波動率%, 最大回撤%]（A：派息基金＝Z 開頭不給）
     if (isDist(code)) return null;
     var r = (D.vol.funds||{})[code]; if(!r) return null;
-    var hit = r[per];
-    return hit ? hit[0] : null;
+    return r[per] || null;
   }
+  function volOf(code, per){ var h=volPair(code,per); return h ? h[0] : null; }
+  function mddOf(code, per){ var h=volPair(code,per); return h ? h[1] : null; }
   /* 派息基金＝代號 Z 開頭（與 06 bundle 的判據 Ho() 一致；用戶明確：只有 Z 開頭才是派息基金） */
   function isDist(code){ return /^Z/i.test(String(code||'').trim()); }
   function yieldOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
@@ -321,6 +340,8 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   function sortVal(f,k){
     if (k==='yield') return yieldOf(f.code);
     if (k==='rate') return f.rating||0;
+    if (k.indexOf('vol')===0) return volOf(f.code, k.slice(3));
+    if (k.indexOf('mdd')===0) return mddOf(f.code, k.slice(3));
     if (PERIODS.indexOf(k)>=0) return mOf(f.code, k).returnPercent;
     return f.code;
   }
@@ -575,20 +596,84 @@ td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     if(S.houses.length){ var b=el('button','sum','公司：'+S.houses.length+' 家 <span class="x">✕</span>');
       b.onclick=function(){ S.houses=[]; render(); save(); run(); }; box.appendChild(b); }
   }
+  var HOVER_OK = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  function detailHTML(f){
+    var inner=[];
+    var r1=PERIODS.map(function(per){ return PLAB[per]+' '+pct(mOf(f.code,per).returnPercent); }).join('　');
+    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return q==null?'—':Math.round(q); }).join(' / ');
+    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' '+(v==null?'—':(v.toFixed(2)+'%')); }).join('　');
+    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' '+(d==null?'—':(d.toFixed(1)+'%')); }).join('　');
+    var r0 = f.rating||0;
+    inner.push('<div class="dl"><b>'+f.code+'</b>　'+(f.name||'')+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
+    inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
+    inner.push('<div class="dl"><span class="k">NAV 分位</span>'+r2+'</div>');
+    inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
+    inner.push('<div class="dl"><span class="k">類型</span>'+f._type+'　<span class="k">地區</span>'+f._region
+      +'　<span class="k">幣種</span>'+(f.currencyCode||'—')+'　<span class="k">風險</span>'+(f.risk||'—')
+      +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
+      +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
+      +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
+    inner.push('<div class="dl"><a class="go" href="./06-fund-portfolio-workbench.html?fund='+f.code+'">在 06 開啟 '+f.code+' 走勢圖 →</a></div>');
+    return inner.join('');
+  }
+  function toggleRow(code, row){
+    var nx = row.nextElementSibling;
+    if (nx && nx.className === 'xrow'){ nx.remove(); return; }
+    var tb = row.parentNode;
+    var tr = el('tr','xrow'), td = el('td','');
+    td.colSpan = 99;
+    var f = D.byCode[code]; if(!f) return;
+    td.innerHTML = detailHTML(f);
+    tr.appendChild(td);
+    tb.insertBefore(tr, row.nextSibling);
+  }
+  function showCard(code, row){
+    var f = D.byCode[code]; if(!f) return;
+    var c = document.getElementById('dcard');
+    if(!c){ c = el('div',''); c.id='dcard'; document.body.appendChild(c); }
+    c.innerHTML = detailHTML(f); c.hidden = false;
+    var r = row.getBoundingClientRect();
+    var top = r.bottom + 6, h = c.offsetHeight, w = c.offsetWidth;
+    if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+    c.style.left = Math.min(Math.max(8, r.left), innerWidth - w - 8) + 'px';
+    c.style.top = top + 'px';
+  }
+  function hideCard(){ var c=document.getElementById('dcard'); if(c) c.hidden = true; }
   function run(){
+    hideCard();
     var out=results();
     $('hit').textContent='符合 '+out.length+' 檔 / '+(D.cat.funds||[]).length;
     renderTable(out);
   }
   var ROW_CAP = 80;        // 預設只渲染 80 列（146×12 全渲染會拖慢展開／收合）
 var SHOW_ALL = false;
-  var COLS=[['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],['3Y','3 年'],['5Y','5 年'],
-            ['yield','最新年化派息率']];
+  /* 欄位依檢視而異；副標雙行讓「類型／地區／幣種／評級」不佔新欄 */
+  function cols(){
+    var base = [['code','代號'],['name','基金名']];
+    if (S.view === 'risk'){
+      return base.concat([['vol1Y','波動率 1 年'],['vol3Y','波動率 3 年'],['vol5Y','波動率 5 年'],
+                          ['mdd1Y','最大回撤 1 年'],['mdd3Y','最大回撤 3 年'],['mdd5Y','最大回撤 5 年']]);
+    }
+    return base.concat([['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],['3Y','3 年'],['5Y','5 年'],
+                        ['yield','最新年化派息率']]);
+  }
+  var WID = {  // 固定佈局用：'*' 表示自適應（吃剩餘寬度）
+    code:58, name:'*', YTD:78, '3M':72, '1Y':70, '3Y':70, '5Y':70, yield:104,
+    vol1Y:86, vol3Y:86, vol5Y:86, mdd1Y:104, mdd3Y:104, mdd5Y:104
+  };
   function renderTable(rows){
     var th=document.querySelector('#tbl thead'), tb=document.querySelector('#tbl tbody');
     th.innerHTML=''; tb.innerHTML='';
+    var C = cols();
+    /* 欄寬用 colgroup（兩種檢視欄數不同，比 nth-child 乾淨） */
+    var old = document.querySelector('#tbl colgroup'); if(old) old.remove();
+    var cg = document.createElement('colgroup');
+    C.forEach(function(c){ var co=document.createElement('col'); var w=WID[c[0]];
+      if(w!=='*') co.style.width=w+'px'; cg.appendChild(co); });
+    var co2=document.createElement('col'); co2.style.width='40px'; cg.appendChild(co2);
+    document.querySelector('#tbl').insertBefore(cg, document.querySelector('#tbl thead'));
     var tr=el('tr');
-    COLS.forEach(function(c){
+    C.forEach(function(c){
       var t=el('th','',c[1]+(S.sort===c[0]?(S.dir<0?' ▼':' ▲'):''));
       t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} save(); run(); };
       tr.appendChild(t);
@@ -597,29 +682,65 @@ var SHOW_ALL = false;
     th.appendChild(tr);
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
     rows.slice(0, lim).forEach(function(f){
-      var row=el('tr');
-      row.appendChild(el('td','','<span class="code">'+f.code+'</span>'));
-      row.appendChild(el('td','name', f.name||''));
-      PERIODS.forEach(function(per){
-        var v = mOf(f.code, per).returnPercent;
-        row.appendChild(el('td', cls(v), pct(v)));
-      });
-      var y = yieldOf(f.code);
-      row.appendChild(el('td','', y==null?'—':(y.toFixed(2)+'%')));
+      var row=el('tr'); row.className='drow'; row.setAttribute('data-code', f.code);
+      /* 代號（副標：星級） */
+      var r0 = f.rating||0;
+      row.appendChild(el('td','cell-code',
+        '<span class="code">'+f.code+'</span><span class="sub stars">'+(r0?('★'.repeat(r0)):'<span class="ms-na">—</span>')+'</span>'));
+      /* 基金名（副標：類型 · 地區 · 幣種） */
+      row.appendChild(el('td','name',
+        '<span class="nm">'+(f.name||'')+'</span><span class="sub">'+f._type+' · '+f._region+' · '+(f.currencyCode||'')+'</span>'));
+      if (S.view === 'risk'){
+        ['1Y','3Y','5Y'].forEach(function(per){
+          var v = volOf(f.code, per);
+          row.appendChild(el('td', v==null?'na':'', v==null?'—':(v.toFixed(2)+'%')));
+        });
+        ['1Y','3Y','5Y'].forEach(function(per){
+          var d = mddOf(f.code, per);
+          row.appendChild(el('td', d==null?'na':'down', d==null?'—':(d.toFixed(1)+'%')));
+        });
+      } else {
+        PERIODS.forEach(function(per){
+          var v = mOf(f.code, per).returnPercent;
+          row.appendChild(el('td', cls(v), pct(v)));
+        });
+        var y = yieldOf(f.code);
+        row.appendChild(el('td','', y==null?'—':(y.toFixed(2)+'%')));
+      }
       var td=el('td',''), b=el('button','add','+');
       b.title='加入待加入清單';
-      b.onclick=function(){ if(PICKED.indexOf(f.code)<0){PICKED.push(f.code); renderPicked(); toast('已加入 '+f.code);} };
+      b.onclick=function(ev){ ev.stopPropagation(); if(PICKED.indexOf(f.code)<0){PICKED.push(f.code); renderPicked(); toast('已加入 '+f.code);} };
       td.appendChild(b); row.appendChild(td);
+      /* 點列展開長尾（手機／桌面都可）；桌面另給 hover 卡 */
+      row.onclick=function(){ toggleRow(f.code, row); };
+      if (HOVER_OK){
+        row.addEventListener('mouseenter', function(){ showCard(f.code, row); });
+        row.addEventListener('mouseleave', hideCard);
+      }
       tb.appendChild(row);
     });
     if(rows.length > lim){
       var mb=el('button','btn','顯示全部 '+rows.length+' 檔');
       mb.style.marginTop='8px';
       mb.onclick=function(){ SHOW_ALL=true; run(); };
-      tb.appendChild(el('tr')).appendChild(el('td','')).appendChild(mb);
-      var trLast=tb.lastChild; trLast.firstChild.colSpan=12;
+      var trM=el('tr'), tdM=el('td',''); tdM.colSpan=C.length+1; tdM.appendChild(mb); trM.appendChild(tdM); tb.appendChild(trM);
     }
-    $('resHead').textContent='共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')+'；派息率只對派息基金（Z 開頭）顯示，其餘為「—」';
+    /* 檢視 chips */
+    var vh = document.getElementById('resHead');
+    vh.innerHTML = '<span class="vchips"><b>檢視</b>'
+      + '<button class="vchip'+(S.view==='basic'?' on':'')+'" data-v="basic">基本（表現）</button>'
+      + '<button class="vchip'+(S.view==='risk'?' on':'')+'" data-v="risk">風險</button></span>'
+      + '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
+      + '｜點列可展開完整資料'+(S.view==='risk'?'｜波動率／回撤只對非派息基金（非 Z 開頭）':'｜派息率只對派息基金（Z 開頭）')+'</span>';
+    Array.prototype.forEach.call(vh.querySelectorAll('.vchip'), function(x){
+      x.onclick=function(ev){
+        ev.stopPropagation();
+        S.view = x.getAttribute('data-v');
+        var keys = cols().map(function(c){ return c[0]; });
+        if (keys.indexOf(S.sort) < 0) { S.sort = keys[2]; S.dir = -1; }
+        save(); run();
+      };
+    });
     $('res').hidden=false;
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
