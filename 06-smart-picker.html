@@ -27,7 +27,7 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
   background:linear-gradient(135deg,#fffdf7f5,#f9f4ead1);border-bottom:0}
 .stage.open .bar{border-bottom:1px solid #eadfce}
 .toggle{appearance:none;border:0;background:0 0;font:inherit;font-weight:800;cursor:pointer;color:var(--ink);
-  display:inline-flex;align-items:center;gap:7px;padding:2px 0;color:#7f1028}
+  display:inline-flex;align-items:center;gap:7px;padding:2px 0;color:#7f1028;font-size:12px}
 .toggle .ic{width:15px;height:15px;flex:0 0 auto;display:block}
 .toggle .caret{color:var(--red);font-size:11px}
 .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 180px;min-width:0}
@@ -53,12 +53,12 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .chip:hover{color:var(--red)}
 .chip.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
 .chip.na{color:var(--line-2);cursor:default}
-.pop{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:#8f0d25;cursor:pointer;
+.pop{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:#776d60;cursor:pointer;
   padding:2px 1px;display:inline-flex;align-items:center;gap:4px}
 .pop:hover{color:var(--red)}
-.pop .v{font-family:ui-monospace,Consolas,monospace;font-weight:700}
 .pop.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
 .pop .caret{font-size:9px;color:var(--gray)}
+/* .pop.on 沿用 var(--lit-*)，與 .chip.on 一致 */
 .pane{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-2);box-shadow:0 10px 28px rgba(30,20,10,.16);
   padding:10px;min-width:200px}
 .pane[hidden]{display:none}
@@ -94,11 +94,14 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 table{width:100%;border-collapse:collapse;font-size:11px}
 #tbl{table-layout:fixed}
 #tbl th,#tbl td{overflow:hidden;text-overflow:ellipsis}
+#tbl th:last-child{text-align:center}      /* ⑤ 與 td.cell-pick 的居中對齊 */
+#tbl th{line-height:1.25}                   /* ⑦ 讓表頭可以排兩行 */
 #tbl tbody td{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em;font-weight:800}
 #tbl tbody td.name{font-weight:700}          /* 基金名 700（同 06 .fund-option b） */
 #tbl tbody td.cell-pick{font-weight:400}
 th,td{padding:8px 5px;border-bottom:1px solid #eee3d4;text-align:right;white-space:nowrap;line-height:1.22}
-th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
+/* 只有「代號／基金名」靠左；舊版 -n+3 會把第 3 欄（年初至今）也靠左 → 數據看起來擠在左邊 */
+th:nth-child(-n+2),td:nth-child(-n+2){text-align:left}
 th{font:inherit;font-size:10px;font-weight:800;color:#7e293e;background:#e9dfd0;
   border-bottom:1px solid #d8c8b3;cursor:pointer;user-select:none}
 th:hover{color:var(--red)}
@@ -112,14 +115,15 @@ tbody tr.drow.alt td{background:#fffaf2}
 tbody tr.drow:hover td{background:#f3e3cc}
 tr.drow td{vertical-align:top}
 tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
-  font-size:12px;line-height:1.65;padding:9px 10px}
+  font-size:11px;line-height:1.6;padding:8px 10px}
 tr.xrow .dl{margin:0 0 2px}
-tr.xrow .dl b{color:#3e332c}
-tr.xrow .k{color:#9b1730;font-weight:700;margin-right:4px}
+.dl b{color:#3e332c;font-weight:700}
+.dl .k{color:#9b1730;font-weight:700;margin-right:4px}          /* 標籤：紅＋粗 */
+.dl b.fname{color:#2c2722;font-weight:800}                      /* ④ 基金名加粗 */
 
 .vcnt{font-size:10px;color:#94897b;font-weight:700}
 #dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
-  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
+  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:11px;line-height:1.6}
 #dcard[hidden]{display:none}
 .code{font-family:Georgia,serif;font-weight:700;font-size:14px;color:#8f0d25}
 .up{color:var(--up)} .down{color:var(--down)} .na{color:var(--gray)}
@@ -162,7 +166,7 @@ td.cell-pick{text-align:center}
 
   <div class="stage">
     <div class="bar">
-      <button class="toggle" id="toggle" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.1" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.7V8.2l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>智能條件<span class="caret">▸</span></button>
+      <button class="toggle" id="toggle" aria-expanded="false"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.96 11.96A5.6 5.6 0 1 0 4.04 11.96" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 8.2 10.4 5.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>智能條件<span class="caret">▸</span></button>
       <div class="sums" id="sums"></div>
       <span class="hit" id="hit">—</span>
       <button class="reset" id="reset">重置</button>
@@ -608,20 +612,21 @@ td.cell-pick{text-align:center}
   var HOVER_OK = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
   function detailHTML(f){
     var inner=[];
-    var r1=PERIODS.map(function(per){ return PLAB[per]+' '+pct(mOf(f.code,per).returnPercent); }).join('　');
-    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return q==null?'—':Math.round(q); }).join(' / ');
-    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' '+(v==null?'—':(v.toFixed(2)+'%')); }).join('　');
-    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' '+(d==null?'—':(d.toFixed(1)+'%')); }).join('　');
+    /* ③④ 標籤用 <span class="k">（紅＋粗）、內容一律用 <b>（深＋粗）→ 類別與內容一眼可分 */
+    var r1=PERIODS.map(function(per){ return PLAB[per]+' <b>'+pct(mOf(f.code,per).returnPercent)+'</b>'; }).join('　');
+    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return '<b>'+(q==null?'—':Math.round(q))+'</b>'; }).join(' / ');
+    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' <b>'+(v==null?'—':(v.toFixed(2)+'%'))+'</b>'; }).join('　');
+    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' <b>'+(d==null?'—':(d.toFixed(2)+'%'))+'</b>'; }).join('　');
     var r0 = f.rating||0;
-    inner.push('<div class="dl"><b>'+f.code+'</b>　'+(f.name||'')+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
+    inner.push('<div class="dl"><b class="fname">'+f.code+'　'+(f.name||'')+'</b>'+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
     inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
     inner.push('<div class="dl"><span class="k">NAV 分位</span>'+r2+'</div>');
     inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
-    inner.push('<div class="dl"><span class="k">類型</span>'+f._type+'　<span class="k">地區</span>'+f._region
-      +'　<span class="k">幣種</span>'+(f.currencyCode||'—')+'　<span class="k">風險</span>'+(f.risk||'—')
-      +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
-      +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
-      +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
+    inner.push('<div class="dl"><span class="k">類型</span><b>'+f._type+'</b>　<span class="k">地區</span><b>'+f._region+'</b>'
+      +'　<span class="k">幣種</span><b>'+(f.currencyCode||'—')+'</b>　<span class="k">風險</span><b>'+(f.risk||'—')+'</b>'
+      +'　<span class="k">評級</span><b>'+(r0?('★'.repeat(r0)):'—')+'</b>'
+      +'　<span class="k">派息日</span><b>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')+'</b>'
+      +'　<span class="k">上架</span><b>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(2)+' 年');})()+'</b></div>');
     return inner.join('');
   }
   function toggleRow(code, row){
@@ -660,11 +665,11 @@ var SHOW_ALL = false;
   /* 欄位依檢視而異；副標雙行讓「類型／地區／幣種／評級」不佔新欄 */
   function cols(){
     return [['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],
-            ['3Y','3 年'],['5Y','5 年'],['yield','最新年化派息率']];
+            ['3Y','3 年'],['5Y','5 年'],['yield','最新年化<br>派息率']];
   }
   var WID = {  // table-layout:fixed 用；百分比 → 任何寬度都塞得下（不再橫向卷軸）
-    code:'9%', name:'25%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
-    yield:'15%', pick:'9%'
+    code:'9%', name:'30%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
+    yield:'10%', pick:'9%'
   };
   function renderTable(rows){
     var th=document.querySelector('#tbl thead'), tb=document.querySelector('#tbl tbody');
@@ -736,7 +741,7 @@ var SHOW_ALL = false;
       + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
     $('res').hidden = !RES_SHOWN || $('panel').hidden;   /* 面板收合時，基金表也一起收 */
   }
-  function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
+  function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(2)+'%'); }   /* ② 一律 2 位 */
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
   /* 06 目前組合裡的代號 —— 06 組合表用的是 .fund-code（在 .fund-info-table 內），
      不是 .code（那是我們自己的 class）；也要排除搜尋建議清單。 */

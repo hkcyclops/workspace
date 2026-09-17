@@ -1348,7 +1348,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
   background:linear-gradient(135deg,#fffdf7f5,#f9f4ead1);border-bottom:0}
 #sp-wrap .stage.open .bar{border-bottom:1px solid #eadfce}
 #sp-wrap .toggle{appearance:none;border:0;background:0 0;font:inherit;font-weight:800;cursor:pointer;color:var(--ink);
-  display:inline-flex;align-items:center;gap:7px;padding:2px 0;color:#7f1028}
+  display:inline-flex;align-items:center;gap:7px;padding:2px 0;color:#7f1028;font-size:12px}
 #sp-wrap .toggle .ic{width:15px;height:15px;flex:0 0 auto;display:block}
 #sp-wrap .toggle .caret{color:var(--red);font-size:11px}
 #sp-wrap .sums{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 180px;min-width:0}
@@ -1373,13 +1373,13 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .chip:hover{color:var(--red)}
 #sp-wrap .chip.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
 #sp-wrap .chip.na{color:var(--line-2);cursor:default}
-#sp-wrap .pop{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:#8f0d25;cursor:pointer;
+#sp-wrap .pop{appearance:none;border:0;background:0 0;font:inherit;font-size:12.5px;color:#776d60;cursor:pointer;
   padding:2px 1px;display:inline-flex;align-items:center;gap:4px}
 #sp-wrap .pop:hover{color:var(--red)}
-#sp-wrap .pop .v{font-family:ui-monospace,Consolas,monospace;font-weight:700}
 #sp-wrap .pop.on{color:var(--lit-ink);background:var(--lit-bg);font-weight:700}
 #sp-wrap .pop .caret{font-size:9px;color:var(--gray)}
-#sp-wrap .pane{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-2);box-shadow:0 10px 28px rgba(30,20,10,.16);
+#sp-wrap /* .pop.on 沿用 var(--lit-*)，與 .chip.on 一致 */
+.pane{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-2);box-shadow:0 10px 28px rgba(30,20,10,.16);
   padding:10px;min-width:200px}
 #sp-wrap .pane[hidden]{display:none}
 #sp-wrap .pane h4{margin:0 0 6px;font-size:11px;color:var(--gray);letter-spacing:.06em}
@@ -1414,12 +1414,17 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap table{width:100%;border-collapse:collapse;font-size:11px}
 #sp-wrap #sp-tbl{table-layout:fixed}
 #sp-wrap #sp-tbl th,#sp-wrap #sp-tbl td{overflow:hidden;text-overflow:ellipsis}
-#sp-wrap #sp-tbl tbody td{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em;font-weight:800}
+#sp-wrap #sp-tbl th:last-child{text-align:center}
+#sp-wrap /* ⑤ 與 td.cell-pick 的居中對齊 */
+#sp-tbl th{line-height:1.25}
+#sp-wrap /* ⑦ 讓表頭可以排兩行 */
+#sp-tbl tbody td{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em;font-weight:800}
 #sp-wrap #sp-tbl tbody td.name{font-weight:700}
 #sp-wrap /* 基金名 700（同 06 .fund-option b） */
 #sp-tbl tbody td.cell-pick{font-weight:400}
 #sp-wrap th,#sp-wrap td{padding:8px 5px;border-bottom:1px solid #eee3d4;text-align:right;white-space:nowrap;line-height:1.22}
-#sp-wrap th:nth-child(-n+3),#sp-wrap td:nth-child(-n+3){text-align:left}
+#sp-wrap /* 只有「代號／基金名」靠左；舊版 -n+3 會把第 3 欄（年初至今）也靠左 → 數據看起來擠在左邊 */
+th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
 #sp-wrap th{font:inherit;font-size:10px;font-weight:800;color:#7e293e;background:#e9dfd0;
   border-bottom:1px solid #d8c8b3;cursor:pointer;user-select:none}
 #sp-wrap th:hover{color:var(--red)}
@@ -1433,13 +1438,17 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap tbody tr.drow:hover td{background:#f3e3cc}
 #sp-wrap tr.drow td{vertical-align:top}
 #sp-wrap tr.xrow td{background:#fdfaf3;border-bottom:2px solid var(--gold);text-align:left;white-space:normal;
-  font-size:12px;line-height:1.65;padding:9px 10px}
+  font-size:11px;line-height:1.6;padding:8px 10px}
 #sp-wrap tr.xrow .dl{margin:0 0 2px}
-#sp-wrap tr.xrow .dl b{color:#3e332c}
-#sp-wrap tr.xrow .k{color:#9b1730;font-weight:700;margin-right:4px}
-#sp-wrap .vcnt{font-size:10px;color:#94897b;font-weight:700}
+#sp-wrap .dl b{color:#3e332c;font-weight:700}
+#sp-wrap .dl .k{color:#9b1730;font-weight:700;margin-right:4px}
+#sp-wrap /* 標籤：紅＋粗 */
+.dl b.fname{color:#2c2722;font-weight:800}
+#sp-wrap /* ④ 基金名加粗 */
+
+.vcnt{font-size:10px;color:#94897b;font-weight:700}
 #sp-wrap #sp-dcard{position:fixed;z-index:70;max-width:420px;background:#fff;border:1px solid var(--line-2);
-  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:12px;line-height:1.65}
+  box-shadow:0 10px 28px rgba(30,20,10,.16);padding:10px 12px;font-size:11px;line-height:1.6}
 #sp-wrap #sp-dcard[hidden]{display:none}
 #sp-wrap .code{font-family:Georgia,serif;font-weight:700;font-size:14px;color:#8f0d25}
 #sp-wrap .up{color:var(--up)}
@@ -1478,7 +1487,7 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 <script id="SP_PICKER_V1">
 (function(){
 if (document.getElementById("sp-wrap")) return;   /* 已注入 */
-var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxjaXJjbGUgY3g9IjgiIGN5PSI4IiByPSI2LjEiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIvPjxwYXRoIGQ9Ik04IDQuN1Y4LjJsMi41IDEuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz7mmbrog73mop3ku7Y8c3BhbiBjbGFzcz0iY2FyZXQiPuKWuDwvc3Bhbj48L2J1dHRvbj4KICAgICAgPGRpdiBjbGFzcz0ic3VtcyIgaWQ9InNwLXN1bXMiPjwvZGl2PgogICAgICA8c3BhbiBjbGFzcz0iaGl0IiBpZD0ic3AtaGl0Ij7igJQ8L3NwYW4+CiAgICAgIDxidXR0b24gY2xhc3M9InJlc2V0IiBpZD0ic3AtcmVzZXQiPumHjee9rjwvYnV0dG9uPgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJwYW5lbCIgaWQ9InNwLXBhbmVsIiBoaWRkZW4+CiAgICAgIDxkaXYgY2xhc3M9ImxvYWRpbmciIGlkPSJzcC1sb2FkaW5nIj7ovInlhaXos4fmlpnkuK3igKbvvIjpppbmrKHpnIDovInlhaXntIQgOCBNQiDmrbflj7Los4fmlpnvvIk8L2Rpdj4KICAgICAgPGRpdiBpZD0ic3AtYm9keSIgaGlkZGVuPgogICAgICAgIDxkaXYgY2xhc3M9InByZXNldHMiIGlkPSJzcC1wcmVzZXRzIj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJncm91cHMiIGlkPSJzcC1ncm91cHMiPjwvZGl2PgogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICAgPGRpdiBjbGFzcz0iZm9vdCI+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3Atdmlld1JlcyI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxjaXJjbGUgY3g9IjciIGN5PSI3IiByPSI0LjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIvPjxwYXRoIGQ9Ik0xMC40IDEwLjQgTDE0IDE0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuafpeeci+e1kOaenDwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4gZ29sZCIgaWQ9InNwLXNhdmVQcmVzZXQiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS40IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biIgaWQ9InNwLW15RmF2Ij48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggMS44bDEuOSAzLjkgNC4zLjYtMy4xIDMgLjcgNC4zTDggMTEuNmwtMy44IDIgLjctNC4zLTMuMS0zIDQuMy0uNnoiIGZpbGw9ImN1cnJlbnRDb2xvciIvPjwvc3ZnPuaIkeeahOaUtuiXjzwvYnV0dG9uPgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4gayIgaWQ9InNwLWFkZFRvMDYiIGRhdGEtYWRkPSIxIiBkaXNhYmxlZD7liqDlhaXntYTlkIg8L2J1dHRvbj4KICAgICAgPHNwYW4gY2xhc3M9ImhpbnQiIGlkPSJzcC1mb290SGludCI+PC9zcGFuPgogICAgPC9kaXY+CiAgPC9kaXY+CgogIDxzZWN0aW9uIGNsYXNzPSJyZXMiIGlkPSJzcC1yZXMiIGhpZGRlbj4KICAgIDxkaXYgaWQ9InNwLXJlc0hlYWQiIHN0eWxlPSJtYXJnaW4tYm90dG9tOjZweDtkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2dhcDoxMHB4O2ZsZXgtd3JhcDp3cmFwIj48L2Rpdj4KICAgIDxkaXYgc3R5bGU9Im92ZXJmbG93LXg6YXV0byI+PHRhYmxlIGlkPSJzcC10YmwiPjx0aGVhZD48L3RoZWFkPjx0Ym9keT48L3Rib2R5PjwvdGFibGU+PC9kaXY+CiAgPC9zZWN0aW9uPgo8ZGl2IGNsYXNzPSJwYW5lIiBpZD0ic3AtcGFuZSIgaGlkZGVuPjwvZGl2Pgo8ZGl2IGNsYXNzPSJ0b2FzdCIgaWQ9InNwLXRvYXN0Ij48L2Rpdj4=";
+var __b64 = "PGRpdiBjbGFzcz0ic3RhZ2UiPgogICAgPGRpdiBjbGFzcz0iYmFyIj4KICAgICAgPGJ1dHRvbiBjbGFzcz0idG9nZ2xlIiBpZD0ic3AtdG9nZ2xlIiBhcmlhLWV4cGFuZGVkPSJmYWxzZSI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0xMS45NiAxMS45NkE1LjYgNS42IDAgMSAwIDQuMDQgMTEuOTYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTggOC4yIDEwLjQgNS44IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPuaZuuiDveaineS7tjxzcGFuIGNsYXNzPSJjYXJldCI+4pa4PC9zcGFuPjwvYnV0dG9uPgogICAgICA8ZGl2IGNsYXNzPSJzdW1zIiBpZD0ic3Atc3VtcyI+PC9kaXY+CiAgICAgIDxzcGFuIGNsYXNzPSJoaXQiIGlkPSJzcC1oaXQiPuKAlDwvc3Bhbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0icmVzZXQiIGlkPSJzcC1yZXNldCI+6YeN572uPC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9InBhbmVsIiBpZD0ic3AtcGFuZWwiIGhpZGRlbj4KICAgICAgPGRpdiBjbGFzcz0ibG9hZGluZyIgaWQ9InNwLWxvYWRpbmciPui8ieWFpeizh+aWmeS4reKApu+8iOmmluasoemcgOi8ieWFpee0hCA4IE1CIOatt+WPsuizh+aWme+8iTwvZGl2PgogICAgICA8ZGl2IGlkPSJzcC1ib2R5IiBoaWRkZW4+CiAgICAgICAgPGRpdiBjbGFzcz0icHJlc2V0cyIgaWQ9InNwLXByZXNldHMiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Imdyb3VwcyIgaWQ9InNwLWdyb3VwcyI+PC9kaXY+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJmb290Ij4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIGsiIGlkPSJzcC12aWV3UmVzIj48c3ZnIGNsYXNzPSJpYyIgdmlld0JveD0iMCAwIDE2IDE2IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PGNpcmNsZSBjeD0iNyIgY3k9IjciIHI9IjQuNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMS42Ii8+PHBhdGggZD0iTTEwLjQgMTAuNCBMMTQgMTQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjEuNiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+5p+l55yL57WQ5p6cPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBnb2xkIiBpZD0ic3Atc2F2ZVByZXNldCI+PHN2ZyBjbGFzcz0iaWMiIHZpZXdCb3g9IjAgMCAxNiAxNiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik04IDEuOGwxLjkgMy45IDQuMy42LTMuMSAzIC43IDQuM0w4IDExLjZsLTMuOCAyIC43LTQuMy0zLjEtMyA0LjMtLjZ6IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz7mlLbol488L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iYnRuIiBpZD0ic3AtbXlGYXYiPjxzdmcgY2xhc3M9ImljIiB2aWV3Qm94PSIwIDAgMTYgMTYiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAxLjhsMS45IDMuOSA0LjMuNi0zLjEgMyAuNyA0LjNMOCAxMS42bC0zLjggMiAuNy00LjMtMy4xLTMgNC4zLS42eiIgZmlsbD0iY3VycmVudENvbG9yIi8+PC9zdmc+5oiR55qE5pS26JePPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImJ0biBrIiBpZD0ic3AtYWRkVG8wNiIgZGF0YS1hZGQ9IjEiIGRpc2FibGVkPuWKoOWFpee1hOWQiDwvYnV0dG9uPgogICAgICA8c3BhbiBjbGFzcz0iaGludCIgaWQ9InNwLWZvb3RIaW50Ij48L3NwYW4+CiAgICA8L2Rpdj4KICA8L2Rpdj4KCiAgPHNlY3Rpb24gY2xhc3M9InJlcyIgaWQ9InNwLXJlcyIgaGlkZGVuPgogICAgPGRpdiBpZD0ic3AtcmVzSGVhZCIgc3R5bGU9Im1hcmdpbi1ib3R0b206NnB4O2Rpc3BsYXk6ZmxleDthbGlnbi1pdGVtczpjZW50ZXI7Z2FwOjEwcHg7ZmxleC13cmFwOndyYXAiPjwvZGl2PgogICAgPGRpdiBzdHlsZT0ib3ZlcmZsb3cteDphdXRvIj48dGFibGUgaWQ9InNwLXRibCI+PHRoZWFkPjwvdGhlYWQ+PHRib2R5PjwvdGJvZHk+PC90YWJsZT48L2Rpdj4KICA8L3NlY3Rpb24+CjxkaXYgY2xhc3M9InBhbmUiIGlkPSJzcC1wYW5lIiBoaWRkZW4+PC9kaXY+CjxkaXYgY2xhc3M9InRvYXN0IiBpZD0ic3AtdG9hc3QiPjwvZGl2Pg==";
 var __bytes = Uint8Array.from(atob(__b64), function(c){ return c.charCodeAt(0); });
 var __mark = new TextDecoder("utf-8").decode(__bytes);
 var __wrap = document.createElement("div"); __wrap.id = "sp-wrap";
@@ -1914,20 +1923,21 @@ document.body.appendChild(__wrap);
   var HOVER_OK = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
   function detailHTML(f){
     var inner=[];
-    var r1=PERIODS.map(function(per){ return PLAB[per]+' '+pct(mOf(f.code,per).returnPercent); }).join('　');
-    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return q==null?'—':Math.round(q); }).join(' / ');
-    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' '+(v==null?'—':(v.toFixed(2)+'%')); }).join('　');
-    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' '+(d==null?'—':(d.toFixed(1)+'%')); }).join('　');
+    /* ③④ 標籤用 <span class="k">（紅＋粗）、內容一律用 <b>（深＋粗）→ 類別與內容一眼可分 */
+    var r1=PERIODS.map(function(per){ return PLAB[per]+' <b>'+pct(mOf(f.code,per).returnPercent)+'</b>'; }).join('　');
+    var r2=PERIODS.map(function(per){ var q=mOf(f.code,per).navPercentile; return '<b>'+(q==null?'—':Math.round(q))+'</b>'; }).join(' / ');
+    var r3=['1Y','3Y','5Y'].map(function(per){ var v=volOf(f.code,per); return PLAB[per]+' <b>'+(v==null?'—':(v.toFixed(2)+'%'))+'</b>'; }).join('　');
+    var r4=['1Y','3Y','5Y'].map(function(per){ var d=mddOf(f.code,per); return PLAB[per]+' <b>'+(d==null?'—':(d.toFixed(2)+'%'))+'</b>'; }).join('　');
     var r0 = f.rating||0;
-    inner.push('<div class="dl"><b>'+f.code+'</b>　'+(f.name||'')+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
+    inner.push('<div class="dl"><b class="fname">'+f.code+'　'+(f.name||'')+'</b>'+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
     inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
     inner.push('<div class="dl"><span class="k">NAV 分位</span>'+r2+'</div>');
     inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
-    inner.push('<div class="dl"><span class="k">類型</span>'+f._type+'　<span class="k">地區</span>'+f._region
-      +'　<span class="k">幣種</span>'+(f.currencyCode||'—')+'　<span class="k">風險</span>'+(f.risk||'—')
-      +'　<span class="k">評級</span>'+(r0?('★'.repeat(r0)):'—')
-      +'　<span class="k">派息日</span>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')
-      +'　<span class="k">上架</span>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(1)+' 年');})()+'</div>');
+    inner.push('<div class="dl"><span class="k">類型</span><b>'+f._type+'</b>　<span class="k">地區</span><b>'+f._region+'</b>'
+      +'　<span class="k">幣種</span><b>'+(f.currencyCode||'—')+'</b>　<span class="k">風險</span><b>'+(f.risk||'—')+'</b>'
+      +'　<span class="k">評級</span><b>'+(r0?('★'.repeat(r0)):'—')+'</b>'
+      +'　<span class="k">派息日</span><b>'+(paydayOf(f.code)?{early:'月初',mid:'月中',late:'月底'}[paydayOf(f.code)]:'—')+'</b>'
+      +'　<span class="k">上架</span><b>'+(function(){var y=listYearsOf(f.code);return y==null?'—':(y.toFixed(2)+' 年');})()+'</b></div>');
     return inner.join('');
   }
   function toggleRow(code, row){
@@ -1966,11 +1976,11 @@ var SHOW_ALL = false;
   /* 欄位依檢視而異；副標雙行讓「類型／地區／幣種／評級」不佔新欄 */
   function cols(){
     return [['code','代號'],['name','基金名'],['YTD','年初至今'],['3M','3 個月'],['1Y','1 年'],
-            ['3Y','3 年'],['5Y','5 年'],['yield','最新年化派息率']];
+            ['3Y','3 年'],['5Y','5 年'],['yield','最新年化<br>派息率']];
   }
   var WID = {  // table-layout:fixed 用；百分比 → 任何寬度都塞得下（不再橫向卷軸）
-    code:'9%', name:'25%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
-    yield:'15%', pick:'9%'
+    code:'9%', name:'30%', YTD:'8.4%', '3M':'8.4%', '1Y':'8.4%', '3Y':'8.4%', '5Y':'8.4%',
+    yield:'10%', pick:'9%'
   };
   function renderTable(rows){
     var th=document.querySelector('#sp-tbl thead'), tb=document.querySelector('#sp-tbl tbody');
@@ -2042,7 +2052,7 @@ var SHOW_ALL = false;
       + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
     $('sp-res').hidden = !RES_SHOWN || $('sp-panel').hidden;   /* 面板收合時，基金表也一起收 */
   }
-  function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
+  function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(2)+'%'); }   /* ② 一律 2 位 */
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
   /* 06 目前組合裡的代號 —— 06 組合表用的是 .fund-code（在 .fund-info-table 內），
      不是 .code（那是我們自己的 class）；也要排除搜尋建議清單。 */
