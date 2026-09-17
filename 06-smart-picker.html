@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);
-  font:14px/1.5 "Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,sans-serif}
+  font:14px/1.5 "Noto Sans TC",ui-sans-serif,system-ui,sans-serif}
 a{color:var(--red)}
 .wrap{max-width:1080px;margin:0 auto;padding:18px 14px 90px}
 .masthead{border-bottom:2px solid var(--red);padding-bottom:10px;margin-bottom:12px}
@@ -20,7 +20,8 @@ a{color:var(--red)}
 h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-weight:500}
 .sub{margin:6px 0 0;font-size:12.5px;color:var(--ink-2)}
 .sub b{color:var(--ink)}
-.stage{background:var(--card);border:1px solid var(--line);box-shadow:inset 0 2px var(--gold)}
+.stage{background:var(--card);border:1px solid var(--line);box-shadow:inset 0 2px var(--gold);
+  font:14px/1.5 "Noto Sans TC",ui-sans-serif,system-ui,sans-serif;color:var(--ink)}
 .bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
 .toggle{appearance:none;border:0;background:0 0;font:inherit;font-weight:800;cursor:pointer;color:var(--ink);
   display:inline-flex;align-items:center;gap:7px;padding:2px 0}
@@ -77,10 +78,12 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .hint{font-size:10.5px;color:var(--gray)}
 .foot{padding:9px 12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .btn{appearance:none;font:inherit;font-size:12.5px;font-weight:700;padding:6px 12px;cursor:pointer;
-  background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2)}
+  background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2);
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1.35}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.k{background:var(--red);border-color:var(--red);color:#fff7ee}
-.btn.g{border-color:var(--gold);color:var(--lit-ink)}
-.btn .ic{width:13px;height:13px;vertical-align:-2px;margin-right:5px;display:inline-block}
+.btn.gold{border-color:var(--gold);color:var(--lit-ink)}
+.btn .ic{width:13px;height:13px;vertical-align:0;margin-right:0;display:block;flex:0 0 auto}
 .btn.k .ic{color:#fff7ee}
 .res{margin-top:14px;contain:content}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -111,15 +114,9 @@ tr.xrow .go{color:var(--red);text-decoration:none}
 .up{color:var(--up)} .down{color:var(--down)} .na{color:var(--gray)}
 .stars{color:var(--gold);letter-spacing:.5px}
 .ms-na{color:var(--gray)}
-.add{appearance:none;border:0;background:0 0;color:var(--red);font:inherit;font-size:15px;font-weight:700;
-  cursor:pointer;padding:0 4px;line-height:1}
-.picked{margin-top:12px;padding:10px;background:#fffdf8;border:1px dashed var(--line-2)}
-.picked h4{margin:0 0 6px;font-size:11.5px;color:var(--gray);letter-spacing:.06em}
-.picked .lst{display:flex;flex-wrap:wrap;gap:6px}
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-2);
-  background:#fff;border:1px solid var(--line);padding:3px 7px}
-.pill b{font-family:Georgia,serif}
-.pill button{appearance:none;border:0;background:0 0;color:var(--red);cursor:pointer;font:inherit;padding:0}
+.pick{width:15px;height:15px;accent-color:var(--red);cursor:pointer;margin:0;vertical-align:middle}
+.pick[disabled]{cursor:default;accent-color:var(--gray)}
+td.cell-pick{text-align:center}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:90;background:#2c2722;color:#fff7ee;
   font-size:12.5px;font-weight:700;padding:8px 14px;opacity:0;transition:opacity .2s}
 .toast.on{opacity:1}
@@ -128,7 +125,7 @@ tr.xrow .go{color:var(--red);text-decoration:none}
 @media (max-width:768px){
   .panel{position:fixed;inset:0;z-index:70;background:var(--card);overflow:auto;padding:14px 12px 76px}
   .stage{border-left:0;border-right:0}
-  .foot{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card)}
+  .panel:not([hidden])~.foot{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--card)}
   .res{overflow-x:auto}
   table{font-size:12px}
 }
@@ -144,12 +141,12 @@ tr.xrow .go{color:var(--red);text-decoration:none}
 
   <div class="stage">
     <div class="bar">
-      <button class="toggle" id="toggle" aria-expanded="true"><span class="caret">▾</span>智能條件 <small>點擊展開／收合</small></button>
+      <button class="toggle" id="toggle" aria-expanded="false"><span class="caret">▸</span>智能條件 <small>點擊展開／收合</small></button>
       <div class="sums" id="sums"></div>
       <span class="hit" id="hit">—</span>
       <button class="reset" id="reset">重置</button>
     </div>
-    <div class="panel" id="panel">
+    <div class="panel" id="panel" hidden>
       <div class="loading" id="loading">載入資料中…（首次需載入約 8 MB 歷史資料）</div>
       <div id="body" hidden>
         <div class="presets" id="presets"></div>
@@ -158,9 +155,9 @@ tr.xrow .go{color:var(--red);text-decoration:none}
     </div>
     <div class="foot">
       <button class="btn k" id="viewRes"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.4 10.4 L14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>查看結果</button>
-      <button class="btn g" id="savePreset"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>收藏</button>
+      <button class="btn gold" id="savePreset"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>收藏</button>
       <button class="btn" id="myFav"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor"/></svg>我的收藏</button>
-      <button class="btn" id="clearPicked">清空待加入</button>
+      <button class="btn k" id="addTo06" disabled>加入組合</button>
       <span class="hint" id="footHint"></span>
     </div>
   </div>
@@ -168,11 +165,6 @@ tr.xrow .go{color:var(--red);text-decoration:none}
   <section class="res" id="res" hidden>
     <div id="resHead" style="font-size:12px;color:var(--gray);margin-bottom:6px"></div>
     <div style="overflow-x:auto"><table id="tbl"><thead></thead><tbody></tbody></table></div>
-    <div class="picked" id="picked" hidden>
-      <h4>待加入清單（複製代號後到 06 的搜尋框貼上；之後會直寫 06 組合儲存）</h4>
-      <div class="lst" id="pickedLst"></div>
-      <div style="margin-top:8px"><button class="btn" id="copyCodes">複製全部代號</button></div>
-    </div>
   </section>
 </div>
 <div class="pane" id="pane" hidden></div>
@@ -181,7 +173,9 @@ tr.xrow .go{color:var(--red);text-decoration:none}
 <script>
 (function(){
   /* 錯誤可視化：試用版要能看到哪裡掛了，而不是白畫面 */
-  function fail(msg){ var e=document.getElementById('loading'); if(e){ e.textContent='載入失敗：'+msg; e.style.color='#8f0d25'; } document.title='ERR '+msg; }
+  function fail(msg){ var e=document.getElementById('loading'); if(e){ e.textContent='載入失敗：'+msg; e.style.color='#8f0d25'; }
+    var w=document.getElementById('sp-wrap'); if(w) w.style.visibility='';
+    document.title='ERR '+msg; }
   window.onerror=function(m,src,ln,col){ fail(m+' @'+(ln||'?')+':'+(col||'?')); };
   window.addEventListener('unhandledrejection', function(ev){ fail(String(ev.reason&&ev.reason.message||ev.reason)); });
   function step(t){ var e=document.getElementById('loading'); if(e) e.textContent=t; }
@@ -197,7 +191,8 @@ tr.xrow .go{color:var(--red);text-decoration:none}
     yieldMin:null, yieldMax:null,
     houses:[], listYears:null, sort:'1Y', dir:-1
   };
-  var PICKED = [];
+  var PICK = [];                               // 勾選待加入的基金代號
+  var RES_SHOWN = false;                       // 結果清單預設折疊，互動後才顯示
   var el = function(t,c,h){ var e=document.createElement(t); if(c) e.className=c; if(h!==undefined) e.innerHTML=h; return e; };
   var $ = function(id){ return document.getElementById(id); };
   function toast(t){ var x=$('toast'); x.textContent=t; x.classList.add('on'); setTimeout(function(){x.classList.remove('on');},1900); }
@@ -225,14 +220,10 @@ tr.xrow .go{color:var(--red);text-decoration:none}
     step('渲染面板…');
     render(); $('loading').hidden=true; $('body').hidden=false;
     step('');
+    renderPickBtn();
     run();
-    /* 手機：預設收合（全屏抽屜不該一開就蓋住結果），桌面維持展開 */
-    if (innerWidth < 768){
-      $('panel').hidden = true;
-      var tg = $('toggle');
-      tg.setAttribute('aria-expanded','false');
-      var ca = tg.querySelector('.caret'); if(ca) ca.textContent = '▸';
-    }
+    /* 防止載入期間露出半成品（注入到 06 時外層是 visibility:hidden） */
+    var w=document.getElementById('sp-wrap'); if(w) w.style.visibility='';
   }
 
   /* ---------- 由 assetClass 拆「類型／地區」 ---------- */
@@ -665,8 +656,9 @@ var SHOW_ALL = false;
       t.onclick=function(){ if(S.sort===c[0]) S.dir*=-1; else {S.sort=c[0];S.dir=-1;} save(); run(); };
       tr.appendChild(t);
     });
-    tr.appendChild(el('th','','加入'));
+    tr.appendChild(el('th','','選取'));
     th.appendChild(tr);
+    var inPortList = portfolioCodes();
     var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
     rows.slice(0, lim).forEach(function(f){
       var row=el('tr'); row.className='drow'; row.setAttribute('data-code', f.code);
@@ -683,10 +675,20 @@ var SHOW_ALL = false;
       });
       var y = yieldOf(f.code);
       row.appendChild(el('td','', y==null?'—':(y.toFixed(2)+'%')));
-      var td=el('td',''), b=el('button','add','+');
-      b.title='加入待加入清單';
-      b.onclick=function(ev){ ev.stopPropagation(); if(PICKED.indexOf(f.code)<0){PICKED.push(f.code); renderPicked(); toast('已加入 '+f.code);} };
-      td.appendChild(b); row.appendChild(td);
+      var td=el('td','cell-pick'), cb=el('input','pick');
+      cb.type='checkbox'; cb.setAttribute('aria-label','選取 '+f.code);
+      if (inPortList.indexOf(String(f.code).toUpperCase())>=0){
+        cb.checked=true; cb.disabled=true; cb.title='已在 06 組合中';
+      } else {
+        cb.checked = PICK.indexOf(f.code)>=0;
+        cb.title='勾選後按「加入組合」送進 06';
+        cb.onchange=function(ev){ ev.stopPropagation();
+          var k=PICK.indexOf(f.code);
+          if (cb.checked){ if(k<0) PICK.push(f.code); } else if(k>=0){ PICK.splice(k,1); }
+          renderPickBtn(); };
+      }
+      cb.onclick=function(ev){ ev.stopPropagation(); };
+      td.appendChild(cb); row.appendChild(td);
       /* 點列展開長尾（手機／桌面都可）；桌面另給 hover 卡 */
       row.onclick=function(){ toggleRow(f.code, row); };
       if (HOVER_OK){
@@ -704,19 +706,75 @@ var SHOW_ALL = false;
     document.getElementById('resHead').innerHTML =
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
       + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）</span>';
-    $('res').hidden=false;
+    $('res').hidden = !RES_SHOWN;
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
   function cls(v){ return v==null?'na':(v>=0?'up':'down'); }
-  function renderPicked(){
-    var p=$('picked'); if(!PICKED.length){ p.hidden=true; return; }
-    p.hidden=false;
-    var box=$('pickedLst'); box.innerHTML='';
-    PICKED.forEach(function(c){
-      var s=el('span','pill','<b>'+c+'</b>');
-      var x=el('button','','✕'); x.onclick=function(){ PICKED.splice(PICKED.indexOf(c),1); renderPicked(); };
-      s.appendChild(x); box.appendChild(s);
+  /* 06 目前組合裡的代號 —— 06 組合表用的是 .fund-code（在 .fund-info-table 內），
+     不是 .code（那是我們自己的 class）；也要排除搜尋建議清單。 */
+  function portfolioCodes(){
+    var out=[];
+    Array.prototype.forEach.call(document.querySelectorAll('.fund-code'), function(e){
+      if (e.closest && e.closest('#sp-wrap')) return;            /* 排除自家表格 */
+      if (e.closest && e.closest('.fund-suggestions')) return;   /* 排除搜尋建議 */
+      var t=(e.textContent||'').trim().toUpperCase();
+      if (/^[A-Z0-9]{2,6}$/.test(t) && out.indexOf(t)<0) out.push(t);
     });
+    return out;
+  }
+  function renderPickBtn(){
+    var b=$('addTo06'); if(!b) return;
+    b.disabled = !PICK.length;
+    b.textContent = PICK.length ? ('加入組合（'+PICK.length+'）') : '加入組合';
+  }
+  /* 勾選 → 一鍵把代號送進 06 的「搜尋並加入基金」（用原生 setter 觸發 React） */
+  function addTo06(){
+    if (!PICK.length) return;
+    var inp = document.querySelector('.add-fund-row input') || document.getElementById('fund-search');
+    if (!inp){ toast('找不到 06 的加入基金欄位'); return; }
+    var have = portfolioCodes();
+    var room = Math.max(0, 10 - have.length);
+    var todo = PICK.filter(function(c){ return have.indexOf(String(c).toUpperCase())<0; });
+    if (!todo.length){ toast('所選基金都已在組合中'); return; }
+    if (todo.length > room){
+      if (!room){ toast('組合已滿（最多 10 隻）'); return; }
+      toast('組合最多 10 隻，本次只加入前 '+room+' 隻');
+      todo = todo.slice(0, room);
+    }
+    var btn=$('addTo06'); btn.disabled=true;
+    var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+    var i=0, added=[], miss=[];
+    function finish(){
+      var msg = added.length ? ('已加入 '+added.length+' 隻到 06 組合：'+added.join(' ')) : '沒有加入任何基金';
+      if (miss.length) msg += '；找不到：'+miss.join(' ');
+      toast(msg);
+      PICK = PICK.filter(function(c){ return added.indexOf(c)<0; });
+      RES_SHOWN = true; run();
+    }
+    function next(){
+      if (i >= todo.length){ finish(); return; }
+      var code = todo[i++];
+      setter.call(inp, code);
+      inp.dispatchEvent(new Event('input', {bubbles:true}));
+      var tries = 0;
+      (function waitSug(){
+        var sg = document.querySelector('.fund-suggestions'), target=null;
+        if (sg){
+          var bs = sg.querySelectorAll('button');
+          for (var k=0;k<bs.length;k++){
+            if ((bs[k].innerText||'').trim().toUpperCase().indexOf(code.toUpperCase()) === 0){ target=bs[k]; break; }
+          }
+        }
+        if (target){
+          target.click(); added.push(code);
+          setter.call(inp,''); inp.dispatchEvent(new Event('input', {bubbles:true}));
+          setTimeout(next, 280);
+        } else if (tries++ < 24){
+          setTimeout(waitSug, 120);
+        } else { miss.push(code); next(); }
+      })();
+    }
+    next();
   }
 
   /* ---------- 本機記憶 ---------- */
@@ -728,6 +786,7 @@ var SHOW_ALL = false;
     var p=$('panel'); p.hidden=!p.hidden;
     this.setAttribute('aria-expanded', String(!p.hidden));
     this.querySelector('.caret').textContent = p.hidden?'▸':'▾';
+    if (!p.hidden && !RES_SHOWN){ RES_SHOWN=true; run(); }   /* 展開＝開始使用 */
   };
   $('reset').onclick=function(){
     Object.keys(S).forEach(function(k){ if(Array.isArray(S[k])) S[k]=[]; });
@@ -760,12 +819,9 @@ var SHOW_ALL = false;
     });
     p.appendChild(scr);
   };
-  $('viewRes').onclick=function(){ var p=$('panel'); if(!p.hidden) $('toggle').click(); $('res').scrollIntoView({behavior:'smooth'}); };
-  $('clearPicked').onclick=function(){ PICKED=[]; renderPicked(); };
-  $('copyCodes').onclick=function(){
-    var t=PICKED.join(' ');
-    navigator.clipboard?.writeText(t).then(function(){ toast('已複製：'+t); }, function(){ toast(t); });
-  };
+  $('viewRes').onclick=function(){ var p=$('panel'); if(!p.hidden) $('toggle').click();
+    RES_SHOWN=true; run(); $('res').scrollIntoView({behavior:'smooth'}); };
+  $('addTo06').onclick=addTo06;
   $('footHint').textContent='條件自動存本機｜'+new Date().toLocaleDateString('zh-HK');
 
   boot();
