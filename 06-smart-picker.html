@@ -33,7 +33,7 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
 .hit{font-size:12px;font-weight:800;color:var(--red);white-space:nowrap}
 .reset{appearance:none;background:0 0;border:1px solid var(--line-2);color:var(--gray);font:inherit;font-size:11.5px;
   padding:3px 8px;cursor:pointer}
-.panel{padding:12px 12px 14px}
+.panel{padding:12px 12px 14px;contain:layout style}
 .panel[hidden]{display:none}
 .presets{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
 .presets .lbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--gray);margin-right:2px}
@@ -73,13 +73,27 @@ h1{margin:4px 0 0;font-family:Georgia,"Noto Serif TC",serif;font-size:24px;font-
   background:#fffdf8;border:1px solid var(--line-2);color:var(--ink-2)}
 .btn.k{background:var(--red);border-color:var(--red);color:#fff7ee}
 .btn.g{border-color:var(--gold);color:var(--lit-ink)}
-.res{margin-top:14px}
+.res{margin-top:14px;contain:content}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
+/* 效能：固定佈局＋單行省略（auto 佈局要為 146×12 格算 min-content，展開/收合會卡 1–2 秒） */
+#tbl{table-layout:fixed}
+#tbl th:nth-child(1),#tbl td:nth-child(1){width:58px}
+#tbl th:nth-child(2),#tbl td:nth-child(2){width:29%}
+#tbl th:nth-child(3),#tbl td:nth-child(3){width:72px}
+#tbl th:nth-child(4),#tbl td:nth-child(4){width:78px}
+#tbl th:nth-child(5),#tbl td:nth-child(5){width:50px}
+#tbl th:nth-child(6),#tbl td:nth-child(6){width:74px}
+#tbl th:nth-child(7),#tbl td:nth-child(7){width:64px}
+#tbl th:nth-child(8),#tbl td:nth-child(8){width:64px}
+#tbl th:nth-child(9),#tbl td:nth-child(9){width:62px}
+#tbl th:nth-child(10),#tbl td:nth-child(10){width:54px}
+#tbl th:nth-child(11),#tbl td:nth-child(11){width:54px}
+#tbl th:nth-child(12),#tbl td:nth-child(12){width:40px}
 th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
 th{font-family:Georgia,serif;font-size:12px;color:var(--gray);cursor:pointer;user-select:none;background:#fffdf8}
 th:hover{color:var(--red)}
-td.name{white-space:normal;min-width:0;max-width:280px}
+td.name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .code{font-family:Georgia,serif;font-weight:700}
 .up{color:var(--up)} .down{color:var(--down)} .na{color:var(--gray)}
 .stars{color:var(--gold);letter-spacing:.5px}
@@ -243,19 +257,21 @@ td.name{white-space:normal;min-width:0;max-width:280px}
     var hit = r[w];
     return hit ? hit[0] : null;
   }
-  function yieldOf(code){ var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
+  /* 派息基金＝代號 Z 開頭（與 06 bundle 的判據 Ho() 一致；用戶明確：只有 Z 開頭才是派息基金） */
+  function isDist(code){ return /^Z/i.test(String(code||'').trim()); }
+  function yieldOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
   function listYearsOf(code){
     var idx=(D.man.navIndex||{})[code]; if(!idx||!idx.firstTimestamp) return null;
     return (Date.now()-idx.firstTimestamp)/31557600000;   // 365.25 天
   }
-  function paydayOf(code){ var r=D.dref[code]; return r? r.payDayBucket : null; }
+  function paydayOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r? r.payDayBucket : null; }
 
   /* ---------- 篩選 ---------- */
   function match(f){
     var m = function(sel, v){ return sel.length===0 || sel.indexOf(v)>=0; };
     if (!m(S.type, f._type)) return false;
     if (!m(S.region, f._region)) return false;
-    if (!m(S.dist, f.isDistributionFund ? 'dist' : 'nondist')) return false;
+    if (!m(S.dist, isDist(f.code) ? 'dist' : 'nondist')) return false;
     if (!m(S.risk, f.risk||'中')) return false;
     if (!m(S.ccy, f.currencyCode||'')) return false;
     if (!m(S.rate, String(f.rating||0))) return false;
@@ -268,9 +284,8 @@ td.name{white-space:normal;min-width:0;max-width:280px}
     if (S.retMax!=null && (ret==null || ret > S.retMax)) return false;
     if (S.navMin!=null && (nv==null || nv < S.navMin)) return false;
     if (S.navMax!=null && (nv==null || nv > S.navMax)) return false;
-    var isDist = !!f.isDistributionFund;
     if (S.volMin!=null || S.volMax!=null){
-      var v = volOf(f.code, isDist);
+      var v = volOf(f.code, isDist(f.code));
       if (v==null) return false;
       if (S.volMin!=null && v < S.volMin) return false;
       if (S.volMax!=null && v > S.volMax) return false;
@@ -294,7 +309,7 @@ td.name{white-space:normal;min-width:0;max-width:280px}
   }
   function sortVal(f,k){
     if (k==='ret') return metric(f.code).returnPercent;
-    if (k==='vol') return volOf(f.code, !!f.isDistributionFund);
+    if (k==='vol') return volOf(f.code, isDist(f.code));
     if (k==='yield') return yieldOf(f.code);
     if (k==='rate') return f.rating||0;
     if (k==='nav') return metric(f.code).navPercentile;
@@ -567,7 +582,9 @@ td.name{white-space:normal;min-width:0;max-width:280px}
     $('hit').textContent='符合 '+out.length+' 檔 / '+(D.cat.funds||[]).length;
     renderTable(out);
   }
-  var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','地區'],['ccy','幣種'],['ret','期間回報'],
+  var ROW_CAP = 80;        // 預設只渲染 80 列（146×12 全渲染會拖慢展開／收合）
+var SHOW_ALL = false;
+var COLS=[['code','代號'],['name','基金名'],['_type','類型'],['_region','地區'],['ccy','幣種'],['ret','期間回報'],
             ['vol','波動率'],['yield','派息率'],['rate','評級'],['payday','派息日'],['years','上架']];
   function renderTable(rows){
     var th=document.querySelector('#tbl thead'), tb=document.querySelector('#tbl tbody');
@@ -580,8 +597,9 @@ td.name{white-space:normal;min-width:0;max-width:280px}
     });
     tr.appendChild(el('th','','加入'));
     th.appendChild(tr);
-    rows.slice(0,300).forEach(function(f){
-      var mt=metric(f.code), v=volOf(f.code, !!f.isDistributionFund);
+    var lim = SHOW_ALL ? rows.length : Math.min(rows.length, ROW_CAP);
+    rows.slice(0, lim).forEach(function(f){
+      var mt=metric(f.code), v=volOf(f.code, isDist(f.code));
       var r=f.rating||0, pay=paydayOf(f.code), ly=listYearsOf(f.code);
       var row=el('tr');
       row.appendChild(el('td','','<span class="code">'+f.code+'</span>'));
@@ -603,7 +621,14 @@ td.name{white-space:normal;min-width:0;max-width:280px}
     });
     var WLAB={ '1Y':'1 年','3Y':'3 年','5Y':'5 年' };
     var wl = WLAB[S.win] || ('自訂 '+S.win.slice(1)+' 年');
-    $('resHead').textContent='共 '+rows.length+' 檔'+(rows.length>300?'（只列前 300）':'')+'｜期間＝'+wl+'｜波動率只對非派息基金有效（顯示「—」者不參與波動率篩選）';
+    if(rows.length > lim){
+      var mb=el('button','btn','顯示全部 '+rows.length+' 檔');
+      mb.style.marginTop='8px';
+      mb.onclick=function(){ SHOW_ALL=true; run(); };
+      tb.appendChild(el('tr')).appendChild(el('td','')).appendChild(mb);
+      var trLast=tb.lastChild; trLast.firstChild.colSpan=12;
+    }
+    $('resHead').textContent='共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')+''+(rows.length>300?'（只列前 300）':'')+'｜期間＝'+wl+'｜波動率只對非派息基金有效（顯示「—」者不參與波動率篩選）';
     $('res').hidden=false;
   }
   function pct(v){ return v==null?'—':((v>=0?'+':'')+v.toFixed(1)+'%'); }
