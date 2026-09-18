@@ -1845,13 +1845,13 @@ document.body.appendChild(__wrap);
         r.appendChild(rangeInputs('ret', per, '%'));
         return r;
       }
-      /* 「更多」放頂：REST 係時間上最早嘅兩期，展開後仍然保持 YTD→3M→1Y→3Y→5Y 順序 */
+      /* 「更多」放底：主項（1Y/3Y/5Y）先顯示，展開後 REST（YTD/3M）插在上方 */
       var more = el('div','more'); more.hidden = true;
       REST.forEach(function(per){ more.appendChild(row(per)); });
       var mb = el('button','chip custbtn','更多年期 ›');
       mb.onclick = function(ev){ ev.stopPropagation(); more.hidden = !more.hidden; mb.classList.toggle('on', !more.hidden); };
-      p.appendChild(mb); p.appendChild(more);
       MAIN.forEach(function(per){ p.appendChild(row(per)); });
+      p.appendChild(mb); p.appendChild(more);
       p.appendChild(acts('ret'));
     },
     yield: function(p){
