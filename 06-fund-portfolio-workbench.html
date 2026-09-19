@@ -1375,8 +1375,8 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .qbtn.on{background:var(--lit-bg);color:var(--lit-ink);border-color:#b78e42}
 #sp-wrap .qtext{margin-top:6px;font-size:10.5px;line-height:1.55;color:var(--ink-2);background:#fffdf8;border-left:2px solid var(--gold);padding:6px 8px;border-radius:0 6px 6px 0}
 #sp-wrap .dline{font-size:10px;color:var(--gray);margin:0 0 7px}
-#sp-wrap .segbar{display:flex;flex:1;gap:3px;min-width:0}
-#sp-wrap .seg{flex:1;min-width:0;appearance:none;border:1px solid var(--line-2);background:#fffdf8;color:var(--gray);font:inherit;font-size:10.5px;padding:4px 2px;cursor:pointer;text-align:center;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sp-wrap .segbar{display:flex;flex:1;gap:3px;min-width:max-content}
+#sp-wrap .seg{flex:1 1 auto;min-width:max-content;appearance:none;border:1px solid var(--line-2);background:#fffdf8;color:var(--gray);font:inherit;font-size:10.5px;padding:4px 2px;cursor:pointer;text-align:center;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sp-wrap .seg.on{background:var(--lit-bg);color:var(--lit-ink);border-color:#b78e42;font-weight:700}
 #sp-wrap .cust{margin-top:7px}
 #sp-wrap .custbtn{font-size:11px}
@@ -1390,6 +1390,12 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 #sp-wrap .igrp .u{color:var(--gray);font-size:11px}
 #sp-wrap .pane .igrp input[type=number]{width:56px}
 #sp-wrap .retrow,#sp-wrap .navrow{flex-wrap:wrap;gap:5px}
+#sp-wrap /* ② 期間回報：預選 chip 要睇得出係「撳一下即套用」嘅預設選項，並同數值輸入分隔 */
+.pane .pRow.retrow{gap:7px}
+#sp-wrap .pane .prelab{flex:0 0 auto;color:var(--gray);font-size:10px;font-weight:800;letter-spacing:.08em}
+#sp-wrap .pane .retrow .chip{border:1px solid var(--line-2);background:#fffdf8;border-radius:4px;padding:3px 8px;color:#7a6c5c}
+#sp-wrap .pane .retrow .chip:hover{border-color:#b78e42;background:#fffaf1;color:var(--red)}
+#sp-wrap .pane .retrow .igrpwrap{border-left:1px dashed var(--line);margin-left:4px;padding-left:10px}
 #sp-wrap .retrow .chip,#sp-wrap .navrow .chip{font-size:11px}
 #sp-wrap .panel[hidden]{display:none}
 #sp-wrap /* ① 面板收合時，底部那一排（查看結果／收藏／我的收藏／加入組合／提示）也一起收 */
@@ -1828,11 +1834,12 @@ document.body.appendChild(__wrap);
         var r = el('div','row pRow retrow');
         r.appendChild(el('span','plab', PLAB[per]));
         var med = medOf(per);
-        /* 例子預選 chip（門檻直接寫喺文字上）＋ 保留數值輸入 */
+        /* 快速預選 chip：撳一下即套用該門檻。加「預選」標籤，令用家知道呢三個係預設選項 */
+        r.appendChild(el('span','prelab','預選'));
         [['正回報 ≥0', 0, null],
          [med > 0 ? ('升逾 ' + med + '%') : ('升逾 0%'), Math.max(med, 1), null],
          ['負回報 <0', null, 0]].forEach(function(t){
-          var b = el('button','chip', t[0]);
+          var b = el('button','chip pre', t[0]);
           b.onclick = function(ev){
             ev.stopPropagation();
             var cur = JSON.parse(JSON.stringify(S.ret));
@@ -2209,7 +2216,7 @@ var SHOW_ALL = false;
       tr.appendChild(t);
     });
     var thPick=el('th','','選取');
-    thPick.title='勾選後按「加入組合」，會把該基金送進 06 的組合配置';
+    thPick.title='勾選後按「加入組合」，會把該基金送進組合配置';
     tr.appendChild(thPick);
     th.appendChild(tr);
     var inPortList = portfolioCodes();
@@ -2236,7 +2243,7 @@ var SHOW_ALL = false;
         cb.checked=true; cb.disabled=true; cb.title='已在 06 組合中';
       } else {
         cb.checked = PICK.indexOf(f.code)>=0;
-        cb.title='勾選後按「加入組合」，送進 06 的組合配置';
+        cb.title='勾選後按「加入組合」，送進組合配置';
         cb.onchange=function(ev){ ev.stopPropagation();
           var k=PICK.indexOf(f.code);
           if (cb.checked){ if(k<0) PICK.push(f.code); } else if(k>=0){ PICK.splice(k,1); }
@@ -2261,7 +2268,7 @@ var SHOW_ALL = false;
     document.getElementById('sp-resHead').innerHTML =
       '<span class="vcnt">共 '+rows.length+' 檔'+((rows.length>lim)?('（先列 '+lim+'，可顯示全部）'):'')
       + '｜點列可展開完整資料（波動率／最大回撤在展開列）｜派息率只對派息基金（Z 開頭）'
-      + '｜<b class="pickhint">勾選方格後按「加入組合」，即送進 06 的組合配置</b></span>';
+      + '｜<b class="pickhint">勾選方格後按「加入組合」，即送進組合配置</b></span>';
     /* 「查看結果」只收篩選項（keepfoot）時，結果表要留住；只有撳標題成塊收起先收埋結果 */
     var _st=$('sp-panel').closest('.stage');
     var _folded = $('sp-panel').hidden && !(_st && _st.classList.contains('keepfoot'));
