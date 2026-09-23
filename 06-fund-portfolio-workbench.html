@@ -1560,7 +1560,7 @@ document.body.appendChild(__wrap);
   var CATS = {type:[], region:[]};             // 由 assetClass 拆出
   var S = {                                    // 條件狀態（未選＝不限）
     type:[], region:[], risk:[], ccy:[], rate:[], nav:[], payday:[], dist:[], years:null,
-    ret:{}, navP:{}, vol:{}, sharpe:{},  // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
+    ret:{}, navP:{}, vol:{}, sharpe:{}, calmar:{},  // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
     yieldMin:null, yieldMax:null,
     houses:[], listYears:null, sort:'1Y', dir:-1
   };
@@ -1681,8 +1681,11 @@ document.body.appendChild(__wrap);
     return (a - RF) / v;
   }
   function calmarOf(code, per){
-    var a = annOf(code, per), d = mddOf(code, per);
-    if (a == null || d == null || !(d < 0)) return null;
+    var a = annOf(code, per), d = mddOf(code, per), v = volOf(code, per);
+    /* ⚠️ 同 sharpeOf 共用 RISK_MIN_VOL：Calmar 的分母係 |最大回撤|，
+       類現金基金回撤可細到 −0.02% → 比值會爆到 225（實測 M13）。
+       兩者共用同一門檻，口徑一致、亦只用一條規則解釋。 */
+    if (a == null || d == null || v == null || v < RISK_MIN_VOL || !(d < 0)) return null;
     return a / Math.abs(d);
   }
   function statOf(fn, per){         /* 該期指標的分佈（浮層第一行即時算，避免寫死數字過期） */
@@ -1731,6 +1734,7 @@ document.body.appendChild(__wrap);
       }
       if (needV && !q(volOf(f.code, per), needV)) return false;
       if (S.sharpe[per] && !q(sharpeOf(f.code, per), S.sharpe[per])) return false;
+      if (S.calmar[per] && !q(calmarOf(f.code, per), S.calmar[per])) return false;
     }
     if (S.yieldMin!=null || S.yieldMax!=null){
       var y = yieldOf(f.code); if (y==null) return false;
@@ -1785,6 +1789,7 @@ document.body.appendChild(__wrap);
     gs.appendChild(popRow('價格分位', periodLabel('navP',''), 'navP'));
     gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
     gs.appendChild(popRow('夏普比率', periodLabel('sharpe',''), 'sharpe'));
+    gs.appendChild(popRow('卡瑪比率', periodLabel('calmar',''), 'calmar'));
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
     gs.appendChild(popRow('平台歷史', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
     gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
@@ -1965,6 +1970,40 @@ document.body.appendChild(__wrap);
       });
       p.appendChild(acts('sharpe'));
     },
+    calmar: function(p){
+      p.appendChild(paneTitle('卡瑪比率（年化回報 ÷ |最大回撤|）','calmar'));
+      var meds = ANN_PERIODS.map(function(per){
+        var st = statOf(calmarOf, per);
+        return st ? (PLAB[per] + '中位 ' + st.med.toFixed(2)) : null;
+      }).filter(Boolean).join('　');
+      var n1 = statOf(calmarOf, '1Y');
+      p.appendChild(dataLine(meds + (n1 ? ('（' + n1.n + ' 檔可計）') : '')
+        + '　波動率低於 5% 的類現金基金不計算'));
+      /* 逐期預選（理由同夏普）：Calmar 合理水平按期差異極大
+         —— 1 年期中位 1.36、5 年期僅 0.13，唔可以一次套用同一檔位到全部期間。 */
+      ANN_PERIODS.forEach(function(per){
+        var r = el('div','row pRow retrow');
+        r.appendChild(el('span','plab', PLAB[per]));
+        r.appendChild(el('span','prelab','預選'));
+        [['> 2', 2, null],
+         ['> 1', 1, null],
+         ['0.5 至 1', 0.5, 1],
+         ['< 0.5', null, 0.5]].forEach(function(t){
+          var b = el('button','chip pre', t[0]);
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            var cur = JSON.parse(JSON.stringify(S.calmar));
+            cur[per] = { min: t[1], max: t[2] };
+            if (cur[per].min == null && cur[per].max == null) delete cur[per];
+            S.calmar = cur; render(); renderSums(); run(); openPane('calmar', null);
+          };
+          r.appendChild(b);
+        });
+        r.appendChild(rangeInputs('calmar', per, '', '0.1'));
+        p.appendChild(r);
+      });
+      p.appendChild(acts('calmar'));
+    },
     years: function(p){
       p.appendChild(el('h4','','平台歷史滿 N 年（＝我們能取得資料的最早年數）'));
       var r=el('div','row');
@@ -2020,7 +2059,8 @@ document.body.appendChild(__wrap);
     navP: '用來判斷現價相對本身歷史是偏便宜還是偏貴。分位低（30 以下）＝接近該時段的低位，即相對便宜；分位高（70 以上）＝接近高位，即相對貴。0 為期內最低、100 為期內最高；例如分位 20，表示現價只高於該時段內約兩成時間的價位。',
     vol: '一年內價格的升跌幅度；數值愈大代表上落愈大。例如 20% 即每 100 元一年內約升跌 20 元。只適用於非派息基金（派息基金為 Z 開頭）。',
     yield: '按最近派息推算的一年派息率，只適用於派息基金（Z 開頭）。例如 6% 即每 100 元一年派息 6 元。',
-    sharpe: '夏普比率＝年化回報 ÷ 年化波動率（無風險利率取 0）。數值愈大，代表每承受一單位波動所換到的回報愈多。只提供 1／3／5 年（短期年化會失真），且波動率低於 5% 的類現金基金不計算。只適用於非派息基金。'
+    sharpe: '夏普比率＝年化回報 ÷ 年化波動率（無風險利率取 0），是衡量投資組合「性價比」的核心指標：數值愈高，代表承擔每單位風險所獲得的超額收益愈多。一般認為大於 1 表現良好、大於 2 為優秀。只提供 1／3／5 年（短期年化會失真），且波動率低於 5% 的類現金基金不計算。只適用於非派息基金。',
+    calmar: '卡瑪比率（Calmar Ratio）＝區間年化回報 ÷ 區間最大回撤（取絕對值），是衡量風險調整後收益的核心指標。分級參考：低於 0.5 代表回撤代價太大、收益不足以補償風險；0.5 至 1.0 屬可接受範圍、性價比一般；大於 1.0 為優秀水平，意味歷史上最慘的虧損用約一年收益就能填平；大於 2.0 極為罕見，屬「穩穩幸福」的頂級水平。只提供 1／3／5 年，且波動率低於 5% 的類現金基金不計算。只適用於非派息基金。'
   };
   function paneTitle(text, key){
     var wrap = el('div','ptitlewrap'), row = el('div','ptitle');
@@ -2136,6 +2176,7 @@ document.body.appendChild(__wrap);
       if(k==='yield'){S.yieldMin=S.yieldMax=null;}
       if(k==='vol'){S.vol={};}
       if(k==='sharpe'){S.sharpe={};}
+      if(k==='calmar'){S.calmar={};}
       if(k==='years'){S.listYears=null;}
       if(k==='house'){S.houses=[];}
       closePane(); render(); run();
@@ -2200,6 +2241,7 @@ document.body.appendChild(__wrap);
       ['價格分位', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
       ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
       ['夏普', hasPeriod('sharpe') ? periodLabel('sharpe','') : null, function(){ S.sharpe={}; }],
+      ['卡瑪', hasPeriod('calmar') ? periodLabel('calmar','') : null, function(){ S.calmar={}; }],
       ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
         function(){ S.yieldMin=S.yieldMax=null; }],
       ['平台歷史', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
