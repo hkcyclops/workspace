@@ -1560,7 +1560,7 @@ document.body.appendChild(__wrap);
   var CATS = {type:[], region:[]};             // 由 assetClass 拆出
   var S = {                                    // 條件狀態（未選＝不限）
     type:[], region:[], risk:[], ccy:[], rate:[], nav:[], payday:[], dist:[], years:null,
-    ret:{}, navP:{}, vol:{},          // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
+    ret:{}, navP:{}, vol:{}, sharpe:{},  // 多期 AND：{期: {min,max}}，期＝YTD/3M/1Y/3Y/5Y
     yieldMin:null, yieldMax:null,
     houses:[], listYears:null, sort:'1Y', dir:-1
   };
@@ -1654,6 +1654,44 @@ document.body.appendChild(__wrap);
   }
   function volOf(code, per){ var h=volPair(code,per); return h ? h[0] : null; }
   function mddOf(code, per){ var h=volPair(code,per); return h ? h[1] : null; }
+  /* ---------- 夏普比率／Calmar（2026-09-24 新增，方案 A：只做非派息） ----------
+     業務規則：
+       · rf = 0（業界慣例，照叫夏普）→ Sharpe = 年化回報 ÷ 年化波動率
+       · 只做 1／3／5 年 —— YTD／3M 年化會暴走（實測 3M 累計 +15% 可年化成 +77%）
+       · 波動率 < 5% 的類現金基金不計算 —— 否則比值爆表（實測可達 37.6，
+         且唔設限的話 3 年期 Top10 有 8 檔係呢類基金）
+       · 派息基金自動排除 —— volPair() 對 Z 開頭已回 null
+     無需改資料管線：年化回報由 smart-metrics 既有的 returnPercent ＋ 起訖時間戳換算。 */
+  var ANN_PERIODS = ['1Y','3Y','5Y'];
+  var RF = 0;                       /* ← 無風險利率，要改只需改呢一個數 */
+  var RISK_MIN_VOL = 5;             /* ← 類現金門檻（%） */
+  function annOf(code, per){        /* 複利年化回報（%）；年數由真實起訖時間戳算 */
+    if (ANN_PERIODS.indexOf(per) < 0) return null;
+    var m = mOf(code, per);
+    if (!m || m.returnPercent == null || m.startTimestamp == null || m.endTimestamp == null) return null;
+    var yrs = (m.endTimestamp - m.startTimestamp) / (365.25 * 86400000);
+    if (!(yrs > 0.5)) return null;
+    var g = 1 + m.returnPercent / 100;
+    if (!(g > 0)) return null;
+    return (Math.pow(g, 1 / yrs) - 1) * 100;
+  }
+  function sharpeOf(code, per){
+    var a = annOf(code, per), v = volOf(code, per);
+    if (a == null || v == null || v < RISK_MIN_VOL) return null;
+    return (a - RF) / v;
+  }
+  function calmarOf(code, per){
+    var a = annOf(code, per), d = mddOf(code, per);
+    if (a == null || d == null || !(d < 0)) return null;
+    return a / Math.abs(d);
+  }
+  function statOf(fn, per){         /* 該期指標的分佈（浮層第一行即時算，避免寫死數字過期） */
+    var vs = [];
+    (D.cat.funds||[]).forEach(function(f){ var v = fn(f.code, per); if (v != null && isFinite(v)) vs.push(v); });
+    if (!vs.length) return null;
+    vs.sort(function(a,b){ return a-b; });
+    return { n: vs.length, med: vs[Math.floor(vs.length/2)], lo: vs[0], hi: vs[vs.length-1] };
+  }
   /* 派息基金＝代號 Z 開頭（與 06 bundle 的判據 Ho() 一致；用戶明確：只有 Z 開頭才是派息基金） */
   function isDist(code){ return /^Z/i.test(String(code||'').trim()); }
   function yieldOf(code){ if(!isDist(code)) return null; var r=D.dref[code]; return r && r.annualizedDistributionRate!=null ? r.annualizedDistributionRate : null; }
@@ -1692,6 +1730,7 @@ document.body.appendChild(__wrap);
         if (needN && !q(m0.navPercentile, needN)) return false;
       }
       if (needV && !q(volOf(f.code, per), needV)) return false;
+      if (S.sharpe[per] && !q(sharpeOf(f.code, per), S.sharpe[per])) return false;
     }
     if (S.yieldMin!=null || S.yieldMax!=null){
       var y = yieldOf(f.code); if (y==null) return false;
@@ -1745,6 +1784,7 @@ document.body.appendChild(__wrap);
     gs.appendChild(popRow('期間回報', periodLabel('ret','%'), 'ret'));
     gs.appendChild(popRow('價格分位', periodLabel('navP',''), 'navP'));
     gs.appendChild(popRow('波動率', periodLabel('vol','%'), 'vol'));
+    gs.appendChild(popRow('夏普比率', periodLabel('sharpe',''), 'sharpe'));
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
     gs.appendChild(popRow('平台歷史', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
     gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
@@ -1890,6 +1930,41 @@ document.body.appendChild(__wrap);
       }));
       p.appendChild(acts('vol'));
     },
+    sharpe: function(p){
+      p.appendChild(paneTitle('夏普比率（年化回報 ÷ 年化波動率；無風險利率＝0）','sharpe'));
+      var meds = ANN_PERIODS.map(function(per){
+        var st = statOf(sharpeOf, per);
+        return st ? (PLAB[per] + '中位 ' + st.med.toFixed(2)) : null;
+      }).filter(Boolean).join('　');
+      var n1 = statOf(sharpeOf, '1Y');
+      p.appendChild(dataLine(meds + (n1 ? ('（' + n1.n + ' 檔可計）') : '')
+        + '　波動率低於 5% 的類現金基金不計算'));
+      /* 逐期預選（唔用 levelRow）：夏普的合理水平按期差異極大
+         —— 5 年期中位僅約 0.2~0.3，若一次套用「≥1.5」到全部期間會永遠 0 檔（實測過）。 */
+      ANN_PERIODS.forEach(function(per){
+        var r = el('div','row pRow retrow');
+        r.appendChild(el('span','plab', PLAB[per]));
+        var st = statOf(sharpeOf, per);
+        r.appendChild(el('span','prelab','預選'));
+        [['≥ 1', 1, null],
+         [(st && st.med > 0.01) ? ('≥ 中位 ' + st.med.toFixed(2)) : '≥ 0.5',
+          (st && st.med > 0.01) ? st.med : 0.5, null],
+         ['< 0', null, 0]].forEach(function(t){
+          var b = el('button','chip pre', t[0]);
+          b.onclick = function(ev){
+            ev.stopPropagation();
+            var cur = JSON.parse(JSON.stringify(S.sharpe));
+            cur[per] = { min: t[1], max: t[2] };
+            if (cur[per].min == null && cur[per].max == null) delete cur[per];
+            S.sharpe = cur; render(); renderSums(); run(); openPane('sharpe', null);
+          };
+          r.appendChild(b);
+        });
+        r.appendChild(rangeInputs('sharpe', per, '', '0.1'));
+        p.appendChild(r);
+      });
+      p.appendChild(acts('sharpe'));
+    },
     years: function(p){
       p.appendChild(el('h4','','平台歷史滿 N 年（＝我們能取得資料的最早年數）'));
       var r=el('div','row');
@@ -1944,7 +2019,8 @@ document.body.appendChild(__wrap);
     ret: '各段時間的回報，正數為升、負數為跌。例如 −5% 即每 100 元虧損 5 元；期與期之間為 AND（全部符合）。',
     navP: '用來判斷現價相對本身歷史是偏便宜還是偏貴。分位低（30 以下）＝接近該時段的低位，即相對便宜；分位高（70 以上）＝接近高位，即相對貴。0 為期內最低、100 為期內最高；例如分位 20，表示現價只高於該時段內約兩成時間的價位。',
     vol: '一年內價格的升跌幅度；數值愈大代表上落愈大。例如 20% 即每 100 元一年內約升跌 20 元。只適用於非派息基金（派息基金為 Z 開頭）。',
-    yield: '按最近派息推算的一年派息率，只適用於派息基金（Z 開頭）。例如 6% 即每 100 元一年派息 6 元。'
+    yield: '按最近派息推算的一年派息率，只適用於派息基金（Z 開頭）。例如 6% 即每 100 元一年派息 6 元。',
+    sharpe: '夏普比率＝年化回報 ÷ 年化波動率（無風險利率取 0）。數值愈大，代表每承受一單位波動所換到的回報愈多。只提供 1／3／5 年（短期年化會失真），且波動率低於 5% 的類現金基金不計算。只適用於非派息基金。'
   };
   function paneTitle(text, key){
     var wrap = el('div','ptitlewrap'), row = el('div','ptitle');
@@ -2059,6 +2135,7 @@ document.body.appendChild(__wrap);
       if(k==='ret'){S.ret={};}
       if(k==='yield'){S.yieldMin=S.yieldMax=null;}
       if(k==='vol'){S.vol={};}
+      if(k==='sharpe'){S.sharpe={};}
       if(k==='years'){S.listYears=null;}
       if(k==='house'){S.houses=[];}
       closePane(); render(); run();
@@ -2122,6 +2199,7 @@ document.body.appendChild(__wrap);
       ['期間回報', hasPeriod('ret') ? periodLabel('ret','%') : null, function(){ S.ret={}; }],
       ['價格分位', hasPeriod('navP') ? periodLabel('navP','') : null, function(){ S.navP={}; }],
       ['波動率', hasPeriod('vol') ? periodLabel('vol','%') : null, function(){ S.vol={}; }],
+      ['夏普', hasPeriod('sharpe') ? periodLabel('sharpe','') : null, function(){ S.sharpe={}; }],
       ['年化派息率', (S.yieldMin!=null||S.yieldMax!=null) ? rangeLabel(S.yieldMin,S.yieldMax,'%') : null,
         function(){ S.yieldMin=S.yieldMax=null; }],
       ['平台歷史', S.listYears!=null ? ('滿 '+S.listYears+' 年') : null, function(){ S.listYears=null; }]
@@ -2148,7 +2226,10 @@ document.body.appendChild(__wrap);
     inner.push('<div class="dl"><b class="fname">'+f.code+'　'+(f.name||'')+'</b>'+(isDist(f.code)?'　<span class="k">派息基金</span>':'')+'</div>');
     inner.push('<div class="dl"><span class="k">各期回報</span>'+r1+'</div>');
     inner.push('<div class="dl"><span class="k">價格分位</span>'+r2+'</div>');
+    var r5=['1Y','3Y','5Y'].map(function(per){ var x=sharpeOf(f.code,per); return PLAB[per]+' <b class="num">'+(x==null?'—':x.toFixed(2))+'</b>'; }).join('　');
+    var r6=['1Y','3Y','5Y'].map(function(per){ var x=calmarOf(f.code,per); return PLAB[per]+' <b class="num">'+(x==null?'—':x.toFixed(2))+'</b>'; }).join('　');
     inner.push('<div class="dl"><span class="k">波動率</span>'+r3+'　<span class="k">最大回撤</span>'+r4+'</div>');
+    inner.push('<div class="dl"><span class="k">夏普</span>'+r5+'　<span class="k">Calmar</span>'+r6+'</div>');
     inner.push('<div class="dl"><span class="k">類型</span><b>'+f._type+'</b>　<span class="k">地區</span><b>'+f._region+'</b>'
       +'　<span class="k">幣種</span><b>'+(f.currencyCode||'—')+'</b>　<span class="k">風險</span><b>'+(f.risk||'—')+'</b>'
       +'　<span class="k">評級</span><b>'+(r0?('★'.repeat(r0)):'—')+'</b>'
