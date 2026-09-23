@@ -1513,14 +1513,20 @@ th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
 #sp-wrap .toast.on{opacity:1}
 #sp-wrap .loading{padding:26px 4px;color:var(--gray);font-size:13px}
 @media (max-width:768px){
-#sp-wrap .groups{grid-template-columns:1fr}
+/* 條件行改 2 列後，這裡不再需要單列覆寫（見下一個 media 區塊） */
 }
 @media (max-width:768px){
 #sp-wrap /* 不用全屏抽屜：抽屜會蓋住 .bar（toggle）→ 收不起來，也蓋住結果表 → 無法勾選加入組合。
      維持內聯展開，配合預設收合，就不會一開就淹掉畫面。 */
   .stage{border-left:0;border-right:0}
-#sp-wrap .groups{grid-template-columns:1fr}
-#sp-wrap .g{padding:4px 0}
+#sp-wrap /* 條件行：2 列 + 緊湊。实測 390px 手機 #sp-groups 由 566px → 280px，
+      且「偏高行」由 3 個變 0 個。—— 只改 2 列而不緊湊會反而變 686px！ —— */
+.groups{grid-template-columns:1fr 1fr;gap:1px 10px}
+#sp-wrap .g{padding:1px 0;gap:5px;align-items:center;border-bottom:0}
+#sp-wrap .g>.gl{flex:0 0 54px;font-size:10.5px;padding-top:0}
+#sp-wrap .g>.gc{gap:1px 5px}
+#sp-wrap .g .chip{font-size:11px;padding:1px 0}
+#sp-wrap .g .pop{font-size:11px}
 #sp-wrap table{font-size:10px}
 #sp-wrap th,#sp-wrap td{padding:6px 3px}
 #sp-wrap #sp-tbl th{font-size:9px}
@@ -1531,6 +1537,14 @@ th:nth-child(-n+2),#sp-wrap td:nth-child(-n+2){text-align:left}
   .sums{order:9;flex:1 1 100%}
 #sp-wrap .pane{max-height:calc(100vh - 20px);overflow:auto}
 #sp-wrap .foot{gap:6px}
+}
+
+@media (max-width:600px){
+#sp-wrap /* 窄機：chip ≥ 4 個的行（類型／地區…）橫跨兩列。
+      每列只有 ~132px，總簻 8 個 chip 會在 ~84px 裡瘋狂換行。
+      实測：跨欄令手機「偏高行」由 4 → 0。
+      ⚠️ 但 ≥600px 時跨欄會浪費格位（平板由 177 變 227），故只在窄機啟用。 */
+.g.wide{grid-column:1/-1}
 }
 </style>
 <script id="SP_PICKER_V1">
@@ -1793,6 +1807,10 @@ document.body.appendChild(__wrap);
     gs.appendChild(popRow('年化派息率', rangeLabel(S.yieldMin,S.yieldMax,'%'), 'yield'));
     gs.appendChild(popRow('平台歷史', S.listYears?('滿 '+S.listYears+' 年'):'不限', 'years'));
     gs.appendChild(popRow('基金公司', S.houses.length?('已選 '+S.houses.length+' 家'):'全部', 'house'));
+    /* 條件行：chip ≥ 4 個就標記 .wide（窄機時橫跨兩列，避免在窄格裡換行） */
+    Array.prototype.forEach.call(gs.querySelectorAll('.g'), function(r) {
+      if (r.querySelectorAll('.chip').length >= 4) r.classList.add('wide');
+    });
     // 常用指標
     var ps=$('sp-presets'); ps.innerHTML=''; ps.appendChild(el('span','lbl','常用指標'));
     [['低風險高息',{risk:['低'],yieldMin:5}],
