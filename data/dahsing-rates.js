@@ -1,7 +1,7 @@
 window.DAHSING_RATES = {
-  "hibor": 2.7789,
+  "hibor": 2.75,
   "prime": 5.25,
-  "hiborUpdated": "2026/10/23",
+  "hiborUpdated": "2026/10/26",
   "primeUpdated": "2026/10/02",
-  "fetchedAt": "2026-10-23T08:57:44.069Z"
+  "fetchedAt": "2026-10-26T09:31:35.550Z"
 };
