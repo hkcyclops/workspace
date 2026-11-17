@@ -11,6 +11,12 @@ on:
     - cron: '0 0 * * *'
   workflow_dispatch: # 允許在 Actions 分頁手動觸發
 
+# 同一時間只跑一個：避免排程與手動觸發互相搶 push
+# （基金、Dah Sing 兩個工作流早就有，只有匯率漏了）
+concurrency:
+  group: update-rates-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write # 少了這段推不上去
 
@@ -106,11 +112,48 @@ jobs:
       # ④ 有實際變動才提交
       - name: Commit only if changed
         run: |
+          # ① 檔案必須存在：否則 git add 會報
+          #    fatal: pathspec '...' did not match any files（exit 128）
+          for f in data/rates.js data/rates-history.js; do
+            if [ ! -f "$f" ]; then
+              echo "::error::缺少 $f，中止提交"
+              exit 1
+            fi
+          done
+
           git add data/rates.js data/rates-history.js
 
           if git diff --quiet --cached; then
             echo "匯率未變動，略過提交"
-          else
-            git commit -m "chore(rates): update $(date -u +%Y-%m-%d)"
-            git push origin HEAD:${{ github.ref_name }}
+            exit 0
           fi
+
+          git commit -m "chore(rates): update $(date -u +%Y-%m-%d)"
+
+          # ② 推送重試三次。
+          #    2026-11-16 run #77 失敗於這一步，退出碼 128 —— git 的 fatal 級錯誤
+          #    （認證抖動／連線被 reset／二級速率限制／index.lock／pathspec 不匹配），
+          #    都是瞬時的，重試通常就能過。
+          #    匯率是「當日快照」，AIA 只提供當日值 → 失敗一次就永久缺一天，
+          #    不能像基金那樣靠隔天全量重抓自癒，所以必須在這裡自癒。
+          for i in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "推送成功（第 $i 次）"
+              exit 0
+            else
+              rc=$?
+              echo "::warning::第 $i 次推送失敗（exit ${rc}），10 秒後重新同步再試"
+            fi
+            sleep 10
+            # 先同步再加推。若 rebase 有衝突（代表有另一個流程同時改同一個檔），
+            # 立即 abort 並告警 —— 這種情況重試解決不了，別浪費剩下兩次機會。
+            # （已加 concurrency，正常情況下不該出現；出現即代表有異常。）
+            if ! git pull --rebase origin ${{ github.ref_name }}; then
+              git rebase --abort || true
+              echo "::error::同步時發生衝突，放棄重試（請檢查是否有流程同時改 rates 檔）"
+              exit 1
+            fi
+          done
+
+          echo "::error::推送重試 3 次仍失敗，本日匯率未寫入"
+          exit 1
